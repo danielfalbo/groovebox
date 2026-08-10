@@ -6,8 +6,9 @@ CREATE TABLE IF NOT EXISTS albums (
     release_year INTEGER,
     discogs_master_id INTEGER UNIQUE,
     cover_image_url TEXT,
-    has_vinyl INTEGER DEFAULT 0,  -- 1 if owned in collection
-    in_wantlist INTEGER DEFAULT 0, -- 1 if in wantlist
+    has_vinyl INTEGER DEFAULT 0,    -- 1 if owned as physical vinyl
+    in_collection INTEGER DEFAULT 0, -- 1 if owned in Discogs collection
+    in_wantlist INTEGER DEFAULT 0,   -- 1 if in wantlist
     streaming_notes TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP

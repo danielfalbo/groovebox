@@ -44,7 +44,10 @@
           <button class="bp5-button bp5-minimal bp5-icon-cog settings-gear-btn" id="settings-gear-btn" onclick="toggleSettingsMenu(event)" title="Settings & Sync"></button>
           <div class="bp5-menu bp5-elevation-2 settings-dropdown-menu" id="settings-dropdown-menu" style="display: none;">
             <a class="bp5-menu-item bp5-icon-refresh" id="discogs-sync-btn" onclick="triggerDiscogsSync()">Sync Discogs (Collection & Wantlist)</a>
-            <div class="sync-last-time" id="sync-last-time"></div>
+            <div class="sync-last-time" id="sync-last-time">Never synced Discogs</div>
+            <div class="bp5-menu-divider"></div>
+            <a class="bp5-menu-item bp5-icon-clean" id="dedupe-albums-btn" onclick="triggerDedupeAlbums()">Merge Duplicate Albums</a>
+            <div class="sync-last-time" id="dedupe-last-time">Never merged duplicates</div>
           </div>
         </div>
       </div>
@@ -104,10 +107,10 @@
           <div class="section-filter-inner">
             <!-- Segmented Filter Pills (Visible when in Albums View) -->
             <div class="bp5-button-group bp5-large album-filter-pills" id="album-filter-pills" style="display: none;">
-              <button class="bp5-button bp5-active" id="pill-all" onclick="setAlbumFilter('all')">
+              <button class="bp5-button" id="pill-all" onclick="setAlbumFilter('all')">
                 All Albums <span class="bp5-tag bp5-round bp5-minimal count-tag" id="count-all">-</span>
               </button>
-              <button class="bp5-button" id="pill-collection" onclick="setAlbumFilter('collection')">
+              <button class="bp5-button bp5-active" id="pill-collection" onclick="setAlbumFilter('collection')">
                 📀 Collection <span class="bp5-tag bp5-round bp5-intent-warning count-tag" id="count-collection">-</span>
               </button>
               <button class="bp5-button" id="pill-wantlist" onclick="setAlbumFilter('wantlist')">

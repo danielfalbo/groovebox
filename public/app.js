@@ -5,7 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initSidebarState();
   initSortState();
   loadPlaylists();
-  showAllSongs();
+  startSyncPolling();
+  showAlbums('collection');
 });
 
 function toggleSidebar() {
@@ -90,7 +91,7 @@ function clearNavActive() {
   if (filterInput) filterInput.value = '';
 }
 
-let activeAlbumFilter = 'all';
+let activeAlbumFilter = 'collection';
 
 function showSectionFilter(placeholder, showPills = false) {
   const wrap = document.getElementById('section-filter-wrap');
@@ -142,7 +143,14 @@ async function setAlbumFilter(filter) {
   `;
 
   try {
-    const url = filter === 'all' ? '/api/albums' : `/api/albums?filter=${filter}`;
+    const filterInput = document.getElementById('section-filter-input');
+    const q = filterInput ? filterInput.value.trim() : '';
+
+    let params = new URLSearchParams();
+    if (filter !== 'all') params.append('filter', filter);
+    if (q) params.append('q', q);
+
+    const url = `/api/albums${params.toString() ? '?' + params.toString() : ''}`;
     const res = await fetch(url);
     rawSectionData = await res.json();
     renderAlbumCards(rawSectionData);
@@ -150,6 +158,8 @@ async function setAlbumFilter(filter) {
     console.error('Failed to load filtered albums:', err);
   }
 }
+
+let albumSearchDebounceTimer = null;
 
 function handleSectionFilter(query) {
   const q = (query || '').toLowerCase().trim();
@@ -176,18 +186,28 @@ function handleSectionFilter(query) {
     }
     renderArtistCards(filtered);
   } else if (currentSectionView === 'albums') {
-    const grid = document.getElementById('grid-container');
-    grid.innerHTML = '';
-    const filtered = !q ? rawSectionData : rawSectionData.filter(alb => 
-      (alb.title && alb.title.toLowerCase().includes(q)) ||
-      (alb.artist && alb.artist.toLowerCase().includes(q))
-    );
+    if (albumSearchDebounceTimer) clearTimeout(albumSearchDebounceTimer);
     
-    if (filtered.length === 0) {
-      grid.innerHTML = '<div class="bp5-text-muted">No matching albums</div>';
-      return;
-    }
-    renderAlbumCards(filtered);
+    albumSearchDebounceTimer = setTimeout(async () => {
+      const grid = document.getElementById('grid-container');
+      try {
+        let params = new URLSearchParams();
+        if (activeAlbumFilter !== 'all') params.append('filter', activeAlbumFilter);
+        if (q) params.append('q', q);
+
+        const url = `/api/albums${params.toString() ? '?' + params.toString() : ''}`;
+        const res = await fetch(url);
+        const albums = await res.json();
+
+        if (!albums || albums.length === 0) {
+          grid.innerHTML = '<div class="bp5-text-muted" style="grid-column: 1 / -1; text-align: center; padding: 24px;">No matching albums</div>';
+          return;
+        }
+        renderAlbumCards(albums);
+      } catch (err) {
+        console.error('Failed to search albums:', err);
+      }
+    }, 200);
   }
 }
 
@@ -281,7 +301,7 @@ function renderArtistCards(artists) {
   });
 }
 
-async function showAlbums() {
+async function showAlbums(targetFilter) {
   clearNavActive();
   currentSectionView = 'albums';
   showSectionFilter('Filter albums by title, artist...', true);
@@ -290,7 +310,7 @@ async function showAlbums() {
   document.getElementById('table-container').style.display = 'none';
   
   updateAlbumCounts();
-  setAlbumFilter(activeAlbumFilter);
+  setAlbumFilter(targetFilter || activeAlbumFilter);
 }
 
 function renderAlbumCards(albums) {
@@ -309,8 +329,22 @@ function renderAlbumCards(albums) {
     const coverUrl = alb.cover_image_url || fallbackCover;
     
     let badgeHTML = '';
-    if (alb.has_vinyl) {
+    const fmt = (alb.primary_format || '').toLowerCase();
+    
+    if (alb.has_vinyl || fmt.includes('vinyl')) {
       badgeHTML = `<span class="bp5-tag bp5-intent-warning bp5-round album-badge">📀 Vinyl</span>`;
+    } else if (fmt.includes('file') || fmt.includes('mp3') || fmt.includes('wav') || fmt.includes('flac')) {
+      badgeHTML = `<span class="bp5-tag bp5-intent-warning bp5-round album-badge">📁 Files</span>`;
+    } else if (fmt.includes('sacd')) {
+      badgeHTML = `<span class="bp5-tag bp5-intent-warning bp5-round album-badge">💿 SACD</span>`;
+    } else if (fmt.includes('cd')) {
+      badgeHTML = `<span class="bp5-tag bp5-intent-warning bp5-round album-badge">💿 CD</span>`;
+    } else if (fmt.includes('cassette')) {
+      badgeHTML = `<span class="bp5-tag bp5-intent-warning bp5-round album-badge">📻 Cassette</span>`;
+    } else if (fmt.includes('flexi')) {
+      badgeHTML = `<span class="bp5-tag bp5-intent-warning bp5-round album-badge">💿 Flexi</span>`;
+    } else if (alb.in_collection) {
+      badgeHTML = `<span class="bp5-tag bp5-intent-warning bp5-round album-badge">📀 Collection</span>`;
     } else if (alb.in_wantlist) {
       badgeHTML = `<span class="bp5-tag bp5-intent-primary bp5-round album-badge">🎯 Wantlist</span>`;
     }
@@ -638,6 +672,26 @@ function toggleSettingsMenu(event) {
   }
 }
 
+async function triggerDedupeAlbums() {
+  const menu = document.getElementById('settings-dropdown-menu');
+  if (menu) menu.style.display = 'none';
+
+  if (!confirm('Merge duplicate albums based on normalized titles and track evidence?')) {
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/albums/dedupe', { method: 'POST' });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Deduplication failed');
+    }
+    checkSyncStatus();
+  } catch (err) {
+    alert('Failed to merge duplicate albums: ' + err.message);
+  }
+}
+
 document.addEventListener('click', (e) => {
   const menu = document.getElementById('settings-dropdown-menu');
   const gearBtn = document.getElementById('settings-gear-btn');
@@ -648,13 +702,7 @@ document.addEventListener('click', (e) => {
 
 let syncPollInterval = null;
 
-document.addEventListener('DOMContentLoaded', () => {
-  initSidebarState();
-  initSortState();
-  loadPlaylists();
-  showAllSongs();
-  startSyncPolling();
-});
+
 
 function startSyncPolling() {
   checkSyncStatus();
@@ -671,25 +719,51 @@ async function checkSyncStatus() {
 
     const bannerWrap = document.getElementById('sync-banner-wrap');
     const statusText = document.getElementById('sync-status-text');
-    const syncBtn = document.getElementById('discogs-sync-btn');
     const lastTimeDiv = document.getElementById('sync-last-time');
+    const dedupeTimeDiv = document.getElementById('dedupe-last-time');
+    const dedupeBtn = document.getElementById('dedupe-albums-btn');
 
     if (lastTimeDiv && data.last_synced_at) {
-      lastTimeDiv.textContent = `Last synced: ${data.last_synced_at}`;
+      lastTimeDiv.textContent = `Last synced Discogs: ${data.last_synced_at}`;
+    }
+    if (dedupeTimeDiv && data.last_deduped_at) {
+      dedupeTimeDiv.textContent = `Last merged: ${data.last_deduped_at}`;
     }
 
     if (data.is_syncing) {
       if (bannerWrap) bannerWrap.style.display = 'inline-flex';
-      if (statusText) statusText.textContent = data.message || 'Syncing Discogs...';
-      if (syncBtn) {
-        syncBtn.textContent = 'Sync in Progress...';
-        syncBtn.classList.add('bp5-disabled');
+      if (statusText) statusText.textContent = data.message || 'Operation in Progress...';
+
+      if (data.stage === 'deduping') {
+        if (dedupeBtn) {
+          dedupeBtn.textContent = 'Merging Duplicates...';
+          dedupeBtn.classList.add('bp5-disabled');
+        }
+        if (syncBtn) {
+          syncBtn.classList.add('bp5-disabled');
+        }
+      } else {
+        if (syncBtn) {
+          syncBtn.textContent = 'Sync in Progress...';
+          syncBtn.classList.add('bp5-disabled');
+        }
+        if (dedupeBtn) {
+          dedupeBtn.classList.add('bp5-disabled');
+        }
       }
     } else {
+      const wasSyncing = bannerWrap && bannerWrap.style.display !== 'none';
       if (bannerWrap) bannerWrap.style.display = 'none';
       if (syncBtn) {
         syncBtn.textContent = 'Sync Discogs (Collection & Wantlist)';
         syncBtn.classList.remove('bp5-disabled');
+      }
+      if (dedupeBtn) {
+        dedupeBtn.textContent = 'Merge Duplicate Albums';
+        dedupeBtn.classList.remove('bp5-disabled');
+      }
+      if (wasSyncing && currentSectionView === 'albums') {
+        showAlbums();
       }
     }
   } catch (err) {

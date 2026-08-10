@@ -31,7 +31,8 @@
   - Symmetrical Blueprint navbar & custom animated Vinyl SVG sidebar icon.
   - B-tree indexing for instant `/api/artists` queries.
   - Circular 1:1 ratio artist avatars.
-- [x] **Discogs Collection & Wantlist Filter Pills**: Segmented toggle bar on Albums grid (`All Albums`, `📀 Collection`, `🎯 Wantlist`) with live count badges and fast query filtering (`/api/albums?filter=collection|wantlist` & `/api/albums/counts`). Filter state persists on re-entry.
+- [x] **Discogs Collection & Wantlist Filter Pills**: Segmented toggle bar on Albums grid (`All Albums`, `📀 Collection`, `🎯 Wantlist`) with live count badges and fast query filtering (`/api/albums?filter=collection|wantlist` & `/api/albums/counts`). Application default homepage view set to **`📀 Collection`** in Albums view.
+- [x] **Lossless Master Album Deduplication**: Evidence-backed deduplication algorithm (`DedupeAlbums`) merging duplicate digital/streaming releases into 1-to-1 master albums with title normalization (`NormalizeAlbumTitle`) and track title overlap matching. Triggerable via CLI flag (`go run . -dedupe-albums`) or UI Settings dropdown menu.
 - [x] **Favicon**: SVG vinyl record favicon (`public/favicon.svg`) + hi-res JPG fallback (`public/favicon.jpg`) with Blueprint dark theme-matching `#2b95d6` center badge.
 - [x] **Navbar Brand Icon**: Replaced default music note icon with a custom animated vinyl SVG icon that rotates 90° on hover.
 - [x] **Enhanced Album Detail Page**:
@@ -53,24 +54,12 @@
 
 ---
 
-## 🗺️ Unfinished Roadmap (carried over from earlier plan, not yet done)
-
-These were part of the original V1 scope and were never completed — they dropped out of the plan during a docs rewrite rather than being finished or deliberately cut:
+## 🗺️ Completed Roadmap Items
 
 - [x] **Apple Music Import** *(completed 2026-08-10)*: Integrated XML parser (`apple_music.go`) and CLI flag `-import-apple-music <path>`. Imported 3,556 tracks, 1,888 new albums, and 35 playlists from `/Users/daniel/apple-music-library/Library.xml` into SQLite. Track ISRCs and titles matched against existing catalog.
 - [x] **Historical Shazam Screenshot Import** *(completed 2026-08-10)*: OCR/extracted 30 recent Shazam history screenshots from `/Users/daniel/Downloads/shazam` and auto-populated corresponding monthly playlists (`2026-08`, `2026-07`, `2026-06`). Real album titles re-linked and deduplicated against canonical master albums.
 - [x] **Track Deduplication & Duration Cleanup** *(completed 2026-08-10)*: Deduplicated 602 redundant track records across identical albums and reassigned 897 playlist memberships. Cleaned 6 empty title tracks and populated missing track durations via iTunes API.
 - [x] **Batch High-Res Cover Art Fetch** *(completed 2026-08-10)*: Populated high-res 600x600 artwork for missing albums via iTunes Search API with fallback SVG cover handling.
-
-- [ ] **Future Shazam-like Ingestion & Offline Sync (Proposed Specification - Not Yet Implemented)**:
-  - **`POST /api/shazam` API Handler**: Receives Shazam tag metadata (`artist`, `title`, `timestamp`). Automatically resolves/creates the target monthly playlist (`YYYY-MM`), fetches iTunes high-res cover art, and links the track.
-  - **iOS Shortcut Sync & Offline Voice Note Recording**:
-    - *Online Shazam Trigger*: When online, Shazam identifies the track and sends JSON to `POST http://<tailscale-ip>:8080/api/shazam` (queueing to `iCloud Drive/Shortcuts/Groovebox/pending_shazams.json` if Tailscale is down).
-    - *True Offline Fallback (Voice/Audio Notes)*: Since iOS Shazam requires an internet connection to identify fingerprints, an offline shortcut can record a 10-15s M4A audio clip saved to `iCloud Drive/Groovebox/voice_notes/`. When back online, audio clips can be sent to Apple Music Shazam API / Chromaprint (`fpcalc`) or transcribed via audio note to identify and assign to the recorded month's playlist (`YYYY-MM`).
-
-
-
-
 
 ---
 

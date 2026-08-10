@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -89,6 +91,7 @@ func main() {
 	importSpotifyTop := flag.Bool("import-spotify-top", false, "Import all-time top tracks from Spotify as a ranked playlist (requires user-top-read scope)")
 	importAppleMusic := flag.String("import-apple-music", "", "Path to Apple Music Library.xml export file")
 	syncDiscogsFlag := flag.Bool("sync-discogs", false, "Sync Discogs collection & wantlist into database")
+	dedupeAlbumsFlag := flag.Bool("dedupe-albums", false, "Safely merge duplicate master albums based on title normalization & track overlap")
 	dbPath := flag.String("db", "music.db", "Path to SQLite database")
 	port := flag.Int("port", 8080, "Port to listen on")
 	flag.Parse()
@@ -148,6 +151,16 @@ func main() {
 		return
 	}
 
+	if *dedupeAlbumsFlag {
+		log.Println("Running lossless album deduplication...")
+		mergedCount, err := DedupeAlbums(db)
+		if err != nil {
+			log.Fatalf("Album deduplication failed: %v", err)
+		}
+		log.Printf("Album deduplication completed! Merged %d duplicate album records.", mergedCount)
+		return
+	}
+
 	// API Routes
 	http.HandleFunc("/api/sync/discogs", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -175,6 +188,30 @@ func main() {
 	http.HandleFunc("/api/sync/status", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(GetSyncProgress())
+	})
+
+	http.HandleFunc("/api/albums/dedupe", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+
+		prog := GetSyncProgress()
+		if prog.IsSyncing {
+			w.WriteHeader(http.StatusConflict)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Operation already in progress"})
+			return
+		}
+
+		go func() {
+			_, err := DedupeAlbums(db)
+			if err != nil {
+				log.Printf("Album deduplication error: %v", err)
+			}
+		}()
+
+		json.NewEncoder(w).Encode(map[string]string{"status": "started", "message": "Album deduplication started in background"})
 	})
 
 	http.HandleFunc("/api/stats", func(w http.ResponseWriter, r *http.Request) {
@@ -676,7 +713,9 @@ func main() {
 		ReleaseYear    int    `json:"release_year"`
 		CoverImageURL  string `json:"cover_image_url"`
 		HasVinyl       bool   `json:"has_vinyl"`
+		InCollection   bool   `json:"in_collection"`
 		InWantlist     bool   `json:"in_wantlist"`
+		PrimaryFormat  string `json:"primary_format"`
 		StreamingNotes string `json:"streaming_notes"`
 		VersionCount   int    `json:"version_count"`
 		TrackCount     int    `json:"track_count"`
@@ -692,7 +731,7 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		var counts AlbumCounts
 		db.QueryRow("SELECT COUNT(*) FROM albums").Scan(&counts.All)
-		db.QueryRow("SELECT COUNT(*) FROM albums WHERE has_vinyl = 1").Scan(&counts.Collection)
+		db.QueryRow("SELECT COUNT(*) FROM albums WHERE in_collection = 1").Scan(&counts.Collection)
 		db.QueryRow("SELECT COUNT(*) FROM albums WHERE in_wantlist = 1").Scan(&counts.Wantlist)
 		json.NewEncoder(w).Encode(counts)
 	})
@@ -700,25 +739,40 @@ func main() {
 	http.HandleFunc("/api/albums", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		filter := r.URL.Query().Get("filter")
+		q := strings.TrimSpace(r.URL.Query().Get("q"))
 
-		whereClause := ""
+		var whereClauses []string
+		var args []interface{}
+
 		if filter == "collection" {
-			whereClause = "WHERE a.has_vinyl = 1"
+			whereClauses = append(whereClauses, "a.in_collection = 1")
 		} else if filter == "wantlist" {
-			whereClause = "WHERE a.in_wantlist = 1"
+			whereClauses = append(whereClauses, "a.in_wantlist = 1")
+		}
+
+		if q != "" {
+			whereClauses = append(whereClauses, "(LOWER(a.title) LIKE ? OR LOWER(a.artist) LIKE ?)")
+			searchTerm := "%" + strings.ToLower(q) + "%"
+			args = append(args, searchTerm, searchTerm)
+		}
+
+		whereStr := ""
+		if len(whereClauses) > 0 {
+			whereStr = "WHERE " + strings.Join(whereClauses, " AND ")
 		}
 
 		query := fmt.Sprintf(`
 			SELECT a.id, a.title, a.artist, COALESCE(a.release_year, 0), COALESCE(a.cover_image_url, ''),
-			       COALESCE(a.has_vinyl, 0), COALESCE(a.in_wantlist, 0), COALESCE(a.streaming_notes, ''),
+			       COALESCE(a.has_vinyl, 0), COALESCE(a.in_collection, 0), COALESCE(a.in_wantlist, 0), COALESCE(a.streaming_notes, ''),
+			       COALESCE((SELECT rv.format_description FROM release_versions rv WHERE rv.album_id = a.id AND rv.format_description IS NOT NULL AND rv.format_description != '' LIMIT 1), ''),
 			       (SELECT COUNT(*) FROM release_versions rv WHERE rv.album_id = a.id) as version_count,
 			       (SELECT COUNT(*) FROM tracks t WHERE t.album_id = a.id) as track_count
 			FROM albums a
 			%s
 			ORDER BY a.title ASC
-			LIMIT 5000`, whereClause)
+			LIMIT 5000`, whereStr)
 
-		rows, err := db.Query(query)
+		rows, err := db.Query(query, args...)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 			return
@@ -728,9 +782,10 @@ func main() {
 		var albums []AlbumSummary
 		for rows.Next() {
 			var alb AlbumSummary
-			var hasVinylInt, inWantlistInt int
-			if err := rows.Scan(&alb.ID, &alb.Title, &alb.Artist, &alb.ReleaseYear, &alb.CoverImageURL, &hasVinylInt, &inWantlistInt, &alb.StreamingNotes, &alb.VersionCount, &alb.TrackCount); err == nil {
+			var hasVinylInt, inCollectionInt, inWantlistInt int
+			if err := rows.Scan(&alb.ID, &alb.Title, &alb.Artist, &alb.ReleaseYear, &alb.CoverImageURL, &hasVinylInt, &inCollectionInt, &inWantlistInt, &alb.StreamingNotes, &alb.PrimaryFormat, &alb.VersionCount, &alb.TrackCount); err == nil {
 				alb.HasVinyl = hasVinylInt == 1
+				alb.InCollection = inCollectionInt == 1
 				alb.InWantlist = inWantlistInt == 1
 				albums = append(albums, alb)
 			}
@@ -942,4 +997,239 @@ func main() {
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
+}
+
+func NormalizeAlbumTitle(title string) string {
+	t := strings.ToLower(strings.TrimSpace(title))
+	// Strip parenthetical and bracketed edition/remaster noise
+	re := regexp.MustCompile(`(?i)\s*[\(\[][^\)\]]*(remaster|deluxe|edition|anniversary|version|bonus|expanded|legacy|special)[^\)\]]*[\)\]]`)
+	t = re.ReplaceAllString(t, "")
+	return strings.TrimSpace(t)
+}
+
+func DedupeAlbums(db *sql.DB) (int, error) {
+	updateSyncProgress(func(p *SyncProgress) {
+		p.IsSyncing = true
+		p.Stage = "deduping"
+		p.Message = "Finding candidate duplicate albums..."
+		p.ItemsFetched = 0
+		p.TotalItems = 0
+		p.LastError = ""
+	})
+
+	defer func() {
+		updateSyncProgress(func(p *SyncProgress) {
+			p.IsSyncing = false
+			p.Stage = "idle"
+			p.LastDedupedAt = time.Now().Format("2006-01-02 15:04:05")
+		})
+	}()
+
+	// Query candidates artist by artist to leverage idx_albums_artist B-tree index
+	artistRows, err := db.Query("SELECT DISTINCT artist FROM albums WHERE artist IS NOT NULL AND artist != ''")
+	if err != nil {
+		updateSyncProgress(func(p *SyncProgress) {
+			p.LastError = err.Error()
+		})
+		return 0, fmt.Errorf("failed to query artists: %w", err)
+	}
+	defer artistRows.Close()
+
+	var artists []string
+	for artistRows.Next() {
+		var a string
+		if artistRows.Scan(&a) == nil {
+			artists = append(artists, a)
+		}
+	}
+	artistRows.Close()
+
+	type albumMeta struct {
+		id              string
+		title           string
+		artist          string
+		hasVinyl        bool
+		inWantlist      bool
+		discogsMasterID int
+	}
+
+	type pair struct {
+		a1 albumMeta
+		a2 albumMeta
+	}
+
+	var candidates []pair
+	for idx, artist := range artists {
+		if idx%50 == 0 {
+			updateSyncProgress(func(p *SyncProgress) {
+				p.Message = fmt.Sprintf("Scanning artists (%d/%d)...", idx+1, len(artists))
+			})
+		}
+
+		aRows, err := db.Query(`
+			SELECT id, title, artist, COALESCE(has_vinyl, 0), COALESCE(in_wantlist, 0), COALESCE(discogs_master_id, 0)
+			FROM albums
+			WHERE artist = ?`, artist)
+		if err != nil {
+			continue
+		}
+
+		var list []albumMeta
+		for aRows.Next() {
+			var m albumMeta
+			var v, w, dm int
+			if aRows.Scan(&m.id, &m.title, &m.artist, &v, &w, &dm) == nil {
+				m.hasVinyl = (v == 1)
+				m.inWantlist = (w == 1)
+				m.discogsMasterID = dm
+				list = append(list, m)
+			}
+		}
+		aRows.Close()
+
+		if len(list) < 2 {
+			continue
+		}
+
+		for i := 0; i < len(list); i++ {
+			for j := i + 1; j < len(list); j++ {
+				m1 := list[i]
+				m2 := list[j]
+				norm1 := NormalizeAlbumTitle(m1.title)
+				norm2 := NormalizeAlbumTitle(m2.title)
+
+				if (m1.discogsMasterID > 0 && m1.discogsMasterID == m2.discogsMasterID) || (norm1 != "" && norm1 == norm2) {
+					candidates = append(candidates, pair{a1: m1, a2: m2})
+				}
+			}
+		}
+	}
+
+	updateSyncProgress(func(p *SyncProgress) {
+		p.TotalItems = len(candidates)
+		p.Message = fmt.Sprintf("Evaluating %d album candidate pairs...", len(candidates))
+	})
+
+	totalMerged := 0
+	for idx, c := range candidates {
+		updateSyncProgress(func(p *SyncProgress) {
+			p.CurrentPage = idx + 1
+			p.ItemsFetched = totalMerged
+			p.Message = fmt.Sprintf("Merging duplicates (%d/%d)...", idx+1, len(candidates))
+		})
+
+		// Verify evidence: shared track count >= 1 or matching discogs_master_id
+		var sharedTracks int
+		err := db.QueryRow(`
+			SELECT COUNT(*)
+			FROM tracks tr1
+			JOIN tracks tr2 ON tr1.album_id = ? AND tr2.album_id = ?
+			WHERE LOWER(SUBSTR(tr1.title, 1, 6)) = LOWER(SUBSTR(tr2.title, 1, 6))`,
+			c.a1.id, c.a2.id).Scan(&sharedTracks)
+
+		norm1 := NormalizeAlbumTitle(c.a1.title)
+		norm2 := NormalizeAlbumTitle(c.a2.title)
+		isMatch := (err == nil && sharedTracks >= 1) || (c.a1.discogsMasterID > 0 && c.a1.discogsMasterID == c.a2.discogsMasterID) || (norm1 != "" && norm1 == norm2)
+		if !isMatch {
+			continue
+		}
+
+		// Determine canonical master album (prefer has_vinyl, then in_wantlist, then shortest title)
+		canonical := c.a1
+		secondary := c.a2
+		if (!c.a1.hasVinyl && c.a2.hasVinyl) || (!c.a1.inWantlist && c.a2.inWantlist) || (len(c.a2.title) < len(c.a1.title)) {
+			canonical = c.a2
+			secondary = c.a1
+		}
+
+		tx, err := db.Begin()
+		if err != nil {
+			continue
+		}
+
+		// 1. Move release_versions to canonical album
+		_, _ = tx.Exec("UPDATE release_versions SET album_id = ? WHERE album_id = ?", canonical.id, secondary.id)
+
+		// 2. Re-calculate flags on canonical album strictly from linked release_versions
+		var hasVinylCount, inWantlistCount int
+		_ = tx.QueryRow("SELECT COUNT(*) FROM release_versions WHERE album_id = ? AND source = 'collection' AND has_vinyl = 1", canonical.id).Scan(&hasVinylCount)
+		_ = tx.QueryRow("SELECT COUNT(*) FROM release_versions WHERE album_id = ? AND source = 'wantlist'", canonical.id).Scan(&inWantlistCount)
+
+		hasVinylVal := 0
+		if hasVinylCount > 0 {
+			hasVinylVal = 1
+		}
+		inWantlistVal := 0
+		if inWantlistCount > 0 {
+			inWantlistVal = 1
+		}
+
+		_, _ = tx.Exec("UPDATE albums SET has_vinyl = ?, in_wantlist = ? WHERE id = ?", hasVinylVal, inWantlistVal, canonical.id)
+		if canonical.discogsMasterID == 0 && secondary.discogsMasterID > 0 {
+			_, _ = tx.Exec("UPDATE albums SET discogs_master_id = ? WHERE id = ?", secondary.discogsMasterID, canonical.id)
+		}
+
+		// 3. Move tracks to canonical album, skipping duplicate track titles
+		tRows, tErr := tx.Query("SELECT id, title FROM tracks WHERE album_id = ?", secondary.id)
+		if tErr == nil {
+			var secondaryTracks []struct{ id, title string }
+			for tRows.Next() {
+				var tid, ttitle string
+				if tRows.Scan(&tid, &ttitle) == nil {
+					secondaryTracks = append(secondaryTracks, struct{ id, title string }{tid, ttitle})
+				}
+			}
+			tRows.Close()
+
+			for _, st := range secondaryTracks {
+				var count int
+				_ = tx.QueryRow("SELECT COUNT(*) FROM tracks WHERE album_id = ? AND LOWER(title) = LOWER(?)", canonical.id, st.title).Scan(&count)
+				if count > 0 {
+					// Duplicate track exists on canonical album -> update playlist_tracks references to canonical track
+					var canonicalTrackID string
+					_ = tx.QueryRow("SELECT id FROM tracks WHERE album_id = ? AND LOWER(title) = LOWER(?) LIMIT 1", canonical.id, st.title).Scan(&canonicalTrackID)
+					if canonicalTrackID != "" {
+						_, _ = tx.Exec("UPDATE OR IGNORE playlist_tracks SET track_id = ? WHERE track_id = ?", canonicalTrackID, st.id)
+						_, _ = tx.Exec("DELETE FROM playlist_tracks WHERE track_id = ?", st.id)
+						_, _ = tx.Exec("DELETE FROM search_fts WHERE target_type = 'track' AND target_id = ?", st.id)
+						_, _ = tx.Exec("DELETE FROM tracks WHERE id = ?", st.id)
+					}
+				} else {
+					// Reassign track to canonical album
+					_, _ = tx.Exec("UPDATE tracks SET album_id = ? WHERE id = ?", canonical.id, st.id)
+				}
+			}
+		}
+
+		// 4. Create a release_version record for secondary album if none exists
+		var existingVerCount int
+		_ = tx.QueryRow("SELECT COUNT(*) FROM release_versions WHERE album_id = ? AND title = ?", canonical.id, secondary.title).Scan(&existingVerCount)
+		if existingVerCount == 0 {
+			vID := uuid.New().String()
+			now := time.Now().Format("2006-01-02 15:04:05")
+			source := "digital"
+			if secondary.hasVinyl {
+				source = "collection"
+			} else if secondary.inWantlist {
+				source = "wantlist"
+			}
+			_, _ = tx.Exec(`INSERT INTO release_versions (id, album_id, title, artist, source, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+				vID, canonical.id, secondary.title, secondary.artist, source, now)
+		}
+
+		// 5. Delete redundant secondary album
+		_, _ = tx.Exec("DELETE FROM albums WHERE id = ?", secondary.id)
+
+		if err := tx.Commit(); err == nil {
+			totalMerged++
+		} else {
+			tx.Rollback()
+		}
+	}
+
+	updateSyncProgress(func(p *SyncProgress) {
+		p.Message = fmt.Sprintf("Deduplication complete! Merged %d albums.", totalMerged)
+	})
+
+	return totalMerged, nil
 }

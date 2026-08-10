@@ -16,15 +16,16 @@ import (
 )
 
 type SyncProgress struct {
-	IsSyncing    bool   `json:"is_syncing"`
-	Stage        string `json:"stage"` // "idle", "authenticating", "collection", "wantlist", "database"
-	CurrentPage  int    `json:"current_page"`
-	TotalPages   int    `json:"total_pages"`
-	ItemsFetched int    `json:"items_fetched"`
-	TotalItems   int    `json:"total_items"`
-	Message      string `json:"message"`
-	LastError    string `json:"last_error,omitempty"`
-	LastSyncedAt string `json:"last_synced_at,omitempty"`
+	IsSyncing     bool   `json:"is_syncing"`
+	Stage         string `json:"stage"` // "idle", "authenticating", "collection", "wantlist", "database", "deduping"
+	CurrentPage   int    `json:"current_page"`
+	TotalPages    int    `json:"total_pages"`
+	ItemsFetched  int    `json:"items_fetched"`
+	TotalItems    int    `json:"total_items"`
+	Message       string `json:"message"`
+	LastError     string `json:"last_error,omitempty"`
+	LastSyncedAt  string `json:"last_synced_at,omitempty"`
+	LastDedupedAt string `json:"last_deduped_at,omitempty"`
 }
 
 var (
@@ -345,9 +346,14 @@ func SyncDiscogs(db *sql.DB) error {
 				masterIDSql = info.MasterID
 			}
 
+			isVinylFormat := strings.Contains(strings.ToLower(formatDesc), "vinyl") || strings.Contains(strings.ToLower(formatDesc), "flexi")
 			hasVinylInt := 0
-			if hasVinyl {
+			if isVinylFormat {
 				hasVinylInt = 1
+			}
+			inCollectionInt := 0
+			if source == "collection" {
+				inCollectionInt = 1
 			}
 			wantlistInt := 0
 			if source == "wantlist" {
@@ -355,16 +361,19 @@ func SyncDiscogs(db *sql.DB) error {
 			}
 
 			_, err := tx.Exec(`
-				INSERT INTO albums (id, title, artist, release_year, discogs_master_id, cover_image_url, has_vinyl, in_wantlist, streaming_notes)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-				albumID, info.Title, artist, info.Year, masterIDSql, cover, hasVinylInt, wantlistInt, "Discogs "+source,
+				INSERT INTO albums (id, title, artist, release_year, discogs_master_id, cover_image_url, has_vinyl, in_collection, in_wantlist, streaming_notes)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				albumID, info.Title, artist, info.Year, masterIDSql, cover, hasVinylInt, inCollectionInt, wantlistInt, "Discogs "+source,
 			)
 			if err != nil {
 				log.Printf("Error inserting album %s: %v", info.Title, err)
 				return
 			}
 		} else {
-			if hasVinyl {
+			if source == "collection" {
+				_, _ = tx.Exec("UPDATE albums SET in_collection = 1, cover_image_url = COALESCE(NULLIF(cover_image_url, ''), ?) WHERE id = ?", cover, albumID)
+			}
+			if strings.Contains(strings.ToLower(formatDesc), "vinyl") || strings.Contains(strings.ToLower(formatDesc), "flexi") {
 				_, _ = tx.Exec("UPDATE albums SET has_vinyl = 1, cover_image_url = COALESCE(NULLIF(cover_image_url, ''), ?) WHERE id = ?", cover, albumID)
 			}
 			if source == "wantlist" {
@@ -375,8 +384,13 @@ func SyncDiscogs(db *sql.DB) error {
 			}
 		}
 
+		isVinylFormat := false
+		if strings.Contains(strings.ToLower(formatDesc), "vinyl") || strings.Contains(strings.ToLower(formatDesc), "flexi") {
+			isVinylFormat = true
+		}
+
 		hasVinylInt := 0
-		if hasVinyl {
+		if isVinylFormat {
 			hasVinylInt = 1
 		}
 
