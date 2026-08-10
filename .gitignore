@@ -1,5 +1,6 @@
 # Binaries
 server
+groovebox
 *.exe
 *.exe;
 *.dll

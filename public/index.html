@@ -55,6 +55,8 @@
 
     <!-- App Body: Sidebar + Main Area -->
     <div class="app-body">
+      <!-- Mobile sidebar backdrop (hidden on desktop) -->
+      <div class="sidebar-backdrop hidden" id="sidebar-backdrop" onclick="toggleSidebar()" title="Close sidebar"></div>
       <!-- Sidebar -->
       <aside class="sidebar-panel" id="sidebar-panel">
         <div class="sidebar-header">
@@ -208,6 +210,31 @@
     </div>
   </div>
 
+  <!-- Modal: Add Songs to Current Playlist (via search) -->
+  <div class="bp5-dialog-container modal-backdrop" id="add-songs-modal" style="display: none;">
+    <div class="bp5-dialog custom-dialog add-songs-dialog">
+      <div class="bp5-dialog-header">
+        <h4 class="bp5-heading" id="add-songs-modal-title">Add Songs</h4>
+        <button class="bp5-button bp5-minimal bp5-icon-cross" onclick="closeAddSongsModal()"></button>
+      </div>
+      <div class="bp5-dialog-body">
+        <div class="bp5-input-group bp5-round" style="margin-bottom: 12px;">
+          <span class="bp5-icon bp5-icon-search"></span>
+          <input type="text" class="bp5-input" id="add-songs-search-input" placeholder="Search songs to add..." autocomplete="off" oninput="handlePlaylistSongSearch(this.value)" />
+        </div>
+        <div class="playlist-select-list add-songs-results" id="add-songs-results">
+          <div class="bp5-text-muted" style="padding: 14px; text-align: center;">Type to search your library...</div>
+        </div>
+      </div>
+      <div class="bp5-dialog-footer">
+        <div class="bp5-dialog-footer-actions">
+          <span class="bp5-text-muted" id="add-songs-count" style="margin-right: auto; font-size: 12px;"></span>
+          <button class="bp5-button bp5-intent-primary" onclick="closeAddSongsModal()">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Add Track to Library -->
   <div class="bp5-dialog-container modal-backdrop" id="add-track-modal" style="display: none;">
     <div class="bp5-dialog custom-dialog">
@@ -230,7 +257,7 @@
           <input class="bp5-input bp5-fill" id="track-album-input" type="text" placeholder="e.g. Hurry Up, We're Dreaming" />
         </div>
         <input type="hidden" id="track-cover-input" value="" />
-        <div style="display: flex; gap: 12px;">
+        <div class="form-row" style="display: flex; gap: 12px;">
           <div class="bp5-form-group" style="flex: 1;">
             <label class="bp5-label" for="track-duration-input">Duration (mm:ss)</label>
             <input class="bp5-input bp5-fill" id="track-duration-input" type="text" placeholder="e.g. 4:03" />

@@ -134,16 +134,47 @@ function setSectionFilterInputValue(q) {
   if (input) input.value = q;
 }
 
+function isMobile() {
+  return window.matchMedia('(max-width: 767px)').matches;
+}
+
+function syncSidebarOverlay() {
+  const sidebar = document.getElementById('sidebar-panel');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  if (!sidebar || !backdrop) return;
+  const collapsed = sidebar.classList.contains('collapsed');
+  backdrop.classList.toggle('hidden', collapsed);
+  // Lock background scroll only when the mobile drawer is open.
+  document.body.classList.toggle('sidebar-locked', !collapsed && isMobile());
+}
+
 function toggleSidebar() {
   const sidebar = document.getElementById('sidebar-panel');
   const isCollapsed = sidebar.classList.toggle('collapsed');
-  localStorage.setItem('sidebar-collapsed', isCollapsed ? 'true' : 'false');
+  // Remember preference on desktop only; on mobile the drawer is auto-hidden.
+  if (!isMobile()) {
+    localStorage.setItem('sidebar-collapsed', isCollapsed ? 'true' : 'false');
+  }
+  syncSidebarOverlay();
 }
 
 function initSidebarState() {
-  if (localStorage.getItem('sidebar-collapsed') === 'true') {
+  const sidebar = document.getElementById('sidebar-panel');
+  if (isMobile()) {
+    // Mobile: drawer starts hidden; ignore desktop localStorage.
+    sidebar.classList.add('collapsed');
+  } else if (localStorage.getItem('sidebar-collapsed') === 'true') {
+    sidebar.classList.add('collapsed');
+  }
+  syncSidebarOverlay();
+}
+
+// Close the mobile drawer after any navigation selection.
+function closeSidebarIfMobile() {
+  if (isMobile()) {
     const sidebar = document.getElementById('sidebar-panel');
     sidebar.classList.add('collapsed');
+    syncSidebarOverlay();
   }
 }
 
@@ -1299,6 +1330,111 @@ async function removeTrackFromPlaylist(playlistID, trackID, position) {
   }
 }
 
+// --- Add Songs to current playlist (search first, then add) ---
+let activePlaylistTrackIds = new Set();
+let addedDraftSet = new Set();
+let playlistSongSearchTimer = null;
+
+function openAddSongsToPlaylistModal() {
+  if (!activePlaylistID) return;
+  document.getElementById('add-songs-modal-title').innerText = `Add Songs to "${activePlaylistName}"`;
+  activePlaylistTrackIds = new Set((rawSectionData || []).map(t => String(t.id)));
+  addedDraftSet = new Set();
+  const input = document.getElementById('add-songs-search-input');
+  input.value = '';
+  document.getElementById('add-songs-results').innerHTML =
+    '<div class="bp5-text-muted" style="padding: 14px; text-align: center;">Type to search your library...</div>';
+  document.getElementById('add-songs-count').innerText = '';
+  document.getElementById('add-songs-modal').style.display = 'flex';
+  setTimeout(() => input.focus(), 50);
+}
+
+function closeAddSongsModal() {
+  document.getElementById('add-songs-modal').style.display = 'none';
+  // Refresh the playlist so newly added songs appear.
+  if (activePlaylistID && addedDraftSet.size > 0) {
+    selectPlaylist(activePlaylistID, activePlaylistName, activePlaylistDesc);
+  }
+}
+
+async function handlePlaylistSongSearch(query) {
+  const q = (query || '').trim();
+  const resultsEl = document.getElementById('add-songs-results');
+  if (!q) {
+    resultsEl.innerHTML =
+      '<div class="bp5-text-muted" style="padding: 14px; text-align: center;">Type to search your library...</div>';
+    return;
+  }
+  resultsEl.innerHTML =
+    '<div class="bp5-text-muted" style="padding: 14px; text-align: center;">Searching...</div>';
+  if (playlistSongSearchTimer) clearTimeout(playlistSongSearchTimer);
+  playlistSongSearchTimer = setTimeout(async () => {
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+      const tracks = await res.json();
+      if (document.getElementById('add-songs-search-input').value.trim() !== q) return; // stale result
+      renderAddSongsResults(tracks);
+    } catch (e) {
+      resultsEl.innerHTML =
+        '<div class="bp5-text-muted" style="padding: 14px; text-align: center;">Search failed</div>';
+    }
+  }, 200);
+}
+
+function renderAddSongsResults(tracks) {
+  const resultsEl = document.getElementById('add-songs-results');
+  if (!tracks || tracks.length === 0) {
+    resultsEl.innerHTML =
+      '<div class="bp5-text-muted" style="padding: 16px; text-align: center;">No songs found</div>';
+    return;
+  }
+  resultsEl.innerHTML = '';
+  tracks.forEach(t => {
+    const trackId = String(t.id);
+    const alreadyIn = activePlaylistTrackIds.has(trackId);
+    const justAdded = addedDraftSet.has(trackId);
+    const row = document.createElement('div');
+    row.className = 'playlist-select-item add-song-row';
+    const coverUrl = t.cover_image_url || fallbackCover;
+    const btnText = alreadyIn ? 'In list' : (justAdded ? 'Added ✓' : '+ Add');
+    const btnClass = (alreadyIn || justAdded) ? 'bp5-intent-success' : 'bp5-intent-primary';
+    row.innerHTML = `
+      <div class="add-song-meta" onclick="event.stopPropagation()">
+        <img class="playlist-cover-fallback" src="${coverUrl}" alt="art" onerror="this.onerror=null;this.src='${fallbackCover}'">
+        <div class="playlist-info">
+          <span class="bp5-text-overflow-ellipsis playlist-name-text">${t.title}</span>
+          <span class="playlist-date-text">${t.artist || ''}${t.album_title ? ' · ' + t.album_title : ''}</span>
+        </div>
+      </div>
+      <button class="bp5-button bp5-small ${btnClass} add-song-btn" ${(alreadyIn || justAdded) ? 'disabled' : ''} onclick="addSongToCurrentPlaylist('${trackId}', this)">${btnText}</button>
+    `;
+    resultsEl.appendChild(row);
+  });
+}
+
+async function addSongToCurrentPlaylist(trackId, btn) {
+  trackId = String(trackId);
+  if (!activePlaylistID || addedDraftSet.has(trackId)) return;
+  try {
+    const res = await fetch(`/api/playlists/${activePlaylistID}/tracks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ track_id: trackId })
+    });
+    if (!res.ok) throw new Error('Failed to add song');
+    addedDraftSet.add(trackId);
+    activePlaylistTrackIds.add(trackId);
+    btn.classList.remove('bp5-intent-primary');
+    btn.classList.add('bp5-intent-success');
+    btn.innerHTML = 'Added ✓';
+    btn.disabled = true;
+    document.getElementById('add-songs-count').innerText =
+      `Added ${addedDraftSet.size} to playlist`;
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
 async function selectPlaylist(id, name, description, elem) {
   clearNavActive();
   currentSectionView = 'playlist';
@@ -1358,9 +1494,10 @@ function renderPlaylistView(playlistID, name, description, tracks) {
         <span class="bp5-icon-standard bp5-icon-music" style="color: #2b95d6;"></span>
       </div>
       <div class="album-header-info" style="flex: 1;">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div class="playlist-title-row" style="display: flex; align-items: center; justify-content: space-between;">
           <h1 class="bp5-heading album-header-title" style="margin: 0;">${name}</h1>
-          <div style="display: flex; gap: 6px;">
+          <div class="playlist-header-actions" style="display: flex; gap: 6px;">
+            <button class="bp5-button bp5-small bp5-intent-primary bp5-icon-plus" onclick="openAddSongsToPlaylistModal()" title="Add songs to this playlist">Add Songs</button>
             <button class="bp5-button bp5-outlined bp5-small bp5-icon-edit" onclick="openEditPlaylistModal('${playlistID}', '${name.replace(/'/g, "\\'")}', '${(description||'').replace(/'/g, "\\'")}')">Edit</button>
             <button class="bp5-button bp5-outlined bp5-intent-danger bp5-small bp5-icon-trash" onclick="deletePlaylistConfirm('${playlistID}', '${name.replace(/'/g, "\\'")}')">Delete</button>
           </div>
@@ -1433,6 +1570,9 @@ function clearNavActive() {
   
   const filterInput = document.getElementById('section-filter-input');
   if (filterInput) filterInput.value = '';
+
+  // Close the off-canvas drawer on mobile once the user picks a destination.
+  closeSidebarIfMobile();
 }
 
 function renderTracks(tracks) {

@@ -891,4 +891,260 @@ html, body {
   color: #8f99a8;
 }
 
+/* Sidebar backdrop (mobile drawer only) */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1190;
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+/* ============================================================
+   MOBILE / RESPONSIVE
+   Breakpoint: < 768px (phones & small devices)
+   ============================================================ */
+@media (max-width: 767px) {
+  body {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .app-layout {
+    height: 100vh;
+    height: 100dvh; /* accounts for mobile browser chrome */
+  }
+
+  /* ---- Navbar: brand row + action/search row ---- */
+  .navbar-custom {
+    flex-wrap: wrap !important;
+    height: auto !important;
+    padding: 10px 12px !important;
+    gap: 10px;
+  }
+  .search-container {
+    order: 3;
+    flex: 1 1 100% !important;
+    flex-wrap: nowrap;
+    gap: 8px;
+    min-width: 0;
+  }
+  .search-container .bp5-input-group {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .search-container .bp5-input-group input {
+    width: 100%;
+    font-size: 13px !important;
+  }
+  .brand-title {
+    font-size: 15px;
+  }
+  .navbar-custom .bp5-navbar-divider {
+    display: none !important;
+  }
+
+  /* ---- Sidebar becomes an off-canvas drawer ---- */
+  .sidebar-panel {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    height: 100%;
+    width: 280px !important;
+    z-index: 1200;
+    transform: translateX(-102%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: none;
+  }
+  .sidebar-panel:not(.collapsed) {
+    transform: translateX(0);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+  }
+  .sidebar-backdrop:not(.hidden) {
+    display: block;
+  }
+  body.sidebar-locked {
+    overflow: hidden;
+  }
+
+  /* The desktop collapse button is redundant on mobile (drawer is auto)
+     but keep it functioning; hide the widen-arrow icon look is fine. */
+
+  /* ---- Main panel ---- */
+  .main-panel {
+    padding: 14px 12px;
+    gap: 14px;
+  }
+
+  /* ---- Grid cards: denser on phones (2 cols) ---- */
+  .grid-container {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+  }
+  .grid-card {
+    padding: 10px;
+  }
+
+  /* ---- Album / Artist detail header stacks & centers ---- */
+  .album-header-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px 16px;
+    gap: 16px;
+  }
+  .album-header-art {
+    width: 150px;
+    height: 150px;
+  }
+  .album-header-badges {
+    justify-content: center;
+  }
+  .album-header-meta {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 14px;
+  }
+  .album-header-title {
+    font-size: 22px;
+  }
+  .album-section {
+    padding: 14px;
+  }
+
+  /* ---- Filter pills wrap ---- */
+  .album-filter-pills {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .album-filter-pills .bp5-button {
+    flex: 1 1 auto;
+    font-size: 12px !important;
+    padding: 0 10px;
+  }
+
+  /* ---- Tables: hide low-value columns ----
+     All Songs / playlist / search (5-col): hide Album + Duration */
+  #table-container th:nth-child(3),
+  #table-container td:nth-child(3),
+  #table-container th:nth-child(4),
+  #table-container td:nth-child(4) {
+    display: none;
+  }
+  /* Album pressings (5-col): hide the Year column only, keep format + status */
+  .album-detail-view .album-section table:has(th:nth-child(5)) th:nth-child(3),
+  .album-detail-view .album-section table:has(th:nth-child(5)) td:nth-child(3) {
+    display: none;
+  }
+
+  /* ---- Modals: near full width, stack two-up fields ---- */
+  .custom-dialog {
+    width: 100%;
+    max-width: 94vw;
+  }
+  .custom-dialog .bp5-dialog-body {
+    padding: 14px;
+  }
+  .form-row {
+    flex-direction: column;
+  }
+  .form-row .bp5-form-group {
+    width: 100%;
+  }
+
+  /* ---- Settings dropdown safe margin on small screens ---- */
+  .settings-dropdown-menu {
+    right: 4px;
+    width: min(220px, calc(100vw - 24px));
+  }
+
+  /* ---- Track rows: keep action buttons reachable ---- */
+  .cover-art-small {
+    width: 32px;
+    height: 32px;
+  }
+  .spotify-icon-btn,
+  .youtube-icon-btn,
+  .discogs-icon-btn,
+  .playlist-act-btn {
+    min-width: 32px !important;
+    height: 32px !important;
+  }
+
+  /* Playlist header: stack title above actions on phones */
+  #playlist-view-header .playlist-title-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px;
+  }
+  #playlist-view-header .playlist-header-actions {
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 8px;
+  }
+  /* Add Songs takes the first line; Edit + Delete wrap to the next */
+  #playlist-view-header .playlist-header-actions .bp5-button.bp5-intent-primary {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+  #playlist-view-header .playlist-header-actions .bp5-button:not(.bp5-intent-primary) {
+    flex: 1 1 calc(50% - 4px);
+    justify-content: center;
+    margin: 0;
+  }
+}
+
+/* --- Add Songs to playlist: search result rows --- */
+.add-song-row {
+  justify-content: space-between;
+  gap: 12px;
+}
+.add-song-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  min-width: 0;
+}
+.add-song-meta .playlist-cover-fallback {
+  flex-shrink: 0;
+  display: flex;
+}
+.add-song-row .playlist-info {
+  min-width: 0;
+}
+.add-song-btn {
+  flex-shrink: 0;
+  min-width: 72px;
+  margin-left: auto;
+}
+.add-songs-dialog .bp5-input-group input {
+  background-color: #181d24 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* ============================================================
+   iOS Safari auto-zoom fix
+   iOS zooms into the page when focusing an input/textarea whose
+   font-size is < 16px. We force 16px on all editable controls on
+   mobile (and disable double-tap zoom on tap targets) so the page
+   stays put while typing. Zoom is intentionally NOT disabled
+   entirely (accessibility); this only prevents the spurious focus
+   zoom.
+   ============================================================ */
+@media (max-width: 767px) {
+  input[type="text"],
+  input[type="search"],
+  input[type="email"],
+  input:not([type]),
+  textarea {
+    font-size: 16px !important;
+  }
+  /* Prevent a second tap from zooming in on buttons/links */
+  button, a, [onclick], input, select, textarea, label {
+    touch-action: manipulation;
+  }
+}
+
 
