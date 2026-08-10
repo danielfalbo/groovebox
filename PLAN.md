@@ -1,5 +1,11 @@
 # 🚀 Groovebox Plan & Task Overview
 
+## 🌍 Big Picture
+
+**Single Source of Truth:** Groovebox is a self-hosted, local-first music archival engine consolidating physical media (Discogs), digital files, streaming catalogs (Spotify, Apple Music), Shazam tags, and custom playlists into one searchable library.
+
+**V1 Scope:** Archival, indexing, metadata linkage, and mobile curation over Tailscale. No direct audio streaming or playback (see [Explicit Non-Goals](#-explicit-non-goals)).
+
 ## 🎯 Architecture Summary
 `groovebox` is a self-hosted, local-first music archival engine written in Go and SQLite with a modern HTML5/CSS3/JS Web UI.
 
@@ -34,13 +40,29 @@
   - Empty-state message when no pressings are linked yet.
   - Discogs release link replaced with inline SVG Discogs logo icon button (`discogs-icon-btn` in `app.js`).
   - Cleaner header status tags: `📀 In Collection` / `🎯 On Wantlist`.
+  - Discogs icon button styling (`.discogs-icon-btn`, `.discogs-svg-icon` in `public/style.css`) matching the Spotify/YouTube icon buttons.
+
+---
+
+## 🗺️ Unfinished Roadmap (carried over from earlier plan, not yet done)
+
+These were part of the original V1 scope and were never completed — they dropped out of the plan during a docs rewrite rather than being finished or deliberately cut:
+
+- [ ] **Apple Music Import**: Parser for `Library.xml` (`POST /api/import/apple-music` or `-import-apple-music <path>` CLI flag) to ingest tracks, artists, album releases, ISRCs, play counts, and playlists. Target file: `/Users/daniel/apple-music-library/Library.xml` (~7.4 MB).
+- [ ] **Shazam Ingestion**: `POST /api/shazam` webhook for instant tag capture (designed for iOS Shortcuts integration, offline queuing/batch flush over Tailscale) plus a Shazam CSV importer for historical tags.
+- [ ] **Playlist Management CRUD**: Full create/edit/delete/reorder endpoints and UI/modal for internal playlists (currently only Spotify-imported playlists exist; no way to manage playlists from the app itself).
+- [ ] **Mobile Polish & Tailscale Deployment**: Final mobile usability pass and documented Tailscale home-server deployment instructions.
+
+---
+
+## 🚫 Explicit Non-Goals
+
+- **Local audio playback / streaming**: not part of Groovebox's scope — this is an archival/indexing tool, not a player.
+- **Discogs OAuth login UI**: no in-app Discogs authentication flow; sync continues to use a token from `.env`.
 
 ---
 
 ## 📋 Recommended Future Tasks
 
-1. **⚠️ Complete Discogs Icon Button Styling** *(started, CSS missing)*: Add `.discogs-icon-btn` and `.discogs-svg-icon` CSS rules to `public/style.css`. Follow the exact same pattern as `.spotify-icon-btn` / `.youtube-icon-btn` (28px circle button, neutral `#8f99a8` icon color, subtle hover background). The SVG and `<a>` tag are already in `app.js`'s `openAlbumPage()` function.
-2. **Local Audio Playback / Streaming**: Integrate HTML5 `<audio>` player or local file playback for stored audio files (`has_files = 1`).
-3. **Discogs OAuth Login UI**: Allow users to authenticate via Discogs OAuth directly from the web interface settings menu.
-4. **Format & Genre Sub-Filters**: Add additional pill filters for media format (Vinyl LP, CD, Digital) and master genres within the Collection/Wantlist views.
-5. **Album Page: Discogs Master Link**: Surface Discogs master release URL in album header (`discogs_master_id` already returned by API — link to `https://www.discogs.com/master/:id`).
+1. **Format & Genre Sub-Filters**: Add additional pill filters for media format (Vinyl LP, CD, Digital) and master genres within the Collection/Wantlist views.
+2. **Album Page: Discogs Master Link**: Surface Discogs master release URL in album header (`discogs_master_id` already returned by API — link to `https://www.discogs.com/master/:id`).
