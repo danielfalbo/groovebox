@@ -3,9 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Music Vault & Archive</title>
+  <title>Groovebox</title>
   
   <!-- Blueprint CSS dependencies -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="alternate icon" type="image/jpeg" href="favicon.jpg">
   <link href="https://unpkg.com/normalize.css@8.0.1/normalize.css" rel="stylesheet" />
   <link href="https://unpkg.com/@blueprintjs/core@5/lib/css/blueprint.css" rel="stylesheet" />
   <link href="https://unpkg.com/@blueprintjs/icons@5/lib/css/blueprint-icons.css" rel="stylesheet" />
@@ -18,11 +20,14 @@
       <div class="bp5-navbar-group bp5-align-left">
         <button class="bp5-button bp5-minimal bp5-icon-menu sidebar-toggle-btn" id="sidebar-toggle-btn" onclick="toggleSidebar()" title="Toggle Playlists Sidebar"></button>
         <div class="bp5-navbar-heading brand-title">
-          <span class="bp5-icon-standard bp5-icon-music logo-icon"></span>
-          Music Vault
+          <svg class="custom-navbar-logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9.5"></circle>
+            <circle cx="12" cy="12" r="7" stroke-dasharray="2 2" opacity="0.6"></circle>
+            <circle cx="12" cy="12" r="3.2" fill="#2b95d6"></circle>
+            <circle cx="12" cy="12" r="1" fill="#111418"></circle>
+          </svg>
+          Groovebox
         </div>
-        <span class="bp5-navbar-divider"></span>
-        <button class="bp5-button bp5-minimal bp5-icon-dashboard" onclick="showDashboard()">Dashboard</button>
       </div>
 
       <div class="bp5-navbar-group bp5-align-right search-container">
@@ -30,10 +35,15 @@
           <span class="bp5-icon bp5-icon-search"></span>
           <input type="text" class="bp5-input" id="search-input" placeholder="Search tracks, artists, albums..." oninput="handleSearch(this.value)" />
         </div>
+        <div class="sync-banner-wrap" id="sync-banner-wrap" style="display: none;">
+          <div class="sync-spinner bp5-spinner bp5-small bp5-intent-primary"><div class="bp5-spinner-head"></div></div>
+          <span class="sync-status-text" id="sync-status-text">Syncing Discogs...</span>
+        </div>
         <div class="settings-menu-wrap">
           <button class="bp5-button bp5-minimal bp5-icon-cog settings-gear-btn" id="settings-gear-btn" onclick="toggleSettingsMenu(event)" title="Settings & Sync"></button>
           <div class="bp5-menu bp5-elevation-2 settings-dropdown-menu" id="settings-dropdown-menu" style="display: none;">
-            <a class="bp5-menu-item bp5-icon-refresh" id="discogs-sync-btn" onclick="triggerDiscogsSync()">Sync Discogs Collection</a>
+            <a class="bp5-menu-item bp5-icon-refresh" id="discogs-sync-btn" onclick="triggerDiscogsSync()">Sync Discogs (Collection & Wantlist)</a>
+            <div class="sync-last-time" id="sync-last-time"></div>
           </div>
         </div>
       </div>
@@ -47,11 +57,25 @@
           <h5 class="bp5-heading text-muted">LIBRARY</h5>
         </div>
         <div class="bp5-menu library-menu">
-          <a class="bp5-menu-item bp5-icon-music nav-item-btn" id="nav-all-songs" onclick="showAllSongs()">All Songs</a>
-          <a class="bp5-menu-item bp5-icon-user nav-item-btn" id="nav-artists" onclick="showArtists()">Artists</a>
-          <a class="bp5-menu-item bp5-icon-record nav-item-btn" id="nav-albums" onclick="showAlbums()">Albums</a>
+          <a class="bp5-menu-item nav-item-btn" id="nav-all-songs" onclick="showAllSongs()">
+            <span class="bp5-icon-standard bp5-icon-music"></span>
+            <span class="nav-item-text">All Songs</span>
+          </a>
+          <a class="bp5-menu-item nav-item-btn" id="nav-artists" onclick="showArtists()">
+            <span class="bp5-icon-standard bp5-icon-user"></span>
+            <span class="nav-item-text">Artists</span>
+          </a>
+          <a class="bp5-menu-item nav-item-btn" id="nav-albums" onclick="showAlbums()">
+            <svg class="custom-sidebar-icon vinyl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9.5"></circle>
+              <circle cx="12" cy="12" r="7" stroke-dasharray="2 2" opacity="0.6"></circle>
+              <circle cx="12" cy="12" r="3.2" fill="currentColor"></circle>
+              <circle cx="12" cy="12" r="1" fill="#181d24"></circle>
+            </svg>
+            <span class="nav-item-text">Albums</span>
+          </a>
         </div>
-        <div class="bp5-navbar-divider sidebar-divider"></div>
+        <div class="sidebar-divider"></div>
         <div class="sidebar-header">
           <h5 class="bp5-heading text-muted">PLAYLISTS</h5>
           <div class="sidebar-header-actions">
@@ -73,10 +97,37 @@
 
       <!-- Main Content -->
       <main class="main-panel">
-        <!-- View Title Card -->
-        <div class="bp5-card bp5-elevation-0 view-title-card">
-          <h2 class="bp5-heading" id="view-title">Imported Playlists</h2>
-          <p class="bp5-text-muted" id="view-subtitle">Select a playlist or search your archive.</p>
+        <!-- Section Local Filter Search Bar & Segmented Pills -->
+        <div class="section-filter-wrap" id="section-filter-wrap" style="display: none;">
+          <div class="section-filter-inner">
+            <!-- Segmented Filter Pills (Visible when in Albums View) -->
+            <div class="bp5-button-group bp5-large album-filter-pills" id="album-filter-pills" style="display: none;">
+              <button class="bp5-button bp5-active" id="pill-all" onclick="setAlbumFilter('all')">
+                All Albums <span class="bp5-tag bp5-round bp5-minimal count-tag" id="count-all">-</span>
+              </button>
+              <button class="bp5-button" id="pill-collection" onclick="setAlbumFilter('collection')">
+                📀 Collection <span class="bp5-tag bp5-round bp5-intent-warning count-tag" id="count-collection">-</span>
+              </button>
+              <button class="bp5-button" id="pill-wantlist" onclick="setAlbumFilter('wantlist')">
+                🎯 Wantlist <span class="bp5-tag bp5-round bp5-intent-primary count-tag" id="count-wantlist">-</span>
+              </button>
+            </div>
+
+            <div class="bp5-input-group bp5-round full-width-filter">
+              <span class="bp5-icon bp5-icon-filter"></span>
+              <input type="text" class="bp5-input" id="section-filter-input" placeholder="Filter current view..." oninput="handleSectionFilter(this.value)" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Dedicated Album Detail Page View -->
+        <div class="album-detail-view" id="album-detail-container" style="display: none;">
+          <!-- Dynamically rendered -->
+        </div>
+
+        <!-- Dedicated Artist Detail Page View -->
+        <div class="artist-detail-view" id="artist-detail-container" style="display: none;">
+          <!-- Dynamically rendered -->
         </div>
 
         <!-- Grid View Container (for Artists & Albums) -->
@@ -84,7 +135,7 @@
           <!-- Dynamically populated cards -->
         </div>
 
-        <!-- Blueprint HTML Table -->
+        <!-- Blueprint HTML Table (for Track Lists) -->
         <div class="table-container bp5-card bp5-elevation-1" id="table-container">
           <table class="bp5-html-table bp5-html-table-striped bp5-interactive bp5-compact full-width-table">
             <thead>

@@ -9,10 +9,40 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+type SyncProgress struct {
+	IsSyncing    bool   `json:"is_syncing"`
+	Stage        string `json:"stage"` // "idle", "authenticating", "collection", "wantlist", "database"
+	CurrentPage  int    `json:"current_page"`
+	TotalPages   int    `json:"total_pages"`
+	ItemsFetched int    `json:"items_fetched"`
+	TotalItems   int    `json:"total_items"`
+	Message      string `json:"message"`
+	LastError    string `json:"last_error,omitempty"`
+	LastSyncedAt string `json:"last_synced_at,omitempty"`
+}
+
+var (
+	syncMutex    sync.Mutex
+	currentProgress SyncProgress
+)
+
+func GetSyncProgress() SyncProgress {
+	syncMutex.Lock()
+	defer syncMutex.Unlock()
+	return currentProgress
+}
+
+func updateSyncProgress(update func(*SyncProgress)) {
+	syncMutex.Lock()
+	defer syncMutex.Unlock()
+	update(&currentProgress)
+}
 
 type DiscogsIdentityResponse struct {
 	Username string `json:"username"`
@@ -20,6 +50,12 @@ type DiscogsIdentityResponse struct {
 
 type DiscogsArtist struct {
 	Name string `json:"name"`
+}
+
+type DiscogsFormat struct {
+	Name         string   `json:"name"`
+	Qty          string   `json:"qty"`
+	Descriptions []string `json:"descriptions"`
 }
 
 type DiscogsBasicInfo struct {
@@ -30,6 +66,11 @@ type DiscogsBasicInfo struct {
 	CoverImage string          `json:"cover_image"`
 	Thumb      string          `json:"thumb"`
 	Artists    []DiscogsArtist `json:"artists"`
+	Formats    []DiscogsFormat `json:"formats"`
+	Labels     []struct {
+		Name  string `json:"name"`
+		Catno string `json:"catno"`
+	} `json:"labels"`
 }
 
 type DiscogsWantItem struct {
@@ -40,6 +81,7 @@ type DiscogsWantItem struct {
 type DiscogsWantlistResponse struct {
 	Pagination struct {
 		Pages int `json:"pages"`
+		Items int `json:"items"`
 	} `json:"pagination"`
 	Wants []DiscogsWantItem `json:"wants"`
 }
@@ -52,6 +94,7 @@ type DiscogsCollectionItem struct {
 type DiscogsCollectionResponse struct {
 	Pagination struct {
 		Pages int `json:"pages"`
+		Items int `json:"items"`
 	} `json:"pagination"`
 	Releases []DiscogsCollectionItem `json:"releases"`
 }
@@ -61,7 +104,6 @@ func getDiscogsToken() string {
 		return token
 	}
 
-	// Fallback to checking ../discogs-albums/.env
 	envPaths := []string{
 		".env",
 		"../discogs-albums/.env",
@@ -117,18 +159,51 @@ func discogsRequest(token, path string, target interface{}) error {
 }
 
 func SyncDiscogs(db *sql.DB) error {
+	syncMutex.Lock()
+	if currentProgress.IsSyncing {
+		syncMutex.Unlock()
+		return fmt.Errorf("sync is already in progress")
+	}
+	currentProgress = SyncProgress{
+		IsSyncing: true,
+		Stage:     "authenticating",
+		Message:   "Authenticating with Discogs...",
+	}
+	syncMutex.Unlock()
+
+	defer func() {
+		updateSyncProgress(func(p *SyncProgress) {
+			p.IsSyncing = false
+		})
+	}()
+
 	token := getDiscogsToken()
 	if token == "" {
-		return fmt.Errorf("DISCOGS_TOKEN not set in environment or ../discogs-albums/.env")
+		err := fmt.Errorf("DISCOGS_TOKEN not set in environment or ../discogs-albums/.env")
+		updateSyncProgress(func(p *SyncProgress) {
+			p.LastError = err.Error()
+			p.Message = "Sync failed: " + err.Error()
+		})
+		return err
 	}
 
 	var identity DiscogsIdentityResponse
 	if err := discogsRequest(token, "/oauth/identity", &identity); err != nil {
-		return fmt.Errorf("failed to fetch Discogs identity: %w", err)
+		errFmt := fmt.Errorf("failed to fetch Discogs identity: %w", err)
+		updateSyncProgress(func(p *SyncProgress) {
+			p.LastError = errFmt.Error()
+			p.Message = "Sync failed: " + errFmt.Error()
+		})
+		return errFmt
 	}
 	log.Printf("Authenticated with Discogs as user @%s", identity.Username)
 
-	// 1. Fetch Collection Releases (has_vinyl = 1)
+	// 1. Fetch Collection Releases
+	updateSyncProgress(func(p *SyncProgress) {
+		p.Stage = "collection"
+		p.Message = "Fetching collection releases..."
+	})
+
 	page := 1
 	totalPages := 1
 	var collectionReleases []DiscogsBasicInfo
@@ -137,17 +212,40 @@ func SyncDiscogs(db *sql.DB) error {
 		var resp DiscogsCollectionResponse
 		path := fmt.Sprintf("/users/%s/collection/folders/0/releases?page=%d&per_page=100", identity.Username, page)
 		if err := discogsRequest(token, path, &resp); err != nil {
-			return fmt.Errorf("failed fetching collection page %d: %w", page, err)
+			errFmt := fmt.Errorf("failed fetching collection page %d: %w", page, err)
+			updateSyncProgress(func(p *SyncProgress) {
+				p.LastError = errFmt.Error()
+				p.Message = "Sync failed: " + errFmt.Error()
+			})
+			return errFmt
 		}
 		totalPages = resp.Pagination.Pages
 		for _, item := range resp.Releases {
 			collectionReleases = append(collectionReleases, item.BasicInformation)
 		}
+		
+		colPage := page
+		colTotalPages := totalPages
+		colFetched := len(collectionReleases)
+		colTotalItems := resp.Pagination.Items
+
+		updateSyncProgress(func(p *SyncProgress) {
+			p.CurrentPage = colPage
+			p.TotalPages = colTotalPages
+			p.ItemsFetched = colFetched
+			p.TotalItems = colTotalItems
+			p.Message = fmt.Sprintf("Fetching collection page %d/%d (%d items)", colPage, colTotalPages, colFetched)
+		})
 		page++
 	}
 	log.Printf("Fetched %d collection releases from Discogs", len(collectionReleases))
 
-	// 2. Fetch Wantlist Items (has_vinyl = 0)
+	// 2. Fetch Wantlist Items
+	updateSyncProgress(func(p *SyncProgress) {
+		p.Stage = "wantlist"
+		p.Message = "Fetching wantlist releases..."
+	})
+
 	page = 1
 	totalPages = 1
 	var wantlistReleases []DiscogsBasicInfo
@@ -156,29 +254,56 @@ func SyncDiscogs(db *sql.DB) error {
 		var resp DiscogsWantlistResponse
 		path := fmt.Sprintf("/users/%s/wants?page=%d&per_page=100", identity.Username, page)
 		if err := discogsRequest(token, path, &resp); err != nil {
-			return fmt.Errorf("failed fetching wantlist page %d: %w", page, err)
+			errFmt := fmt.Errorf("failed fetching wantlist page %d: %w", page, err)
+			updateSyncProgress(func(p *SyncProgress) {
+				p.LastError = errFmt.Error()
+				p.Message = "Sync failed: " + errFmt.Error()
+			})
+			return errFmt
 		}
 		totalPages = resp.Pagination.Pages
 		for _, item := range resp.Wants {
 			wantlistReleases = append(wantlistReleases, item.BasicInformation)
 		}
+
+		wPage := page
+		wTotalPages := totalPages
+		wFetched := len(wantlistReleases)
+		wTotalItems := resp.Pagination.Items
+
+		updateSyncProgress(func(p *SyncProgress) {
+			p.CurrentPage = wPage
+			p.TotalPages = wTotalPages
+			p.ItemsFetched = wFetched
+			p.TotalItems = wTotalItems
+			p.Message = fmt.Sprintf("Fetching wantlist page %d/%d (%d / %d items)", wPage, wTotalPages, wFetched, wTotalItems)
+		})
 		page++
 	}
 	log.Printf("Fetched %d wantlist releases from Discogs", len(wantlistReleases))
 
-	// Upsert Collection Items (has_vinyl = 1)
+	// 3. Database Upsert Stage
+	updateSyncProgress(func(p *SyncProgress) {
+		p.Stage = "database"
+		p.Message = "Updating database records..."
+	})
+
 	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	for _, info := range collectionReleases {
+	processDiscogsItem := func(info DiscogsBasicInfo, source string, hasVinyl bool) {
 		artist := "Unknown"
 		if len(info.Artists) > 0 {
 			var artistNames []string
 			for _, a := range info.Artists {
-				artistNames = append(artistNames, a.Name)
+				name := a.Name
+				if idx := strings.Index(name, " ("); idx != -1 && strings.HasSuffix(name, ")") {
+					name = name[:idx]
+				}
+				artistNames = append(artistNames, name)
 			}
 			artist = strings.Join(artistNames, ", ")
 		}
@@ -188,57 +313,117 @@ func SyncDiscogs(db *sql.DB) error {
 			cover = info.Thumb
 		}
 
-		var releaseID string
-		err := tx.QueryRow("SELECT id FROM releases WHERE discogs_id = ? OR (title = ? AND artist = ?)", info.ID, info.Title, artist).Scan(&releaseID)
-		if err == sql.ErrNoRows {
-			releaseID = uuid.New().String()
-			_, err = tx.Exec(`
-				INSERT INTO releases (id, title, artist, release_year, discogs_id, cover_image_url, has_vinyl, streaming_notes)
-				VALUES (?, ?, ?, ?, ?, ?, 1, 'Discogs Collection')`,
-				releaseID, info.Title, artist, info.Year, info.ID, cover,
+		var formatDesc string
+		if len(info.Formats) > 0 {
+			f := info.Formats[0]
+			desc := f.Name
+			if len(f.Descriptions) > 0 {
+				desc += " (" + strings.Join(f.Descriptions, ", ") + ")"
+			}
+			formatDesc = desc
+		}
+
+		labelName := ""
+		catNo := ""
+		if len(info.Labels) > 0 {
+			labelName = info.Labels[0].Name
+			catNo = info.Labels[0].Catno
+		}
+
+		var albumID string
+		if info.MasterID > 0 {
+			_ = tx.QueryRow("SELECT id FROM albums WHERE discogs_master_id = ?", info.MasterID).Scan(&albumID)
+		}
+		if albumID == "" {
+			_ = tx.QueryRow("SELECT id FROM albums WHERE LOWER(title) = LOWER(?) AND LOWER(artist) = LOWER(?)", info.Title, artist).Scan(&albumID)
+		}
+
+		if albumID == "" {
+			albumID = uuid.New().String()
+			var masterIDSql interface{} = nil
+			if info.MasterID > 0 {
+				masterIDSql = info.MasterID
+			}
+
+			hasVinylInt := 0
+			if hasVinyl {
+				hasVinylInt = 1
+			}
+			wantlistInt := 0
+			if source == "wantlist" {
+				wantlistInt = 1
+			}
+
+			_, err := tx.Exec(`
+				INSERT INTO albums (id, title, artist, release_year, discogs_master_id, cover_image_url, has_vinyl, in_wantlist, streaming_notes)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				albumID, info.Title, artist, info.Year, masterIDSql, cover, hasVinylInt, wantlistInt, "Discogs "+source,
 			)
 			if err != nil {
-				log.Printf("Error inserting Discogs collection release %s: %v", info.Title, err)
+				log.Printf("Error inserting album %s: %v", info.Title, err)
+				return
+			}
+		} else {
+			if hasVinyl {
+				_, _ = tx.Exec("UPDATE albums SET has_vinyl = 1, cover_image_url = COALESCE(NULLIF(cover_image_url, ''), ?) WHERE id = ?", cover, albumID)
+			}
+			if source == "wantlist" {
+				_, _ = tx.Exec("UPDATE albums SET in_wantlist = 1 WHERE id = ?", albumID)
+			}
+			if info.MasterID > 0 {
+				_, _ = tx.Exec("UPDATE albums SET discogs_master_id = ? WHERE id = ? AND discogs_master_id IS NULL", info.MasterID, albumID)
+			}
+		}
+
+		hasVinylInt := 0
+		if hasVinyl {
+			hasVinylInt = 1
+		}
+
+		var versionID string
+		err := tx.QueryRow("SELECT id FROM release_versions WHERE discogs_release_id = ?", info.ID).Scan(&versionID)
+		if err == sql.ErrNoRows {
+			versionID = uuid.New().String()
+			_, err = tx.Exec(`
+				INSERT INTO release_versions (id, album_id, discogs_release_id, title, artist, label, catalog_number, release_year, cover_image_url, format_description, source, has_vinyl)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				versionID, albumID, info.ID, info.Title, artist, labelName, catNo, info.Year, cover, formatDesc, source, hasVinylInt,
+			)
+			if err != nil {
+				log.Printf("Error inserting release version %s (ID %d): %v", info.Title, info.ID, err)
 			}
 		} else if err == nil {
-			_, _ = tx.Exec("UPDATE releases SET has_vinyl = 1, discogs_id = ?, cover_image_url = COALESCE(NULLIF(cover_image_url, ''), ?) WHERE id = ?", info.ID, cover, releaseID)
+			_, _ = tx.Exec(`
+				UPDATE release_versions SET album_id = ?, label = ?, catalog_number = ?, format_description = ?, source = ?, has_vinyl = ?
+				WHERE id = ?`,
+				albumID, labelName, catNo, formatDesc, source, hasVinylInt, versionID,
+			)
 		}
 	}
 
-	// Upsert Wantlist Items (has_vinyl = 0, streaming_notes = 'Discogs Wantlist')
+	for _, info := range collectionReleases {
+		processDiscogsItem(info, "collection", true)
+	}
+
 	for _, info := range wantlistReleases {
-		artist := "Unknown"
-		if len(info.Artists) > 0 {
-			var artistNames []string
-			for _, a := range info.Artists {
-				artistNames = append(artistNames, a.Name)
-			}
-			artist = strings.Join(artistNames, ", ")
-		}
-
-		cover := info.CoverImage
-		if cover == "" {
-			cover = info.Thumb
-		}
-
-		var releaseID string
-		err := tx.QueryRow("SELECT id FROM releases WHERE discogs_id = ?", info.ID).Scan(&releaseID)
-		if err == sql.ErrNoRows {
-			releaseID = uuid.New().String()
-			_, err = tx.Exec(`
-				INSERT INTO releases (id, title, artist, release_year, discogs_id, cover_image_url, has_vinyl, streaming_notes)
-				VALUES (?, ?, ?, ?, ?, ?, 0, 'Discogs Wantlist')`,
-				releaseID, info.Title, artist, info.Year, info.ID, cover,
-			)
-			if err != nil {
-				log.Printf("Error inserting Discogs wantlist release %s: %v", info.Title, err)
-			}
-		}
+		processDiscogsItem(info, "wantlist", false)
 	}
 
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("failed committing Discogs sync: %w", err)
+		errFmt := fmt.Errorf("failed committing Discogs sync: %w", err)
+		updateSyncProgress(func(p *SyncProgress) {
+			p.LastError = errFmt.Error()
+			p.Message = "Sync failed: " + errFmt.Error()
+		})
+		return errFmt
 	}
+
+	nowStr := time.Now().Format("2006-01-02 15:04:05")
+	updateSyncProgress(func(p *SyncProgress) {
+		p.Stage = "idle"
+		p.Message = "Sync completed successfully!"
+		p.LastSyncedAt = nowStr
+	})
 
 	log.Println("Discogs collection & wantlist sync completed successfully!")
 	return nil

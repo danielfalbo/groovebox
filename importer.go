@@ -15,7 +15,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// SpotifyCSVRecord represents a row in the Notion Spotify export CSV
 type SpotifyCSVRecord struct {
 	TrackURI          string
 	TrackName         string
@@ -136,7 +135,6 @@ func ImportSpotifyCSVDirectory(db *sql.DB, dirPath string) error {
 			continue
 		}
 
-		// Find earliest AddedAt date from records to set accurate playlist creation date
 		var earliestDate *time.Time
 
 		for _, rec := range records {
@@ -144,10 +142,10 @@ func ImportSpotifyCSVDirectory(db *sql.DB, dirPath string) error {
 				continue
 			}
 			cleanDate := strings.Trim(rec.AddedAt, `" `)
-			// Remove timezone string in parentheses if present e.g. (GMT+1) -> GMT+1 -> parse manually
 			if idx := strings.Index(cleanDate, " ("); idx != -1 {
 				cleanDate = cleanDate[:idx]
 			}
+
 			for _, layout := range []string{"January 2, 2006 3:04 PM", "January 2, 2006"} {
 				if t, pErr := time.Parse(layout, cleanDate); pErr == nil {
 					if earliestDate == nil || t.Before(*earliestDate) {
@@ -185,23 +183,22 @@ func ImportSpotifyCSVDirectory(db *sql.DB, dirPath string) error {
 
 		for pos, rec := range records {
 			spotifyTrackID := strings.TrimPrefix(rec.TrackURI, "spotify:track:")
-			spotifyAlbumID := strings.TrimPrefix(rec.AlbumURI, "spotify:album:")
 
-			var releaseID string
-			err := tx.QueryRow("SELECT id FROM releases WHERE title = ? AND artist = ?", rec.AlbumName, rec.AlbumArtistNames).Scan(&releaseID)
+			var albumID string
+			err := tx.QueryRow("SELECT id FROM albums WHERE LOWER(title) = LOWER(?) AND LOWER(artist) = LOWER(?)", rec.AlbumName, rec.AlbumArtistNames).Scan(&albumID)
 			if err == sql.ErrNoRows {
-				releaseID = uuid.New().String()
+				albumID = uuid.New().String()
 				var year int
 				if len(rec.AlbumReleaseDate) >= 4 {
 					year, _ = strconv.Atoi(rec.AlbumReleaseDate[len(rec.AlbumReleaseDate)-4:])
 				}
 				_, err = tx.Exec(`
-					INSERT INTO releases (id, title, artist, release_year, cover_image_url, streaming_notes)
+					INSERT INTO albums (id, title, artist, release_year, cover_image_url, streaming_notes)
 					VALUES (?, ?, ?, ?, ?, ?)`,
-					releaseID, rec.AlbumName, rec.AlbumArtistNames, year, rec.AlbumImageURL, "Spotify Album "+spotifyAlbumID,
+					albumID, rec.AlbumName, rec.AlbumArtistNames, year, rec.AlbumImageURL, "Spotify Album",
 				)
 				if err != nil {
-					log.Printf("Error inserting release %s: %v", rec.AlbumName, err)
+					log.Printf("Error inserting album %s: %v", rec.AlbumName, err)
 				}
 			}
 
@@ -211,9 +208,9 @@ func ImportSpotifyCSVDirectory(db *sql.DB, dirPath string) error {
 				trackID = uuid.New().String()
 				trackNumStr := fmt.Sprintf("%d", rec.TrackNumber)
 				_, err = tx.Exec(`
-					INSERT INTO tracks (id, release_id, title, artist, track_number, duration_ms, spotify_id)
+					INSERT INTO tracks (id, album_id, title, artist, track_number, duration_ms, spotify_id)
 					VALUES (?, ?, ?, ?, ?, ?, ?)`,
-					trackID, releaseID, rec.TrackName, rec.ArtistNames, trackNumStr, rec.TrackDurationMs, spotifyTrackID,
+					trackID, albumID, rec.TrackName, rec.ArtistNames, trackNumStr, rec.TrackDurationMs, spotifyTrackID,
 				)
 				if err != nil {
 					log.Printf("Error inserting track %s: %v", rec.TrackName, err)
@@ -225,6 +222,8 @@ func ImportSpotifyCSVDirectory(db *sql.DB, dirPath string) error {
 					VALUES ('track', ?, ?, ?)`,
 					trackID, rec.TrackName, rec.ArtistNames,
 				)
+			} else if err == nil {
+				_, _ = tx.Exec("UPDATE tracks SET album_id = ? WHERE id = ?", albumID, trackID)
 			}
 
 			_, _ = tx.Exec(`
