@@ -48,27 +48,27 @@
 - [x] Create `schema.sql` with table definitions, indexes, and FTS5 search table.
 - [x] Write `db.go` to initialize database connection, execute schema migrations, and prepare helper queries.
 
-### Step 2: Minimal Web Server & Health Endpoint ⬜
-- [ ] Write `main.go` with Go `net/http` router.
-- [ ] Add basic configuration loading (including reading token from `../discogs-albums/.env`).
-- [ ] Provide basic JSON API test endpoint (`GET /api/health`, `GET /api/stats`).
+### Step 2: Notion Spotify Playlists Importer ✅
+- [x] Build Go CSV parser for Spotify exports (`Track URI`, `Track Name`, `Artist Name(s)`, `Album Name`, etc.).
+- [x] Downloaded 19 unique playlist CSV files directly from `danielfalbo/notion` via `gh api`.
+- [x] Ingested 2,780 tracks across 1,510 releases and 19 playlists into SQLite database `music.db`.
 
-### Step 3: Frontend Base & Static Serving ⬜
-- [ ] Create `index.html` (mobile-first UI layout).
-- [ ] Create `style.css` (dark mode, glassmorphism, responsive UI).
-- [ ] Create `app.js` (vanilla JS state management, FTS search interface).
+### Step 3: Web UI Visualization & Search Engine (v0) ✅
+- [x] **HTTP Server (`main.go`):** Serves `index.html` static assets and JSON API endpoints (`/api/stats`, `/api/playlists`, `/api/search`).
+- [x] **FTS5 Search Engine:** Enabled instant full-text search across titles, artists, and releases.
+- [x] **Sleek UI (`public/`):** Mobile-first glassmorphism Web UI built with HTML5, CSS3, and vanilla JS.
 
-### Step 4: Discogs Live Background Sync Engine ⬜
+### Step 4: Apple Music & Other One-Off Imports ⬜
+- [ ] Apple Music `Library.xml` parser (`POST /api/import/apple-music`).
+- [ ] Shazam CSV / Webhook importer.
+
+### Step 5: Apple Music & Other One-Off Imports ⬜
+- [ ] Apple Music `Library.xml` parser (`POST /api/import/apple-music`).
+- [ ] Shazam CSV / Webhook importer.
+
+### Step 6: Discogs Live Background Sync Engine (Deferred) ⬜
 - [ ] Implement Discogs client in Go (handling rate limits / 429 retries).
 - [ ] Add background ticker/worker to sync collection & wantlist into SQLite.
-
-### Step 5: Shazam Webhook & Mobile Capture ⬜
-- [ ] Implement `POST /api/shazam` endpoint for single track tags and batch offline flushes.
-
-### Step 6: One-Off Import Parsers ⬜
-- [ ] Apple Music `Library.xml` / CSV parser (`POST /api/import/apple-music`).
-- [ ] Spotify JSON/CSV parser (`POST /api/import/spotify`).
-- [ ] GitHub / Markdown / CSV playlist importer (`POST /api/import/playlist`).
 
 ### Step 7: Playlist Management & Mobile Polish ⬜
 - [ ] Complete internal playlist CRUD endpoints & UI modal/screens.
@@ -77,5 +77,6 @@
 ---
 
 ## 📌 Current Status
-**Phase:** Step 1 Init
-**Next Immediate Action:** Initialize `go.mod`, install `modernc.org/sqlite`, and create `schema.sql` + `db.go`.
+**Phase:** Step 4 Apple Music & One-Off Imports
+**Completed:** Core SQLite DB, Notion Spotify CSV Importer (19 playlists / 2,780 tracks), Blueprint Dark Web UI v0 with sticky table scrolling, and Tailscale deployment docs.
+**Next Immediate Action:** Build Apple Music `Library.xml` parser (`POST /api/import/apple-music`).

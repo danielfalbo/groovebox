@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Music Vault & Archive</title>
+  
+  <!-- Blueprint CSS dependencies -->
+  <link href="https://unpkg.com/normalize.css@8.0.1/normalize.css" rel="stylesheet" />
+  <link href="https://unpkg.com/@blueprintjs/core@5/lib/css/blueprint.css" rel="stylesheet" />
+  <link href="https://unpkg.com/@blueprintjs/icons@5/lib/css/blueprint-icons.css" rel="stylesheet" />
+  <link href="style.css" rel="stylesheet" />
+</head>
+<body class="bp5-dark">
+  <div class="app-layout">
+    <!-- Blueprint Navbar Header -->
+    <nav class="bp5-navbar bp5-dark navbar-custom">
+      <div class="bp5-navbar-group bp5-align-left">
+        <div class="bp5-navbar-heading brand-title">
+          <span class="bp5-icon-standard bp5-icon-music logo-icon"></span>
+          Music Vault
+        </div>
+        <span class="bp5-navbar-divider"></span>
+        <button class="bp5-button bp5-minimal bp5-icon-dashboard" onclick="showDashboard()">Dashboard</button>
+      </div>
+
+      <div class="bp5-navbar-group bp5-align-right search-container">
+        <div class="bp5-input-group bp5-round">
+          <span class="bp5-icon bp5-icon-search"></span>
+          <input type="text" class="bp5-input" id="search-input" placeholder="Search tracks, artists, albums..." oninput="handleSearch(this.value)" />
+        </div>
+      </div>
+    </nav>
+
+    <!-- App Body: Sidebar + Main Area -->
+    <div class="app-body">
+      <!-- Sidebar -->
+      <aside class="sidebar-panel">
+        <div class="sidebar-header">
+          <h5 class="bp5-heading text-muted">PLAYLISTS</h5>
+        </div>
+        <div class="bp5-menu playlist-menu" id="sidebar-playlists">
+          <!-- Dynamically populated -->
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="main-panel">
+        <!-- Stats Callout Banner -->
+        <div class="stats-row">
+          <div class="bp5-card bp5-elevation-1 stat-card">
+            <span class="bp5-icon-large bp5-icon-music stat-icon"></span>
+            <div>
+              <div class="stat-number" id="stat-tracks">0</div>
+              <div class="stat-desc">Tracks</div>
+            </div>
+          </div>
+          <div class="bp5-card bp5-elevation-1 stat-card">
+            <span class="bp5-icon-large bp5-icon-record stat-icon"></span>
+            <div>
+              <div class="stat-number" id="stat-releases">0</div>
+              <div class="stat-desc">Releases</div>
+            </div>
+          </div>
+          <div class="bp5-card bp5-elevation-1 stat-card">
+            <span class="bp5-icon-large bp5-icon-th-list stat-icon"></span>
+            <div>
+              <div class="stat-number" id="stat-playlists">0</div>
+              <div class="stat-desc">Playlists</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- View Title Card -->
+        <div class="bp5-card bp5-elevation-0 view-title-card">
+          <h2 class="bp5-heading" id="view-title">Imported Playlists</h2>
+          <p class="bp5-text-muted" id="view-subtitle">Select a playlist or search your archive.</p>
+        </div>
+
+        <!-- Blueprint HTML Table -->
+        <div class="table-container bp5-card bp5-elevation-1">
+          <table class="bp5-html-table bp5-html-table-striped bp5-interactive bp5-compact full-width-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">#</th>
+                <th>Track / Artist</th>
+                <th>Album</th>
+                <th style="width: 100px;">Duration</th>
+                <th style="width: 100px; text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="tracklist-body">
+              <!-- Tracks rendered here -->
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
