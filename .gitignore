@@ -6,8 +6,8 @@ server
 *.so
 *.dylib
 
-# Test databases
-*.db
+# music.db is intentionally git-tracked (the actual library data).
+# Transient WAL-mode artifacts are not — they're not the persisted data.
 *.db-journal
 *.db-wal
 *.db-shm
