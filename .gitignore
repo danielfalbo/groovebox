@@ -1,0 +1,18 @@
+# Binaries
+server
+*.exe
+*.exe;
+*.dll
+*.so
+*.dylib
+
+# Test databases
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
