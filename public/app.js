@@ -4,7 +4,34 @@ document.addEventListener('DOMContentLoaded', () => {
   initSidebarState();
   initSortState();
   loadPlaylists();
+  showAllSongs();
 });
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar-panel');
+  const isCollapsed = sidebar.classList.toggle('collapsed');
+  localStorage.setItem('sidebar-collapsed', isCollapsed ? 'true' : 'false');
+}
+
+function initSidebarState() {
+  if (localStorage.getItem('sidebar-collapsed') === 'true') {
+    const sidebar = document.getElementById('sidebar-panel');
+    sidebar.classList.add('collapsed');
+  }
+}
+
+function initSortState() {
+  const select = document.getElementById('playlist-sort-select');
+  if (select) {
+    select.value = currentPlaylistSort;
+  }
+}
+
+function handleSortChange(sortValue) {
+  currentPlaylistSort = sortValue;
+  localStorage.setItem('playlist-sort', sortValue);
+  loadPlaylists();
+}
 
 async function loadPlaylists() {
   try {
@@ -46,10 +73,7 @@ async function loadPlaylists() {
       container.appendChild(a);
     });
 
-    if (playlists.length > 0) {
-      const firstBtn = container.querySelector('.playlist-item-btn');
-      selectPlaylist(playlists[0].id, playlists[0].name, playlists[0].description, firstBtn);
-    }
+    // Playlists rendered to sidebar
   } catch (err) {
     console.error('Failed to load playlists:', err);
   }
@@ -244,6 +268,7 @@ function handleSearch(query) {
 
 function showDashboard() {
   loadPlaylists();
+  showAllSongs();
 }
 
 function renderTracks(tracks) {
