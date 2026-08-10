@@ -43,6 +43,11 @@ go build -o groovebox .
 ./groovebox -import-spotify-account
 ```
 
+### 5. Apple Music Library XML Import
+```bash
+./groovebox -import-apple-music /path/to/Library.xml
+```
+
 Register `http://127.0.0.1:8787/callback` as an exact redirect URI in Spotify Developer Dashboard. Command prints an authorization URL, imports playlists once after browser approval, then exits. Spotify does not expose playlist creation dates, so Groovebox uses earliest track addition date for playlist sorting. It does not store refresh tokens or schedule later imports.
 
 Access the UI locally at `http://localhost:8080`.

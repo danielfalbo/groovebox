@@ -57,7 +57,7 @@
 
 These were part of the original V1 scope and were never completed — they dropped out of the plan during a docs rewrite rather than being finished or deliberately cut:
 
-- [ ] **Apple Music Import**: Parser for `Library.xml` (`POST /api/import/apple-music` or `-import-apple-music <path>` CLI flag) to ingest tracks, artists, album releases, ISRCs, play counts, and playlists. Target file: `/Users/daniel/apple-music-library/Library.xml` (~7.4 MB).
+- [x] **Apple Music Import** *(completed 2026-08-10)*: Integrated XML parser (`apple_music.go`) and CLI flag `-import-apple-music <path>`. Imported 3,556 tracks, 1,888 new albums, and 35 playlists from `/Users/daniel/apple-music-library/Library.xml` into SQLite. Track ISRCs and titles matched against existing catalog.
 - [ ] **Shazam Ingestion**: `POST /api/shazam` webhook for instant tag capture (designed for iOS Shortcuts integration, offline queuing/batch flush over Tailscale) plus a Shazam CSV importer for historical tags.
 - [ ] **Mobile Polish & Tailscale Deployment**: Final mobile usability pass and documented Tailscale home-server deployment instructions.
 

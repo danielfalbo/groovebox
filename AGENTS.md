@@ -3,12 +3,13 @@
 ## 🚀 Overview & Repository Structure
 `my-music-lib` is a self-hosted, local-first music archival and curation engine written in Go and SQLite with a vanilla HTML5/CSS3/JS Web UI.
 
-- `main.go`: Entry point, CLI flag handlers (`-port`, `-import-spotify`, `-import-spotify-account`, `-sync-discogs`), REST API routes (`/api/albums`, `/api/artists`, `/api/sync/discogs`, `/api/sync/status`).
+- `main.go`: Entry point, CLI flag handlers (`-port`, `-import-spotify`, `-import-spotify-account`, `-import-apple-music`, `-sync-discogs`), REST API routes (`/api/albums`, `/api/artists`, `/api/sync/discogs`, `/api/sync/status`).
 - `db.go`: SQLite connection, WAL mode initialization, schema migration execution (`ensureColumn` helper for safe ALTER TABLE).
-- `schema.sql`: DDL for 1-to-1 canonical `albums`, `release_versions` (Discogs collection/wantlist pressings), `tracks`, `playlists`, `playlist_tracks`, and `search_fts` (FTS5 table). `playlists` and `tracks` carry `spotify_id`; `playlist_tracks` carries `added_at`.
+- `schema.sql`: DDL for 1-to-1 canonical `albums`, `release_versions` (Discogs collection/wantlist pressings), `tracks`, `playlists`, `playlist_tracks`, and `search_fts` (FTS5 table). `playlists` and `tracks` carry `spotify_id` / `apple_music_id`; `playlist_tracks` carries `added_at`.
 - `importer.go`: Spotify CSV/Notion export parser linking imported tracks to canonical albums.
 - `discogs.go`: Discogs collection (71 items) and wantlist (5,478 items) client with thread-safe live progress streaming (`GetSyncProgress`).
 - `spotify.go`: One-time Spotify account importer — OAuth Authorization Code flow, owned playlist + track pagination, album upsert, and `created_at` inference from earliest track `added_at`.
+- `apple_music.go`: Apple Music `Library.xml` export parser — XML stream decoder ingesting tracks, albums, ISRCs, and 37 playlists with YYYY-MM creation date inference.
 - `public/`: Static Web UI (`index.html`, `style.css`, `app.js`) branded as **Groovebox**.
 
 ---
