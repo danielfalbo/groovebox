@@ -61,9 +61,10 @@ These were part of the original V1 scope and were never completed — they dropp
 - [x] **Historical Shazam Screenshot Import** *(completed 2026-08-10)*: OCR/extracted 30 recent Shazam history screenshots from `/Users/daniel/Downloads/shazam` and auto-populated corresponding monthly playlists (`2026-08`, `2026-07`, `2026-06`).
 - [ ] **Future Shazam-like Ingestion & Offline Sync**:
   - **`POST /api/shazam` API Handler**: Receives Shazam tag metadata (`artist`, `title`, `timestamp`). Automatically resolves/creates the target monthly playlist (`YYYY-MM`), fetches iTunes high-res cover art, and links the track.
-  - **iOS Shortcut Sync with Tailscale Queueing**:
-    - *Note on iOS Shazam*: Shazam requires an internet/cellular connection to identify audio fingerprints online.
-    - *Tailscale Unreachable Fallback*: If the user is on cellular/Wi-Fi away from home without active Tailscale routing, the iOS Shortcut catches the HTTP failure and appends identified track payloads to `iCloud Drive/Shortcuts/Groovebox/pending_shazams.json`. Automatically flushes pending items to Groovebox once connected to Tailscale.
+  - **iOS Shortcut Sync & Offline Voice Note Recording**:
+    - *Online Shazam Trigger*: When online, Shazam identifies the track and sends JSON to `POST http://<tailscale-ip>:8080/api/shazam` (queueing to `iCloud Drive/Shortcuts/Groovebox/pending_shazams.json` if Tailscale is down).
+    - *True Offline Fallback (Voice/Audio Notes)*: Since iOS Shazam requires an internet connection to identify fingerprints, an offline shortcut can record a 10-15s M4A audio clip saved to `iCloud Drive/Groovebox/voice_notes/`. When back online, audio clips can be sent to Apple Music Shazam API / Chromaprint (`fpcalc`) or transcribed via audio note to identify and assign to the recorded month's playlist (`YYYY-MM`).
+
 
 
 
