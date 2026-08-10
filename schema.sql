@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS tracks (
 -- Playlists Table (Internal)
 CREATE TABLE IF NOT EXISTS playlists (
     id TEXT PRIMARY KEY, -- UUID v4 stored as TEXT
+    spotify_id TEXT UNIQUE,
     name TEXT NOT NULL,
     description TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

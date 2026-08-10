@@ -79,6 +79,7 @@ type AlbumSummary struct {
 
 func main() {
 	importDir := flag.String("import-spotify", "", "Path to directory containing Spotify export CSVs")
+	importSpotifyAccount := flag.Bool("import-spotify-account", false, "Import current Spotify account playlists through OAuth")
 	syncDiscogsFlag := flag.Bool("sync-discogs", false, "Sync Discogs collection & wantlist into database")
 	dbPath := flag.String("db", "music.db", "Path to SQLite database")
 	port := flag.Int("port", 8080, "Port to listen on")
@@ -110,6 +111,15 @@ func main() {
 		if len(os.Args) > 2 && os.Args[1] == "-import-spotify" || (len(os.Args) > 1 && strings.HasPrefix(os.Args[1], "-import-spotify")) {
 			return
 		}
+	}
+
+	if *importSpotifyAccount {
+		log.Println("Starting Spotify account import...")
+		if err := ImportSpotifyAccount(db); err != nil {
+			log.Fatalf("Spotify account import failed: %v", err)
+		}
+		log.Println("Spotify account import completed successfully!")
+		return
 	}
 
 	// API Routes

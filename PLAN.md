@@ -12,8 +12,9 @@
 ### Key Components
 - **`main.go`**: HTTP router & API handlers (`/api/albums`, `/api/albums/counts`, `/api/albums/:id`, `/api/artists`, `/api/artists/:name`, `/api/tracks`, `/api/sync/discogs`, `/api/sync/status`).
 - **`discogs.go`**: Discogs API sync (Collection: 71 items, Wantlist: 5,478 items) with thread-safe live progress streaming (`GetSyncProgress`).
-- **`importer.go`**: Spotify CSV Notion export parser with historical playlist date resolution.
-- **`schema.sql`**: SQLite DDL (`albums`, `release_versions`, `tracks`, `playlists`, `playlist_tracks`, `search_fts`).
+- **`importer.go`**: Spotify CSV/Notion export parser with historical playlist date resolution.
+- **`spotify.go`**: One-time Spotify account importer via OAuth Authorization Code flow; fetches all owned playlists, tracks, and album metadata; uses earliest `added_at` timestamp as playlist `created_at` proxy.
+- **`schema.sql`**: SQLite DDL (`albums`, `release_versions`, `tracks`, `playlists`, `playlist_tracks`, `search_fts`). `playlists` and `tracks` carry `spotify_id`; `playlist_tracks` carries `added_at`.
 - **`public/`**: Static Web UI (`index.html`, `style.css`, `app.js`).
 
 ---
@@ -42,6 +43,8 @@
   - Cleaner header status tags: `📀 In Collection` / `🎯 On Wantlist`.
   - Discogs icon button styling (`.discogs-icon-btn`, `.discogs-svg-icon` in `public/style.css`) matching the Spotify/YouTube icon buttons.
 
+- [x] **One-time Spotify Account Import** *(completed 2026-08-10)*: Imported 76 owned playlists (19,607 track memberships, 14,517 unique tracks) directly from Spotify Web API via OAuth Authorization Code flow (`-import-spotify-account` CLI flag). Earliest track `added_at` used as playlist `created_at` proxy for sort ordering. Followed/external playlists skipped per Spotify API rules. No refresh-token storage or recurring sync.
+
 ---
 
 ## 🗺️ Unfinished Roadmap (carried over from earlier plan, not yet done)
@@ -52,7 +55,6 @@ These were part of the original V1 scope and were never completed — they dropp
 - [ ] **Shazam Ingestion**: `POST /api/shazam` webhook for instant tag capture (designed for iOS Shortcuts integration, offline queuing/batch flush over Tailscale) plus a Shazam CSV importer for historical tags.
 - [ ] **Playlist Management CRUD**: Full create/edit/delete/reorder endpoints and UI/modal for internal playlists (currently only Spotify-imported playlists exist; no way to manage playlists from the app itself).
 - [ ] **Mobile Polish & Tailscale Deployment**: Final mobile usability pass and documented Tailscale home-server deployment instructions.
-- [ ] **One-time Spotify Account Import**: Import current playlists directly from Spotify Web API after a single OAuth Authorization Code login (`playlist-read-private`, `playlist-read-collaborative`). Store Spotify playlist and track IDs so a repeat CLI run updates existing imported playlists cleanly. No scheduler, background sync endpoint, or recurring sync is planned. Existing `-import-spotify <directory>` importer remains historical CSV/Markdown import only.
 
 ---
 

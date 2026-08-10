@@ -36,6 +36,15 @@ go build -o groovebox .
 ./groovebox -import-spotify /path/to/spotify_csv_folder
 ```
 
+### 4. One-time Spotify Account Import
+```bash
+# ~/.zshenv must export SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET.
+# SPOTIFY_TOKEN is accepted as a legacy name for SPOTIFY_CLIENT_SECRET.
+./groovebox -import-spotify-account
+```
+
+Register `http://127.0.0.1:8787/callback` as an exact redirect URI in Spotify Developer Dashboard. Command prints an authorization URL, imports playlists once after browser approval, then exits. Spotify does not expose playlist creation dates, so Groovebox uses earliest track addition date for playlist sorting. It does not store refresh tokens or schedule later imports.
+
 Access the UI locally at `http://localhost:8080`.
 
 ---
@@ -54,7 +63,6 @@ Access the UI locally at `http://localhost:8080`.
 - `GET /api/search?q=:query` - Instant FTS5 full-text search across songs, artists, and releases.
 - `POST /api/sync/discogs` - Trigger async Discogs collection & wantlist sync.
 - `GET /api/sync/status` - Thread-safe live progress streaming (*stage*, *current_page*, *total_pages*, *items_fetched*, *last_synced_at*).
-- `POST /api/sync/spotify` *(planned, not yet implemented)* - Trigger async sync of the user's live Spotify account playlists via the official Spotify Web API (OAuth), distinct from the existing static CSV importer. See `PLAN.md` roadmap.
 
 ---
 
