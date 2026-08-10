@@ -82,18 +82,18 @@
 
 ### **Completed So Far:**
 - [x] **Step 1:** Core Go SQLite foundation initialized with pure Go driver (`modernc.org/sqlite`) & WAL mode in [`db.go`](file:///Users/daniel/my-music-lib/db.go). Full-Text Search table `search_fts` set up in [`schema.sql`](file:///Users/daniel/my-music-lib/schema.sql).
-- [x] **Step 2:** Notion Spotify CSV Importer built in [`importer.go`](file:///Users/daniel/my-music-lib/importer.go). Downloaded 19 playlist CSV files from `danielfalbo/notion` via `gh api` and ingested 2,780 tracks & 1,510 releases into `music.db`.
-- [x] **Step 3:** Blueprint Dark Mode Web UI (`bp5-dark`) in [`public/`](file:///Users/daniel/my-music-lib/public/) with collapsible sidebar, creation date sorting, 2x2 grid collage playlist covers, Library browsing by All Songs / Artists / Albums, FTS5 search (`GET /api/search`), and stats endpoint (`GET /api/stats`).
-- [x] **Step 4:** Discogs Sync Engine ([`discogs.go`](file:///Users/daniel/my-music-lib/discogs.go)) for collection & wantlist items with live navbar sync button (`POST /api/sync/discogs`) and UI vinyl/wantlist tags.
+- [x] **Step 2:** Notion Spotify CSV Importer built in [`importer.go`](file:///Users/daniel/my-music-lib/importer.go). Downloaded 19 playlist CSV files from `danielfalbo/notion` via `gh api`. Parsed earliest `Added At` timestamps to set accurate historical creation dates (ranging back to 2015).
+- [x] **Step 3:** Blueprint Dark Mode Web UI (`bp5-dark`) in [`public/`](file:///Users/daniel/my-music-lib/public/) with collapsible sidebar, creation date sorting, 2x2 grid collage playlist covers, Library browsing by All Songs / Artists / Albums, FTS5 search (`GET /api/search`), and header gear dropdown menu (`⚙️`).
+- [x] **Step 4:** Discogs Sync Engine ([`discogs.go`](file:///Users/daniel/my-music-lib/discogs.go)) for collection & wantlist items with live gear dropdown sync button (`POST /api/sync/discogs`) and UI vinyl/wantlist tags.
 - [x] **Step 5 (Docs):** [`README.md`](file:///Users/daniel/my-music-lib/README.md) written with local quickstart, Playwright screenshot test CLI command, and Tailscale Home Server deployment guide.
 
 ---
 
 ### **🚀 Next Immediate Task for Next Agent: Step 4 (Apple Music Import)**
 - **Target File:** `/Users/daniel/apple-music-library/Library.xml` (~7.4 MB, present on local machine).
-- **Goal:** Implement `POST /api/import/apple-music` (or CLI flag `-import-apple-music <path>`) in Go.
-- **Details:** Parse tracks, artists, album releases, ISRCs, play counts, and playlists from Apple Music `Library.xml` and upsert into SQLite (`tracks` and `releases` tables).
-- **Subsequent Steps:** Shazam webhook (`POST /api/shazam`), Shazam CSV importer, and Discogs background sync.
+- **Goal:** Implement `POST /api/import/apple-music` (or CLI flag `-import-apple-music <path>`) in Go (`apple_music.go`).
+- **Details:** Parse tracks, artists, album releases, ISRCs, play counts, and playlists from Apple Music `Library.xml` and upsert into SQLite (`tracks`, `releases`, `playlists`, and `playlist_tracks`).
+- **Subsequent Steps:** Shazam webhook (`POST /api/shazam`), Shazam CSV importer, and playlist management CRUD.
 
 ### **🛠️ Useful Commands for Next Agent:**
 ```bash
@@ -103,7 +103,7 @@ go run . -port 8080
 # Trigger Discogs sync
 go run . -sync-discogs
 
-# Re-run Spotify importer if needed
+# Re-run Spotify importer if needed (updates accurate dates)
 go run . -import-spotify /tmp/spotify_playlists
 
 # Run Playwright visual test
