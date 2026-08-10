@@ -42,7 +42,6 @@ CREATE TABLE IF NOT EXISTS tracks (
     track_number TEXT,
     duration_ms INTEGER,
     isrc TEXT,
-    shazam_id TEXT,
     spotify_id TEXT,
     apple_music_id TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -69,7 +68,6 @@ CREATE TABLE IF NOT EXISTS playlist_tracks (
 
 -- Indexes for Fast Search & Matching
 CREATE INDEX IF NOT EXISTS idx_tracks_isrc ON tracks(isrc);
-CREATE INDEX IF NOT EXISTS idx_tracks_shazam ON tracks(shazam_id);
 CREATE INDEX IF NOT EXISTS idx_tracks_album ON tracks(album_id);
 CREATE INDEX IF NOT EXISTS idx_versions_album ON release_versions(album_id);
 CREATE INDEX IF NOT EXISTS idx_albums_discogs_master ON albums(discogs_master_id);

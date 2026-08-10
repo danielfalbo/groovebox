@@ -87,10 +87,6 @@ type AlbumSummary struct {
 }
 
 func main() {
-	importDir := flag.String("import-spotify", "", "Path to directory containing Spotify export CSVs")
-	importSpotifyAccount := flag.Bool("import-spotify-account", false, "Import current Spotify account playlists through OAuth")
-	importSpotifyTop := flag.Bool("import-spotify-top", false, "Import all-time top tracks from Spotify as a ranked playlist (requires user-top-read scope)")
-	importAppleMusic := flag.String("import-apple-music", "", "Path to Apple Music Library.xml export file")
 	syncDiscogsFlag := flag.Bool("sync-discogs", false, "Sync Discogs collection & wantlist into database")
 	dedupeAlbumsFlag := flag.Bool("dedupe-albums", false, "Safely merge duplicate master albums based on title normalization & track overlap")
 	dbPath := flag.String("db", "music.db", "Path to SQLite database")
@@ -112,44 +108,6 @@ func main() {
 		if len(os.Args) > 1 && strings.Contains(os.Args[1], "sync-discogs") {
 			return
 		}
-	}
-
-	if *importDir != "" {
-		log.Printf("Starting Spotify CSV import from %s...", *importDir)
-		if err := ImportSpotifyCSVDirectory(db, *importDir); err != nil {
-			log.Fatalf("Import failed: %v", err)
-		}
-		log.Println("Import completed successfully!")
-		if len(os.Args) > 2 && os.Args[1] == "-import-spotify" || (len(os.Args) > 1 && strings.HasPrefix(os.Args[1], "-import-spotify")) {
-			return
-		}
-	}
-
-	if *importSpotifyAccount {
-		log.Println("Starting Spotify account import...")
-		if err := ImportSpotifyAccount(db); err != nil {
-			log.Fatalf("Spotify account import failed: %v", err)
-		}
-		log.Println("Spotify account import completed successfully!")
-		return
-	}
-
-	if *importSpotifyTop {
-		log.Println("Starting Spotify top tracks import...")
-		if err := ImportSpotifyTopTracks(db); err != nil {
-			log.Fatalf("Spotify top tracks import failed: %v", err)
-		}
-		log.Println("Spotify top tracks import completed successfully!")
-		return
-	}
-
-	if *importAppleMusic != "" {
-		log.Printf("Starting Apple Music import from %s...", *importAppleMusic)
-		if err := ImportAppleMusicLibrary(db, *importAppleMusic); err != nil {
-			log.Fatalf("Apple Music import failed: %v", err)
-		}
-		log.Println("Apple Music import completed successfully!")
-		return
 	}
 
 	if *dedupeAlbumsFlag {

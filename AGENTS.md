@@ -3,13 +3,10 @@
 ## 🚀 Overview & Repository Structure
 `my-music-lib` is a self-hosted, local-first music archival and curation engine written in Go and SQLite with a vanilla HTML5/CSS3/JS Web UI.
 
-- `main.go`: Entry point, CLI flag handlers (`-port`, `-import-spotify`, `-import-spotify-account`, `-import-apple-music`, `-sync-discogs`, `-dedupe-albums`), REST API routes (`/api/albums`, `/api/artists`, `/api/sync/discogs`, `/api/sync/status`, `/api/albums/dedupe`), and `DedupeAlbums`/`NormalizeAlbumTitle` merge logic.
+- `main.go`: Entry point, CLI flag handlers (`-port`, `-sync-discogs`, `-dedupe-albums`), REST API routes (`/api/albums`, `/api/artists`, `/api/sync/discogs`, `/api/sync/status`, `/api/albums/dedupe`), and `DedupeAlbums`/`NormalizeAlbumTitle` merge logic.
 - `db.go`: SQLite connection, WAL mode initialization, schema migration execution (`ensureColumn` helper for safe ALTER TABLE).
-- `schema.sql`: DDL for 1-to-1 canonical `albums`, `release_versions` (Discogs collection/wantlist pressings), `tracks`, `playlists`, `playlist_tracks`, and `search_fts` (FTS5 table). `playlists` and `tracks` carry `spotify_id` / `apple_music_id`; `playlist_tracks` carries `added_at`.
-- `importer.go`: Spotify CSV/Notion export parser linking imported tracks to canonical albums.
+- `schema.sql`: DDL for 1-to-1 canonical `albums`, `release_versions` (Discogs collection/wantlist pressings), `tracks`, `playlists`, `playlist_tracks`, and `search_fts` (FTS5 table). `playlists` and `tracks` carry `spotify_id` / `apple_music_id` columns (historical import data; no code writes them anymore).
 - `discogs.go`: Discogs collection (71 items) and wantlist (5,478 items) client with thread-safe live progress streaming (`GetSyncProgress`).
-- `spotify.go`: One-time Spotify account importer — OAuth Authorization Code flow, owned playlist + track pagination, album upsert, and `created_at` inference from earliest track `added_at`.
-- `apple_music.go`: Apple Music `Library.xml` export parser — XML stream decoder ingesting tracks, albums, ISRCs, and 37 playlists with YYYY-MM creation date inference.
 - `public/`: Static Web UI (`index.html`, `style.css`, `app.js`) branded as **Groovebox**.
 
 ---
@@ -30,13 +27,8 @@
    - `POST /api/sync/discogs` starts background syncs asynchronously.
    - `GET /api/sync/status` returns thread-safe progress metrics (*stage*, *current_page*, *total_pages*, *items_fetched*, *last_synced_at*). UI polls status continuously.
 
-3b. **Spotify Account Import (one-time, completed 2026-08-10):**
-   - `spotify.go` implements a single-run OAuth Authorization Code flow: spins up a local callback server on `http://127.0.0.1:8787/callback`, prints the authorize URL, exchanges the code for an access token, then paginates all owned playlists + tracks.
-   - Requires `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` (or legacy `SPOTIFY_TOKEN`) in environment. Redirect URI must be registered in Spotify Developer Dashboard.
-   - Followed/collaborative playlists not owned by the account are skipped (Spotify API 403).
-   - Playlist `created_at` is inferred from the earliest track `added_at` timestamp — Spotify does not expose playlist creation dates.
-   - **Result:** 76 playlists, 14,517 unique tracks, 19,607 playlist memberships imported. No refresh-token storage; command exits after single run.
-   - Explicitly decided against Playwright/Puppeteer scraping of `open.spotify.com` — fragile, against ToS; official API preferred.
+3b. **Spotify Account Import (one-time, completed 2026-08-10, code removed 2026-08-10):**
+   - A one-time OAuth Authorization Code import (`spotify.go`, since deleted) brought in 76 playlists, 14,517 unique tracks, and 19,607 playlist memberships. No refresh tokens were stored and the code never ran again after that import, so it was deleted along with the Apple Music (`apple_music.go`) and Spotify/Notion CSV (`importer.go`) one-off importers. The data they imported remains in `music.db`.
 
 4. **Albums API Filtering & Sorting:**
    - `GET /api/albums` supports `?filter=collection` (in_collection=1) and `?filter=wantlist` (in_wantlist=1).
@@ -64,9 +56,10 @@
    - Track curation controls across views (`+` Add to playlist modal, `✕` track removal). Manual positional re-ordering was intentionally removed — not a supported feature.
    - Live autocompletion combines local `search_fts` / `tracks` table lookup (`/api/autocomplete`) with Apple Music's free iTunes Search API (`/api/autocomplete/online`) to auto-fill title, artist, album, duration, and 300x300 high-res cover art.
 
-7. **Historical Shazam Ingestion & Track Cleanups:**
-   - Imported 30 historical Shazam tracks directly into monthly playlists (`2026-08`, `2026-07`, `2026-06`).
+7. **Historical Shazam Ingestion & Track Cleanups (one-time, completed 2026-08-10):**
+   - Imported 30 historical Shazam tracks directly into monthly playlists (`2026-08`, `2026-07`, `2026-06`) via an ad-hoc script never checked into this repo.
    - Deduplicated 602 redundant track records across identical albums and backfilled missing track durations via iTunes API.
+   - The `tracks.shazam_id` column and its index were dead code (never read/written by any code in this repo) and have been removed from `schema.sql` and `music.db`.
 
 8. **Album Deduplication (`DedupeAlbums`):**
    - Candidate pairs (same artist) qualify via matching `discogs_master_id` OR equal `NormalizeAlbumTitle` output — normalized title equality alone is sufficient merge evidence (do not additionally require track overlap; duplicate albums can have complementary, non-overlapping tracklists, e.g. a collection entry with only side-A tracks vs. a digital entry with only side-B tracks).
@@ -95,13 +88,6 @@ go run . -port 8080
 
 # Re-sync Discogs collection & wantlist into SQLite
 go run . -sync-discogs
-
-# Re-run Spotify CSV importer (updates historical dates)
-go run . -import-spotify /tmp/spotify_playlists
-
-# One-time Spotify account import (OAuth, requires SPOTIFY_CLIENT_ID + SPOTIFY_CLIENT_SECRET)
-# Register http://127.0.0.1:8787/callback in Spotify Developer Dashboard first
-go run . -import-spotify-account
 
 # Playwright Visual Regression Screenshot
 npx -y playwright screenshot http://localhost:8080 screenshot.png

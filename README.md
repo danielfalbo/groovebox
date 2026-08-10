@@ -1,6 +1,6 @@
 # 🎵 Groovebox
 
-A self-hosted, local-first music archival engine that consolidates physical media (Discogs collection & wantlist), streaming catalogs (Spotify, Apple Music), Shazam tags, and custom playlists into a single portable SQLite database with instant full-text search and a sleek mobile-first web interface.
+A self-hosted, local-first music archival engine that consolidates physical media (Discogs collection & wantlist) and custom playlists into a single portable SQLite database with instant full-text search and a sleek mobile-first web interface.
 
 ---
 
@@ -30,25 +30,6 @@ go build -o groovebox .
 ```bash
 ./groovebox -sync-discogs
 ```
-
-### 3. Import Spotify / Notion CSV Playlists
-```bash
-./groovebox -import-spotify /path/to/spotify_csv_folder
-```
-
-### 4. One-time Spotify Account Import
-```bash
-# ~/.zshenv must export SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET.
-# SPOTIFY_TOKEN is accepted as a legacy name for SPOTIFY_CLIENT_SECRET.
-./groovebox -import-spotify-account
-```
-
-### 5. Apple Music Library XML Import
-```bash
-./groovebox -import-apple-music /path/to/Library.xml
-```
-
-Register `http://127.0.0.1:8787/callback` as an exact redirect URI in Spotify Developer Dashboard. Command prints an authorization URL, imports playlists once after browser approval, then exits. Spotify does not expose playlist creation dates, so Groovebox uses earliest track addition date for playlist sorting. It does not store refresh tokens or schedule later imports.
 
 Access the UI locally at `http://localhost:8080`.
 
@@ -157,7 +138,7 @@ npx -y playwright screenshot http://localhost:8080 screenshot.png
 
 - **`albums`**: 1-to-1 canonical master release entities (`discogs_master_id`, title, artist, release year, cover image, `has_vinyl`/`in_collection`/`in_wantlist` flags).
 - **`release_versions`**: Specific Discogs physical pressings & digital entries (`album_id`, `discogs_release_id`, label, cat#, format, source).
-- **`tracks`**: Individual songs linked to canonical albums (title, artist, duration, Spotify ID, Shazam ID, ISRC).
+- **`tracks`**: Individual songs linked to canonical albums (title, artist, duration, Spotify ID, ISRC).
 - **`playlists`**: Internal playlists.
 - **`playlist_tracks`**: Ordered track mappings.
 - **`search_fts`**: FTS5 virtual table for fast searching.
