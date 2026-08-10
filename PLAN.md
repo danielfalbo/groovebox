@@ -53,24 +53,24 @@
 - [x] Downloaded 19 unique playlist CSV files directly from `danielfalbo/notion` via `gh api`.
 - [x] Ingested 2,780 tracks across 1,510 releases and 19 playlists into SQLite database `music.db`.
 
-### Step 3: Web UI Visualization & Search Engine (v0) ✅
-- [x] **HTTP Server (`main.go`):** Serves `index.html` static assets and JSON API endpoints (`/api/stats`, `/api/playlists`, `/api/search`).
+### Step 3: Web UI Visualization & Search Engine (v0 & v1 UI) ✅
+- [x] **HTTP Server (`main.go`):** Serves `index.html` static assets and JSON API endpoints (`/api/stats`, `/api/playlists`, `/api/tracks`, `/api/artists`, `/api/albums`, `/api/search`).
 - [x] **FTS5 Search Engine:** Enabled instant full-text search across titles, artists, and releases.
 - [x] **Sleek UI (`public/`):** Mobile-first glassmorphism Web UI built with HTML5, CSS3, and vanilla JS.
+- [x] **Collapsible Sidebar:** Smooth width animation toggle with `localStorage` state persistence.
+- [x] **Playlist Date & Sorting:** Displays formatted creation dates and supports sorting by Name (A-Z, Z-A) and Date (Newest/Oldest).
+- [x] **2x2 Grid Collage Covers:** Dynamic 2x2 collage generated for each playlist using up to 4 album artwork images.
+- [x] **Library Browsing:** Full view switching for All Songs (table), Artists (grid cards), and Albums (grid cards).
 
 ### Step 4: Apple Music & Other One-Off Imports ⬜
-- [ ] Apple Music `Library.xml` parser (`POST /api/import/apple-music`).
+- [ ] Apple Music `Library.xml` parser (`POST /api/import/apple-music`). Target file: `/Users/daniel/apple-music-library/Library.xml` (~7.4 MB).
 - [ ] Shazam CSV / Webhook importer.
 
-### Step 5: Apple Music & Other One-Off Imports ⬜
-- [ ] Apple Music `Library.xml` parser (`POST /api/import/apple-music`).
-- [ ] Shazam CSV / Webhook importer.
-
-### Step 6: Discogs Live Background Sync Engine (Deferred) ⬜
+### Step 5: Discogs Live Background Sync Engine (Deferred) ⬜
 - [ ] Implement Discogs client in Go (handling rate limits / 429 retries).
 - [ ] Add background ticker/worker to sync collection & wantlist into SQLite.
 
-### Step 7: Playlist Management & Mobile Polish ⬜
+### Step 6: Playlist Management & Mobile Polish ⬜
 - [ ] Complete internal playlist CRUD endpoints & UI modal/screens.
 - [ ] Final mobile usability testing & Tailscale deployment instructions.
 
@@ -81,15 +81,15 @@
 ### **Completed So Far:**
 - [x] **Step 1:** Core Go SQLite foundation initialized with pure Go driver (`modernc.org/sqlite`) & WAL mode in [`db.go`](file:///Users/daniel/my-music-lib/db.go). Full-Text Search table `search_fts` set up in [`schema.sql`](file:///Users/daniel/my-music-lib/schema.sql).
 - [x] **Step 2:** Notion Spotify CSV Importer built in [`importer.go`](file:///Users/daniel/my-music-lib/importer.go). Downloaded 19 playlist CSV files from `danielfalbo/notion` via `gh api` and ingested 2,780 tracks & 1,510 releases into `music.db`.
-- [x] **Step 3:** Blueprint Dark Mode Web UI (`bp5-dark`) in [`public/`](file:///Users/daniel/my-music-lib/public/) with sticky tracklist scrolling, instant FTS5 search endpoint (`GET /api/search`), playlist drawer (`GET /api/playlists`), and stats endpoint (`GET /api/stats`).
+- [x] **Step 3:** Blueprint Dark Mode Web UI (`bp5-dark`) in [`public/`](file:///Users/daniel/my-music-lib/public/) with collapsible sidebar, creation date sorting, 2x2 grid collage playlist covers, Library browsing by All Songs / Artists / Albums, FTS5 search (`GET /api/search`), and stats endpoint (`GET /api/stats`).
 - [x] **Step 4 (Docs):** [`README.md`](file:///Users/daniel/my-music-lib/README.md) written with local quickstart, Playwright screenshot test CLI command, and Tailscale Home Server deployment guide.
 
 ---
 
-### **🚀 Next Immediate Task for Next Agent: Step 5 (Apple Music Import)**
-- **Target File:** `~/apple-music-library/Library.xml` (~7.4 MB, present on local machine).
+### **🚀 Next Immediate Task for Next Agent: Step 4 (Apple Music Import)**
+- **Target File:** `/Users/daniel/apple-music-library/Library.xml` (~7.4 MB, present on local machine).
 - **Goal:** Implement `POST /api/import/apple-music` (or CLI flag `-import-apple-music <path>`) in Go.
-- **Details:** Parse tracks, artists, album releases, ISRCs, and play counts from Apple Music `Library.xml` and upsert into SQLite (`tracks` and `releases` tables).
+- **Details:** Parse tracks, artists, album releases, ISRCs, play counts, and playlists from Apple Music `Library.xml` and upsert into SQLite (`tracks` and `releases` tables).
 - **Subsequent Steps:** Shazam webhook (`POST /api/shazam`), Shazam CSV importer, and Discogs background sync.
 
 ### **🛠️ Useful Commands for Next Agent:**

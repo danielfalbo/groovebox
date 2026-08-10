@@ -10,6 +10,7 @@ A self-hosted, local-first music archival engine that consolidates physical medi
 - **Database:** SQLite via `modernc.org/sqlite` (Pure Go, CGO-free, portable single binary)
 - **Search Engine:** SQLite FTS5 (Porter stemmer + unicode61 tokenizer for instant full-text search)
 - **Frontend:** Vanilla HTML5 + CSS3 (Glassmorphism dark mode) + Vanilla JavaScript
+- **Features:** Collapsible sidebar, creation date playlist sorting, 2x2 grid collage playlist covers, Library view switching (All Songs, Artists, Albums grid)
 - **Networking:** Localhost & Tailscale VPN ready
 
 ---
@@ -31,6 +32,18 @@ go build -o music-vault .
 ```
 
 Access the UI locally at `http://localhost:8080`.
+
+---
+
+## 🔌 API Endpoints
+
+- `GET /api/stats` - Total tracks, releases, and playlists count.
+- `GET /api/playlists?sort=[date_desc|date_asc|name_asc|name_desc]` - List playlists with track counts, creation dates, and 4 cover art URLs.
+- `GET /api/playlists/:id` - Get tracks inside a specific playlist.
+- `GET /api/tracks` - Browse all songs in the library.
+- `GET /api/artists` - Browse all artists with track counts.
+- `GET /api/albums` - Browse all album releases with cover art.
+- `GET /api/search?q=:query` - Instant FTS5 full-text search across songs, artists, and releases.
 
 ---
 

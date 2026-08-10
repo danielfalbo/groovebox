@@ -16,6 +16,7 @@
     <!-- Blueprint Navbar Header -->
     <nav class="bp5-navbar bp5-dark navbar-custom">
       <div class="bp5-navbar-group bp5-align-left">
+        <button class="bp5-button bp5-minimal bp5-icon-menu sidebar-toggle-btn" id="sidebar-toggle-btn" onclick="toggleSidebar()" title="Toggle Playlists Sidebar"></button>
         <div class="bp5-navbar-heading brand-title">
           <span class="bp5-icon-standard bp5-icon-music logo-icon"></span>
           Music Vault
@@ -35,9 +36,29 @@
     <!-- App Body: Sidebar + Main Area -->
     <div class="app-body">
       <!-- Sidebar -->
-      <aside class="sidebar-panel">
+      <aside class="sidebar-panel" id="sidebar-panel">
+        <div class="sidebar-header">
+          <h5 class="bp5-heading text-muted">LIBRARY</h5>
+        </div>
+        <div class="bp5-menu library-menu">
+          <a class="bp5-menu-item bp5-icon-music nav-item-btn" id="nav-all-songs" onclick="showAllSongs()">All Songs</a>
+          <a class="bp5-menu-item bp5-icon-user nav-item-btn" id="nav-artists" onclick="showArtists()">Artists</a>
+          <a class="bp5-menu-item bp5-icon-record nav-item-btn" id="nav-albums" onclick="showAlbums()">Albums</a>
+        </div>
+        <div class="bp5-navbar-divider sidebar-divider"></div>
         <div class="sidebar-header">
           <h5 class="bp5-heading text-muted">PLAYLISTS</h5>
+          <div class="sidebar-header-actions">
+            <div class="bp5-select bp5-minimal bp5-small">
+              <select id="playlist-sort-select" onchange="handleSortChange(this.value)" title="Sort Playlists">
+                <option value="name_asc">Name (A-Z)</option>
+                <option value="name_desc">Name (Z-A)</option>
+                <option value="date_desc" selected>Newest First</option>
+                <option value="date_asc">Oldest First</option>
+              </select>
+            </div>
+            <button class="bp5-button bp5-minimal bp5-small bp5-icon-double-chevron-left collapse-btn" onclick="toggleSidebar()" title="Collapse sidebar"></button>
+          </div>
         </div>
         <div class="bp5-menu playlist-menu" id="sidebar-playlists">
           <!-- Dynamically populated -->
@@ -77,8 +98,13 @@
           <p class="bp5-text-muted" id="view-subtitle">Select a playlist or search your archive.</p>
         </div>
 
+        <!-- Grid View Container (for Artists & Albums) -->
+        <div class="grid-container" id="grid-container" style="display: none;">
+          <!-- Dynamically populated cards -->
+        </div>
+
         <!-- Blueprint HTML Table -->
-        <div class="table-container bp5-card bp5-elevation-1">
+        <div class="table-container bp5-card bp5-elevation-1" id="table-container">
           <table class="bp5-html-table bp5-html-table-striped bp5-interactive bp5-compact full-width-table">
             <thead>
               <tr>
