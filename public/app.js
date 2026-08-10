@@ -694,13 +694,27 @@ async function triggerDiscogsSync() {
 
 async function selectPlaylist(id, name, description, elem) {
   clearNavActive();
+  currentSectionView = 'playlist';
+  hideSectionFilter();
   if (elem) elem.classList.add('bp5-active');
 
   document.getElementById('view-title').textContent = name;
   document.getElementById('view-subtitle').textContent = description || 'Playlist tracks';
-  
+
   document.getElementById('grid-container').style.display = 'none';
   document.getElementById('table-container').style.display = 'block';
+
+  const tbody = document.getElementById('tracklist-body');
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="5" style="text-align: center; padding: 32px;">
+        <div class="bp5-spinner bp5-intent-primary bp5-small" style="margin: 0 auto;">
+          <div class="bp5-spinner-head"></div>
+        </div>
+        <div class="bp5-text-muted" style="margin-top: 8px; font-size: 12px;">Loading playlist...</div>
+      </td>
+    </tr>
+  `;
 
   try {
     const res = await fetch(`/api/playlists/${id}`);
@@ -708,6 +722,7 @@ async function selectPlaylist(id, name, description, elem) {
     renderTracks(tracks);
   } catch (err) {
     console.error('Failed to load playlist tracks:', err);
+    tbody.innerHTML = '<tr><td colspan="5" class="bp5-text-muted" style="text-align: center; padding: 24px;">Failed to load playlist</td></tr>';
   }
 }
 
