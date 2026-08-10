@@ -38,10 +38,12 @@
    - **Result:** 76 playlists, 14,517 unique tracks, 19,607 playlist memberships imported. No refresh-token storage; command exits after single run.
    - Explicitly decided against Playwright/Puppeteer scraping of `open.spotify.com` — fragile, against ToS; official API preferred.
 
-4. **Albums API Filtering:**
-   - `GET /api/albums` supports `?filter=collection` (has_vinyl=1) and `?filter=wantlist` (in_wantlist=1).
+4. **Albums API Filtering & Sorting:**
+   - `GET /api/albums` supports `?filter=collection` (in_collection=1) and `?filter=wantlist` (in_wantlist=1).
+   - `?filter=collection` sorts by `albums.collection_added_at` (Discogs' `date_added`, captured per collection item during sync) descending, newest first; albums without a recorded date sort last. Other filters keep alphabetical (`title ASC`) order.
    - `GET /api/albums/counts` returns `{all, collection, wantlist}` counts for pill badge display.
-   - Limit raised to 5000 records (wantlist is ~715 items).
+   - Limit raised to 5000 records (wantlist is ~5,491 items).
+   - `has_vinyl` (on both `albums` and `release_versions`) means "owned as physical vinyl" — it must only be set when `source == "collection"`. Do not set it for wantlist-sourced vinyl formats; that previously caused wantlist-only albums to show a "Collection"/vinyl badge instead of "Wantlist" (fixed in `discogs.go`'s `processDiscogsItem`, with a self-healing recompute in `db.go`'s `initDB`).
 
 5. **Web UI & Aesthetics (Groovebox):**
    - Uses Blueprint dark theme CSS (`bp5-dark`) with custom dark mode tweaks (`#111418` background).
@@ -58,8 +60,8 @@
    - **Icon button pattern**: `.spotify-icon-btn`, `.youtube-icon-btn`, `.discogs-icon-btn`, `.playlist-act-btn` — all 28px circle buttons with brand-colored SVG icons and hover background. See `style.css` for reference.
 
 6. **Playlist CRUD & Curation + Live Global Autocomplete:**
-   - Full REST endpoints in `main.go`: `POST/PUT/DELETE /api/playlists`, `POST/DELETE /api/playlists/:id/tracks`, `POST /api/playlists/:id/tracks/reorder`, `POST /api/tracks`, `GET /api/autocomplete`, `GET /api/autocomplete/online`.
-   - Track curation controls across views (`+` Add to playlist modal, `▲`/`▼` positional re-ordering, `✕` track removal).
+   - Full REST endpoints in `main.go`: `POST/PUT/DELETE /api/playlists`, `POST/DELETE /api/playlists/:id/tracks`, `POST /api/tracks`, `GET /api/autocomplete`, `GET /api/autocomplete/online`.
+   - Track curation controls across views (`+` Add to playlist modal, `✕` track removal). Manual positional re-ordering was intentionally removed — not a supported feature.
    - Live autocompletion combines local `search_fts` / `tracks` table lookup (`/api/autocomplete`) with Apple Music's free iTunes Search API (`/api/autocomplete/online`) to auto-fill title, artist, album, duration, and 300x300 high-res cover art.
 
 7. **Historical Shazam Ingestion & Track Cleanups:**
@@ -69,6 +71,20 @@
 8. **Album Deduplication (`DedupeAlbums`):**
    - Candidate pairs (same artist) qualify via matching `discogs_master_id` OR equal `NormalizeAlbumTitle` output — normalized title equality alone is sufficient merge evidence (do not additionally require track overlap; duplicate albums can have complementary, non-overlapping tracklists, e.g. a collection entry with only side-A tracks vs. a digital entry with only side-B tracks).
    - Merges reassign the secondary album's `release_versions` and `tracks` onto the canonical album; never insert a placeholder `release_versions` row for the deleted secondary album — the Discogs Pressings table (`public/app.js`) renders every `release_versions` row as a real pressing, so synthetic rows show up as fake "Discogs Pressing" noise.
+
+9. **Client-Side URL Routing:**
+   - `public/app.js` implements a small router (`pushURL`/`replaceURL`/`renderFromLocation`) over the History API — every view (`/albums`, `/albums/:id`, `/artists`, `/artists/:name`, `/songs`, `/playlists/:id`, `/search`) maps to a shareable URL, and the browser back/forward buttons work via a `popstate` listener.
+   - `main.go`'s `/` handler falls back to serving `public/index.html` for any non-`/api/` path that isn't a real static file, so deep links and page refreshes on client-side routes work.
+   - Live-typing filters/search use `replaceState` (no history spam per keystroke); genuine navigations (clicking an album, artist, or playlist) use `pushState`.
+
+## 🚫 Non-Goals
+
+- **Local audio playback / streaming**: out of scope — this is an archival/indexing tool, not a player. Do not add playback UI.
+- **Discogs OAuth login UI**: no in-app Discogs authentication flow; sync continues to use a token from `.env` / `../discogs-albums/.env`.
+
+## 💡 Future Ideas (not started)
+
+- **Format & Genre Sub-Filters**: additional pill filters for media format (Vinyl LP, CD, Digital) and master genres within the Collection/Wantlist views.
 
 
 ## 🛠️ Essential Commands

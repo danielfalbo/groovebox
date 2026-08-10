@@ -64,14 +64,13 @@ Access the UI locally at `http://localhost:8080`.
 - `DELETE /api/playlists/:id` - Delete playlist and its track associations.
 - `POST /api/playlists/:id/tracks` - Add track (`{track_id}`) to playlist.
 - `DELETE /api/playlists/:id/tracks?position=X` - Remove track at position `X` from playlist.
-- `POST /api/playlists/:id/tracks/reorder` - Re-order tracks (`{track_ids: [...]}`).
 - `GET /api/tracks` - Browse all songs in the library.
 - `POST /api/tracks` - Add a new song to library (`{title, artist, album_title, duration_ms, spotify_id, cover_image_url}`).
 - `GET /api/autocomplete` - Local database track/artist autocomplete.
 - `GET /api/autocomplete/online` - Live global iTunes API autocomplete for auto-filling metadata & cover art.
 - `GET /api/artists` - Browse all artists (aggregating albums & tracks) with cover art avatars.
 - `GET /api/artists/:name` - Get dedicated artist detail view with albums grid & tracks.
-- `GET /api/albums?filter=[collection|wantlist]&q=:query` - Browse canonical master albums. Optional filter by `collection` (in_collection=1, owned in Discogs) or `wantlist` (in_wantlist=1). Optional `q` searches title/artist.
+- `GET /api/albums?filter=[collection|wantlist]&q=:query` - Browse canonical master albums. Optional filter by `collection` (in_collection=1, owned in Discogs; sorted by most-recently-added-to-collection first) or `wantlist` (in_wantlist=1). Optional `q` searches title/artist.
 - `GET /api/albums/counts` - Get `{all, collection, wantlist}` album counts for UI badge display.
 - `GET /api/albums/:id` - Get dedicated album detail view (Discogs pressings table with thumbnails & tracklist).
 - `GET /api/search?q=:query` - Instant FTS5 full-text search across songs, artists, and releases.
