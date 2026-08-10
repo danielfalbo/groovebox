@@ -54,6 +54,7 @@ Access the UI locally at `http://localhost:8080`.
 - `GET /api/search?q=:query` - Instant FTS5 full-text search across songs, artists, and releases.
 - `POST /api/sync/discogs` - Trigger async Discogs collection & wantlist sync.
 - `GET /api/sync/status` - Thread-safe live progress streaming (*stage*, *current_page*, *total_pages*, *items_fetched*, *last_synced_at*).
+- `POST /api/sync/spotify` *(planned, not yet implemented)* - Trigger async sync of the user's live Spotify account playlists via the official Spotify Web API (OAuth), distinct from the existing static CSV importer. See `PLAN.md` roadmap.
 
 ---
 

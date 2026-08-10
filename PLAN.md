@@ -52,6 +52,11 @@ These were part of the original V1 scope and were never completed — they dropp
 - [ ] **Shazam Ingestion**: `POST /api/shazam` webhook for instant tag capture (designed for iOS Shortcuts integration, offline queuing/batch flush over Tailscale) plus a Shazam CSV importer for historical tags.
 - [ ] **Playlist Management CRUD**: Full create/edit/delete/reorder endpoints and UI/modal for internal playlists (currently only Spotify-imported playlists exist; no way to manage playlists from the app itself).
 - [ ] **Mobile Polish & Tailscale Deployment**: Final mobile usability pass and documented Tailscale home-server deployment instructions.
+- [ ] **Live Spotify Playlist Sync**: New capability (not previously scoped) to pull the user's *current* Spotify account playlists directly via the official Spotify Web API — distinct from the existing `importer.go`, which only parses a static historical Notion/CSV export. Requires:
+  - OAuth Authorization Code flow (`playlist-read-private`, `playlist-read-collaborative` scopes) using a Client ID/Secret registered at the Spotify Developer Dashboard, with a refresh token stored in `.env` (same pattern as `DISCOGS_TOKEN`).
+  - New `spotify.go` client mirroring `discogs.go`'s thread-safe live-progress-streaming sync pattern, paginating `GET /me/playlists` and `GET /playlists/{id}/tracks`, mapped into the existing `playlists`/`playlist_tracks`/`tracks` schema.
+  - New `POST /api/sync/spotify` endpoint + `-sync-spotify` CLI flag, following the same conventions as the Discogs sync trigger.
+  - Decided against Playwright/Puppeteer scraping of `open.spotify.com` for this — fragile against DOM changes, against Spotify's ToS, and the official Web API is free for personal-use apps and returns clean structured data with stable IDs.
 
 ---
 

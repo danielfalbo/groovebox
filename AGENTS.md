@@ -28,6 +28,12 @@
    - `POST /api/sync/discogs` starts background syncs asynchronously.
    - `GET /api/sync/status` returns thread-safe progress metrics (*stage*, *current_page*, *total_pages*, *items_fetched*, *last_synced_at*). UI polls status continuously.
 
+3b. **Planned: Live Spotify Playlist Sync (not yet implemented):**
+   - `importer.go` today only parses a static historical Notion/CSV export — it has no live connection to a Spotify account.
+   - Pulling a user's *current* Spotify playlists requires the official Spotify Web API via OAuth (Authorization Code flow, `playlist-read-private`/`playlist-read-collaborative` scopes), with a Client ID/Secret from the Spotify Developer Dashboard and a refresh token stored in `.env` (mirroring `DISCOGS_TOKEN`).
+   - Planned implementation: new `spotify.go` mirroring `discogs.go`'s async sync + live-progress pattern, triggered via `POST /api/sync/spotify` / `-sync-spotify` CLI flag.
+   - Explicitly decided against Playwright/Puppeteer scraping of `open.spotify.com` for this — fragile, against ToS; the official API is free for personal use and preferred. See `PLAN.md` roadmap.
+
 4. **Albums API Filtering:**
    - `GET /api/albums` supports `?filter=collection` (has_vinyl=1) and `?filter=wantlist` (in_wantlist=1).
    - `GET /api/albums/counts` returns `{all, collection, wantlist}` counts for pill badge display.
