@@ -771,9 +771,11 @@ function renderTracks(tracks) {
     return;
   }
 
+  const fallbackCover = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36'%3E%3Crect width='36' height='36' fill='%23252a31' rx='3'/%3E%3Cpath fill='%23738091' d='M14 24v-8l8-2v8.5a2 2 0 1 1-2-1.9V17l-4 1v6.5A2 2 0 1 1 14 24z'/%3E%3C/svg%3E`;
+
   tracks.forEach((t, i) => {
     const tr = document.createElement('tr');
-    const coverUrl = t.cover_image_url || 'https://via.placeholder.com/36';
+    const coverUrl = t.cover_image_url || fallbackCover;
     const duration = formatDuration(t.duration_ms);
     const ytBtn = `<a href="https://www.youtube.com/results?search_query=${encodeURIComponent((t.artist || '') + ' ' + t.title)}" target="_blank" class="bp5-button bp5-minimal bp5-small youtube-icon-btn" title="Search on YouTube"><svg class="youtube-svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></a>`;
     const spotifyBtn = t.spotify_id 
@@ -784,7 +786,7 @@ function renderTracks(tracks) {
       <td>${i + 1}</td>
       <td>
         <div class="track-meta">
-          <img class="cover-art-small" src="${coverUrl}" alt="art" onerror="this.src='https://via.placeholder.com/36'">
+          <img class="cover-art-small" src="${coverUrl}" alt="art" onerror="this.onerror=null;this.src='${fallbackCover}'">
           <div>
             <div class="track-title-text">${t.title}</div>
             <div class="track-artist-text">${t.artist}</div>
