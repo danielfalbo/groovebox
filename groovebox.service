@@ -1,0 +1,18 @@
+[Unit]
+Description=Groovebox Music Archival System
+After=network.target
+
+[Service]
+Type=simple
+User=me
+Group=me
+WorkingDirectory=/home/me/groovebox
+ExecStart=/home/me/groovebox/groovebox -port 3000 -db /home/me/groovebox/music.db
+# If present, reads DISCOGS_TOKEN for collection/wantlist sync:
+#   echo 'DISCOGS_TOKEN=...' > /home/me/groovebox/.env
+EnvironmentFile=-/home/me/groovebox/.env
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
