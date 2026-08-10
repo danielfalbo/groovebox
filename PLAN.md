@@ -76,7 +76,30 @@
 
 ---
 
-## 📌 Current Status
-**Phase:** Step 4 Apple Music & One-Off Imports
-**Completed:** Core SQLite DB, Notion Spotify CSV Importer (19 playlists / 2,780 tracks), Blueprint Dark Web UI v0 with sticky table scrolling, and Tailscale deployment docs.
-**Next Immediate Action:** Build Apple Music `Library.xml` parser (`POST /api/import/apple-music`).
+## 📌 Current Status & Handoff Notes for Next Agent
+
+### **Completed So Far:**
+- [x] **Step 1:** Core Go SQLite foundation initialized with pure Go driver (`modernc.org/sqlite`) & WAL mode in [`db.go`](file:///Users/daniel/my-music-lib/db.go). Full-Text Search table `search_fts` set up in [`schema.sql`](file:///Users/daniel/my-music-lib/schema.sql).
+- [x] **Step 2:** Notion Spotify CSV Importer built in [`importer.go`](file:///Users/daniel/my-music-lib/importer.go). Downloaded 19 playlist CSV files from `danielfalbo/notion` via `gh api` and ingested 2,780 tracks & 1,510 releases into `music.db`.
+- [x] **Step 3:** Blueprint Dark Mode Web UI (`bp5-dark`) in [`public/`](file:///Users/daniel/my-music-lib/public/) with sticky tracklist scrolling, instant FTS5 search endpoint (`GET /api/search`), playlist drawer (`GET /api/playlists`), and stats endpoint (`GET /api/stats`).
+- [x] **Step 4 (Docs):** [`README.md`](file:///Users/daniel/my-music-lib/README.md) written with local quickstart, Playwright screenshot test CLI command, and Tailscale Home Server deployment guide.
+
+---
+
+### **🚀 Next Immediate Task for Next Agent: Step 5 (Apple Music Import)**
+- **Target File:** `~/apple-music-library/Library.xml` (~7.4 MB, present on local machine).
+- **Goal:** Implement `POST /api/import/apple-music` (or CLI flag `-import-apple-music <path>`) in Go.
+- **Details:** Parse tracks, artists, album releases, ISRCs, and play counts from Apple Music `Library.xml` and upsert into SQLite (`tracks` and `releases` tables).
+- **Subsequent Steps:** Shazam webhook (`POST /api/shazam`), Shazam CSV importer, and Discogs background sync.
+
+### **🛠️ Useful Commands for Next Agent:**
+```bash
+# Run server locally
+go run . -port 8080
+
+# Re-run Spotify importer if needed
+go run . -import-spotify /tmp/spotify_playlists
+
+# Run Playwright visual test
+npx -y playwright screenshot http://localhost:8080 screenshot.png
+```
