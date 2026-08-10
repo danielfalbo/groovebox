@@ -59,12 +59,12 @@ These were part of the original V1 scope and were never completed — they dropp
 
 - [x] **Apple Music Import** *(completed 2026-08-10)*: Integrated XML parser (`apple_music.go`) and CLI flag `-import-apple-music <path>`. Imported 3,556 tracks, 1,888 new albums, and 35 playlists from `/Users/daniel/apple-music-library/Library.xml` into SQLite. Track ISRCs and titles matched against existing catalog.
 - [x] **Historical Shazam Screenshot Import** *(completed 2026-08-10)*: OCR/extracted 30 recent Shazam history screenshots from `/Users/daniel/Downloads/shazam` and auto-populated corresponding monthly playlists (`2026-08`, `2026-07`, `2026-06`).
-- [ ] **Future Shazam-like Ingestion & Offline Mobile Sync**:
+- [ ] **Future Shazam-like Ingestion & Offline Sync**:
   - **`POST /api/shazam` API Handler**: Receives Shazam tag metadata (`artist`, `title`, `timestamp`). Automatically resolves/creates the target monthly playlist (`YYYY-MM`), fetches iTunes high-res cover art, and links the track.
-  - **iOS Shortcut with Offline iCloud Queueing**:
-    - Triggerable via iPhone Action Button / Back Tap or Shazam action.
-    - Sends `POST http://<tailscale-ip>:8080/api/shazam`.
-    - **Offline/Tailscale Unreachable Fallback**: When network calls fail, appends tag JSON to local file `iCloud Drive/Shortcuts/Groovebox/pending_shazams.json`. Automatically flushes pending items on next successful connection.
+  - **iOS Shortcut Sync with Tailscale Queueing**:
+    - *Note on iOS Shazam*: Shazam requires an internet/cellular connection to identify audio fingerprints online.
+    - *Tailscale Unreachable Fallback*: If the user is on cellular/Wi-Fi away from home without active Tailscale routing, the iOS Shortcut catches the HTTP failure and appends identified track payloads to `iCloud Drive/Shortcuts/Groovebox/pending_shazams.json`. Automatically flushes pending items to Groovebox once connected to Tailscale.
+
 
 
 ---
