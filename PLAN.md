@@ -45,6 +45,11 @@
 - [x] **Unified SVG Fallback Cover Art**: Integrated standard inline SVG vinyl fallback image (`fallbackCover`) across album cards, playlist collages, and pressing thumbnails with `onerror` safety to eliminate broken image icons and layout flicker.
 - [x] **Discogs & Qobuz Search Buttons**: Added action buttons to the Pressings section header on Album Detail pages to open Discogs Master releases (`https://www.discogs.com/master/:id`), search Discogs (`https://www.discogs.com/search/?q=...&type=master`), and search the Qobuz Download Store (`https://www.qobuz.com/gb-en/search/albums/...`).
 - [x] **One-time Spotify Account Import** *(completed 2026-08-10)*: Imported 76 owned playlists (19,607 track memberships, 14,517 unique tracks) directly from Spotify Web API via OAuth Authorization Code flow (`-import-spotify-account` CLI flag). Earliest track `added_at` used as playlist `created_at` proxy for sort ordering. Followed/external playlists skipped per Spotify API rules. No refresh-token storage or recurring sync.
+- [x] **Playlist Management CRUD & Curation**:
+  - Full REST endpoints (`POST/PUT/DELETE /api/playlists`, `POST/DELETE /api/playlists/:id/tracks`, `POST /api/playlists/:id/tracks/reorder`).
+  - Interactive UI modal dialogs to create/edit playlists and select target playlists for adding tracks.
+  - Track-level curation controls (Add to playlist `+` button across tracklists, Move Up `▲` / Move Down `▼` reordering, and Remove `✕` buttons in playlist view).
+  - Sidebar `+` button to create new internal playlists and header edit/delete banner actions.
 
 ---
 
@@ -54,7 +59,6 @@ These were part of the original V1 scope and were never completed — they dropp
 
 - [ ] **Apple Music Import**: Parser for `Library.xml` (`POST /api/import/apple-music` or `-import-apple-music <path>` CLI flag) to ingest tracks, artists, album releases, ISRCs, play counts, and playlists. Target file: `/Users/daniel/apple-music-library/Library.xml` (~7.4 MB).
 - [ ] **Shazam Ingestion**: `POST /api/shazam` webhook for instant tag capture (designed for iOS Shortcuts integration, offline queuing/batch flush over Tailscale) plus a Shazam CSV importer for historical tags.
-- [ ] **Playlist Management CRUD**: Full create/edit/delete/reorder endpoints and UI/modal for internal playlists (currently only Spotify-imported playlists exist; no way to manage playlists from the app itself).
 - [ ] **Mobile Polish & Tailscale Deployment**: Final mobile usability pass and documented Tailscale home-server deployment instructions.
 
 ---

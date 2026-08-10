@@ -53,8 +53,17 @@ Access the UI locally at `http://localhost:8080`.
 
 - `GET /api/stats` - Total tracks, canonical albums, and playlists count.
 - `GET /api/playlists?sort=[date_desc|date_asc|name_asc|name_desc]` - List playlists with track counts, creation dates, and 4 cover art URLs.
+- `POST /api/playlists` - Create new internal playlist (`{name, description}`).
 - `GET /api/playlists/:id` - Get tracks inside a specific playlist.
+- `PUT /api/playlists/:id` - Update playlist title and description.
+- `DELETE /api/playlists/:id` - Delete playlist and its track associations.
+- `POST /api/playlists/:id/tracks` - Add track (`{track_id}`) to playlist.
+- `DELETE /api/playlists/:id/tracks?position=X` - Remove track at position `X` from playlist.
+- `POST /api/playlists/:id/tracks/reorder` - Re-order tracks (`{track_ids: [...]}`).
 - `GET /api/tracks` - Browse all songs in the library.
+- `POST /api/tracks` - Add a new song to library (`{title, artist, album_title, duration_ms, spotify_id, cover_image_url}`).
+- `GET /api/autocomplete` - Local database track/artist autocomplete.
+- `GET /api/autocomplete/online` - Live global iTunes API autocomplete for auto-filling metadata & cover art.
 - `GET /api/artists` - Browse all artists (aggregating albums & tracks) with cover art avatars.
 - `GET /api/artists/:name` - Get dedicated artist detail view with albums grid & tracks.
 - `GET /api/albums?filter=[collection|wantlist]` - Browse canonical master albums. Optional filter by `collection` (has_vinyl=1) or `wantlist` (in_wantlist=1).

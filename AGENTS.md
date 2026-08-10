@@ -54,9 +54,12 @@
    - Solid SVG fallback cover art (`fallbackCover`) used consistently across all album cards, playlist thumbnails, and pressing images to eliminate image broken state/flicker.
    - Pressings section header includes action buttons to open/search master releases on Discogs (`https://www.discogs.com/search/?q=...&type=master`) and Qobuz Download Store (`https://www.qobuz.com/gb-en/search/albums/...`).
    - Sidebar collapse state stored in `localStorage` (`sidebar-collapsed`).
-   - **Icon button pattern**: `.spotify-icon-btn`, `.youtube-icon-btn`, `.discogs-icon-btn` — all 28px circle buttons with brand-colored SVG icons and hover background. See `style.css` for `.spotify-icon-btn` / `.youtube-icon-btn` as the reference to follow for adding new icon buttons.
+   - **Icon button pattern**: `.spotify-icon-btn`, `.youtube-icon-btn`, `.discogs-icon-btn`, `.playlist-act-btn` — all 28px circle buttons with brand-colored SVG icons and hover background. See `style.css` for reference.
 
----
+6. **Playlist CRUD & Curation + Live Global Autocomplete:**
+   - Full REST endpoints in `main.go`: `POST/PUT/DELETE /api/playlists`, `POST/DELETE /api/playlists/:id/tracks`, `POST /api/playlists/:id/tracks/reorder`, `POST /api/tracks`, `GET /api/autocomplete`, `GET /api/autocomplete/online`.
+   - Track curation controls across views (`+` Add to playlist modal, `▲`/`▼` positional re-ordering, `✕` track removal).
+   - Live autocompletion combines local `search_fts` / `tracks` table lookup (`/api/autocomplete`) with Apple Music's free iTunes Search API (`/api/autocomplete/online`) to auto-fill title, artist, album, duration, and 300x300 high-res cover art.
 
 ## 🛠️ Essential Commands
 

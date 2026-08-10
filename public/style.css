@@ -771,3 +771,124 @@ html, body {
   background-color: rgba(43, 149, 214, 0.12) !important;
 }
 
+/* Playlist Action Icon Buttons */
+.playlist-act-btn {
+  padding: 4px 6px !important;
+  min-width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
+  color: #8f99a8 !important;
+  transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease !important;
+}
+
+.playlist-act-btn:hover {
+  color: #2b95d6 !important;
+  background-color: rgba(43, 149, 214, 0.15) !important;
+  transform: scale(1.1);
+}
+
+.playlist-act-btn.danger:hover {
+  color: #db3737 !important;
+  background-color: rgba(219, 55, 55, 0.15) !important;
+}
+
+/* Modals & Backdrop */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(16, 22, 26, 0.75);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-dialog {
+  background-color: #1c2127 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  width: 440px;
+  max-width: 90vw;
+}
+
+.custom-dialog .bp5-dialog-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 12px 16px;
+  background: #181d24;
+}
+
+.custom-dialog .bp5-dialog-body {
+  padding: 16px;
+}
+
+.custom-dialog .bp5-dialog-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 12px 16px;
+  background: #181d24;
+}
+
+.playlist-select-list {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.playlist-select-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.playlist-select-item:hover {
+  background-color: rgba(43, 149, 214, 0.15);
+}
+
+.autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: #252a31;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+  z-index: 1100;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+.autocomplete-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background-color 0.12s ease;
+}
+
+.autocomplete-item:last-child {
+  border-bottom: none;
+}
+
+.autocomplete-item:hover {
+  background-color: rgba(43, 149, 214, 0.25);
+}
+
+.auto-title-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f5f8fa;
+}
+
+.auto-meta-text {
+  font-size: 11px;
+  color: #8f99a8;
+}
+
+

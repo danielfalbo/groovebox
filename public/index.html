@@ -31,6 +31,7 @@
       </div>
 
       <div class="bp5-navbar-group bp5-align-right search-container">
+        <button class="bp5-button bp5-intent-primary bp5-small bp5-icon-plus" onclick="openAddTrackModal()">Add Song</button>
         <div class="bp5-input-group bp5-round">
           <span class="bp5-icon bp5-icon-search"></span>
           <input type="text" class="bp5-input" id="search-input" placeholder="Search tracks, artists, albums..." oninput="handleSearch(this.value)" />
@@ -79,6 +80,7 @@
         <div class="sidebar-header">
           <h5 class="bp5-heading text-muted">PLAYLISTS</h5>
           <div class="sidebar-header-actions">
+            <button class="bp5-button bp5-minimal bp5-small bp5-icon-plus" onclick="openCreatePlaylistModal()" title="Create New Playlist"></button>
             <div class="bp5-select bp5-minimal bp5-small">
               <select id="playlist-sort-select" onchange="handleSortChange(this.value)" title="Sort Playlists">
                 <option value="name_asc">Name (A-Z)</option>
@@ -144,7 +146,7 @@
                 <th>Track / Artist</th>
                 <th>Album</th>
                 <th style="width: 100px;">Duration</th>
-                <th style="width: 100px; text-align: right;">Action</th>
+                <th style="width: 140px; text-align: right;">Action</th>
               </tr>
             </thead>
             <tbody id="tracklist-body">
@@ -153,6 +155,95 @@
           </table>
         </div>
       </main>
+    </div>
+  </div>
+
+  <!-- Modal: Create / Edit Playlist -->
+  <div class="bp5-dialog-container modal-backdrop" id="playlist-modal" style="display: none;">
+    <div class="bp5-dialog custom-dialog">
+      <div class="bp5-dialog-header">
+        <h4 class="bp5-heading" id="playlist-modal-title">Create New Playlist</h4>
+        <button class="bp5-button bp5-minimal bp5-icon-cross" onclick="closePlaylistModal()"></button>
+      </div>
+      <div class="bp5-dialog-body">
+        <div class="bp5-form-group">
+          <label class="bp5-label" for="playlist-name-input">Playlist Name <span class="bp5-text-muted">*</span></label>
+          <input class="bp5-input bp5-fill" id="playlist-name-input" type="text" placeholder="e.g. Late Night Jazz & Beats" />
+        </div>
+        <div class="bp5-form-group">
+          <label class="bp5-label" for="playlist-desc-input">Description</label>
+          <textarea class="bp5-input bp5-fill" id="playlist-desc-input" rows="3" placeholder="Optional notes or mood description..."></textarea>
+        </div>
+      </div>
+      <div class="bp5-dialog-footer">
+        <div class="bp5-dialog-footer-actions">
+          <button class="bp5-button bp5-minimal" onclick="closePlaylistModal()">Cancel</button>
+          <button class="bp5-button bp5-intent-primary" id="playlist-modal-submit-btn" onclick="submitPlaylistForm()">Save Playlist</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add Track to Playlist -->
+  <div class="bp5-dialog-container modal-backdrop" id="add-to-playlist-modal" style="display: none;">
+    <div class="bp5-dialog custom-dialog">
+      <div class="bp5-dialog-header">
+        <h4 class="bp5-heading">Add Track to Playlist</h4>
+        <button class="bp5-button bp5-minimal bp5-icon-cross" onclick="closeAddToPlaylistModal()"></button>
+      </div>
+      <div class="bp5-dialog-body">
+        <p class="bp5-text-muted" id="add-to-playlist-track-info" style="font-size: 13px; margin-bottom: 12px;"></p>
+        <div class="bp5-menu playlist-select-list" id="add-to-playlist-list">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+      <div class="bp5-dialog-footer">
+        <div class="bp5-dialog-footer-actions">
+          <button class="bp5-button bp5-minimal" onclick="closeAddToPlaylistModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add Track to Library -->
+  <div class="bp5-dialog-container modal-backdrop" id="add-track-modal" style="display: none;">
+    <div class="bp5-dialog custom-dialog">
+      <div class="bp5-dialog-header">
+        <h4 class="bp5-heading">Add Song to Library</h4>
+        <button class="bp5-button bp5-minimal bp5-icon-cross" onclick="closeAddTrackModal()"></button>
+      </div>
+      <div class="bp5-dialog-body">
+        <div class="bp5-form-group" style="position: relative;">
+          <label class="bp5-label" for="track-title-input">Song Title <span class="bp5-text-muted">*</span></label>
+          <input class="bp5-input bp5-fill" id="track-title-input" type="text" placeholder="e.g. Midnight City" autocomplete="off" oninput="handleTrackTitleAutocomplete(this.value)" />
+          <div class="autocomplete-dropdown" id="track-title-suggestions" style="display: none;"></div>
+        </div>
+        <div class="bp5-form-group">
+          <label class="bp5-label" for="track-artist-input">Artist Name</label>
+          <input class="bp5-input bp5-fill" id="track-artist-input" type="text" placeholder="e.g. M83" />
+        </div>
+        <div class="bp5-form-group">
+          <label class="bp5-label" for="track-album-input">Album Name</label>
+          <input class="bp5-input bp5-fill" id="track-album-input" type="text" placeholder="e.g. Hurry Up, We're Dreaming" />
+        </div>
+        <input type="hidden" id="track-cover-input" value="" />
+        <div style="display: flex; gap: 12px;">
+          <div class="bp5-form-group" style="flex: 1;">
+            <label class="bp5-label" for="track-duration-input">Duration (mm:ss)</label>
+            <input class="bp5-input bp5-fill" id="track-duration-input" type="text" placeholder="e.g. 4:03" />
+          </div>
+          <div class="bp5-form-group" style="flex: 1;">
+            <label class="bp5-label" for="track-spotify-input">Spotify ID (Optional)</label>
+            <input class="bp5-input bp5-fill" id="track-spotify-input" type="text" placeholder="e.g. 6RUKvImX4v8iY2vFhL9M3k" />
+          </div>
+        </div>
+      </div>
+      <div class="bp5-dialog-footer">
+        <div class="bp5-dialog-footer-actions">
+          <button class="bp5-button bp5-minimal" onclick="closeAddTrackModal()">Cancel</button>
+          <button class="bp5-button bp5-intent-primary" onclick="submitAddTrackForm()">Add Song</button>
+        </div>
+      </div>
     </div>
   </div>
 

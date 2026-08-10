@@ -6,8 +6,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"strconv"
 	"strings"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 type StatsResponse struct {
@@ -173,6 +178,33 @@ func main() {
 
 	http.HandleFunc("/api/playlists", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodPost {
+			var req struct {
+				Name        string `json:"name"`
+				Description string `json:"description"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil || strings.TrimSpace(req.Name) == "" {
+				http.Error(w, "Valid playlist name is required", 400)
+				return
+			}
+			newID := uuid.New().String()
+			now := time.Now().Format("2006-01-02 15:04:05")
+			_, err := db.Exec(`INSERT INTO playlists (id, name, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,
+				newID, strings.TrimSpace(req.Name), strings.TrimSpace(req.Description), now, now)
+			if err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			w.WriteHeader(http.StatusCreated)
+			json.NewEncoder(w).Encode(map[string]string{"id": newID, "name": req.Name, "description": req.Description})
+			return
+		}
+
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", 405)
+			return
+		}
+
 		sortOrder := r.URL.Query().Get("sort")
 		orderBy := "p.name ASC"
 		switch sortOrder {
@@ -229,9 +261,186 @@ func main() {
 
 	http.HandleFunc("/api/playlists/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		playlistID := r.URL.Path[len("/api/playlists/"):]
-		if playlistID == "" {
+		subPath := strings.TrimPrefix(r.URL.Path, "/api/playlists/")
+		parts := strings.Split(strings.Trim(subPath, "/"), "/")
+		if len(parts) == 0 || parts[0] == "" {
 			http.Error(w, "Playlist ID required", 400)
+			return
+		}
+		playlistID := parts[0]
+
+		// Handle /api/playlists/:id/tracks or /api/playlists/:id/tracks/reorder
+		if len(parts) >= 2 && parts[1] == "tracks" {
+			if len(parts) == 3 && parts[2] == "reorder" {
+				if r.Method != http.MethodPut && r.Method != http.MethodPost {
+					http.Error(w, "Method not allowed", 405)
+					return
+				}
+				var req struct {
+					TrackIDs []string `json:"track_ids"`
+				}
+				if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+					http.Error(w, "Invalid payload", 400)
+					return
+				}
+				tx, err := db.Begin()
+				if err != nil {
+					http.Error(w, err.Error(), 500)
+					return
+				}
+				defer tx.Rollback()
+
+				_, err = tx.Exec("DELETE FROM playlist_tracks WHERE playlist_id = ?", playlistID)
+				if err != nil {
+					http.Error(w, err.Error(), 500)
+					return
+				}
+
+				now := time.Now().Format("2006-01-02 15:04:05")
+				stmt, err := tx.Prepare("INSERT INTO playlist_tracks (playlist_id, track_id, position, added_at) VALUES (?, ?, ?, ?)")
+				if err != nil {
+					http.Error(w, err.Error(), 500)
+					return
+				}
+				defer stmt.Close()
+
+				for idx, tID := range req.TrackIDs {
+					if _, err := stmt.Exec(playlistID, tID, idx+1, now); err != nil {
+						http.Error(w, err.Error(), 500)
+						return
+					}
+				}
+				_, _ = tx.Exec("UPDATE playlists SET updated_at = ? WHERE id = ?", now, playlistID)
+
+				if err := tx.Commit(); err != nil {
+					http.Error(w, err.Error(), 500)
+					return
+				}
+				json.NewEncoder(w).Encode(map[string]bool{"success": true})
+				return
+			}
+
+			if r.Method == http.MethodPost {
+				var req struct {
+					TrackID string `json:"track_id"`
+				}
+				if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.TrackID == "" {
+					http.Error(w, "track_id is required", 400)
+					return
+				}
+				var maxPos int
+				_ = db.QueryRow("SELECT COALESCE(MAX(position), 0) FROM playlist_tracks WHERE playlist_id = ?", playlistID).Scan(&maxPos)
+				now := time.Now().Format("2006-01-02 15:04:05")
+				_, err := db.Exec("INSERT OR IGNORE INTO playlist_tracks (playlist_id, track_id, position, added_at) VALUES (?, ?, ?, ?)",
+					playlistID, req.TrackID, maxPos+1, now)
+				if err != nil {
+					http.Error(w, err.Error(), 500)
+					return
+				}
+				_, _ = db.Exec("UPDATE playlists SET updated_at = ? WHERE id = ?", now, playlistID)
+				json.NewEncoder(w).Encode(map[string]bool{"success": true})
+				return
+			}
+
+			if r.Method == http.MethodDelete {
+				trackID := r.URL.Query().Get("track_id")
+				posStr := r.URL.Query().Get("position")
+				if trackID == "" && posStr == "" {
+					http.Error(w, "track_id or position query parameter required", 400)
+					return
+				}
+
+				if posStr != "" {
+					pos, _ := strconv.Atoi(posStr)
+					_, err := db.Exec("DELETE FROM playlist_tracks WHERE playlist_id = ? AND position = ?", playlistID, pos)
+					if err != nil {
+						http.Error(w, err.Error(), 500)
+						return
+					}
+				} else {
+					_, err := db.Exec("DELETE FROM playlist_tracks WHERE playlist_id = ? AND track_id = ?", playlistID, trackID)
+					if err != nil {
+						http.Error(w, err.Error(), 500)
+						return
+					}
+				}
+
+				// Re-index remaining track positions sequentially
+				rows, err := db.Query("SELECT track_id FROM playlist_tracks WHERE playlist_id = ? ORDER BY position ASC", playlistID)
+				if err == nil {
+					var remainingTracks []string
+					for rows.Next() {
+						var tID string
+						if rows.Scan(&tID) == nil {
+							remainingTracks = append(remainingTracks, tID)
+						}
+					}
+					rows.Close()
+
+					tx, _ := db.Begin()
+					if tx != nil {
+						_, _ = tx.Exec("DELETE FROM playlist_tracks WHERE playlist_id = ?", playlistID)
+						now := time.Now().Format("2006-01-02 15:04:05")
+						for idx, tID := range remainingTracks {
+							_, _ = tx.Exec("INSERT INTO playlist_tracks (playlist_id, track_id, position, added_at) VALUES (?, ?, ?, ?)", playlistID, tID, idx+1, now)
+						}
+						_, _ = tx.Exec("UPDATE playlists SET updated_at = ? WHERE id = ?", now, playlistID)
+						_ = tx.Commit()
+					}
+				}
+
+				json.NewEncoder(w).Encode(map[string]bool{"success": true})
+				return
+			}
+		}
+
+		if r.Method == http.MethodPut {
+			var req struct {
+				Name        string `json:"name"`
+				Description string `json:"description"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil || strings.TrimSpace(req.Name) == "" {
+				http.Error(w, "Valid playlist name is required", 400)
+				return
+			}
+			now := time.Now().Format("2006-01-02 15:04:05")
+			res, err := db.Exec("UPDATE playlists SET name = ?, description = ?, updated_at = ? WHERE id = ?",
+				strings.TrimSpace(req.Name), strings.TrimSpace(req.Description), now, playlistID)
+			if err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			affected, _ := res.RowsAffected()
+			if affected == 0 {
+				http.Error(w, "Playlist not found", 404)
+				return
+			}
+			json.NewEncoder(w).Encode(map[string]string{"id": playlistID, "name": req.Name, "description": req.Description})
+			return
+		}
+
+		if r.Method == http.MethodDelete {
+			_, err := db.Exec("DELETE FROM playlist_tracks WHERE playlist_id = ?", playlistID)
+			if err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			res, err := db.Exec("DELETE FROM playlists WHERE id = ?", playlistID)
+			if err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			affected, _ := res.RowsAffected()
+			if affected == 0 {
+				http.Error(w, "Playlist not found", 404)
+				return
+			}
+			json.NewEncoder(w).Encode(map[string]bool{"success": true})
+			return
+		}
+
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", 405)
 			return
 		}
 
@@ -261,12 +470,78 @@ func main() {
 
 	http.HandleFunc("/api/tracks", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodPost {
+			var req struct {
+				Title       string `json:"title"`
+				Artist      string `json:"artist"`
+				AlbumTitle  string `json:"album_title"`
+				DurationMs  int    `json:"duration_ms"`
+				SpotifyID   string `json:"spotify_id"`
+				CoverArtURL string `json:"cover_image_url"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil || strings.TrimSpace(req.Title) == "" {
+				http.Error(w, "Track title is required", 400)
+				return
+			}
+
+			req.Title = strings.TrimSpace(req.Title)
+			req.Artist = strings.TrimSpace(req.Artist)
+			if req.Artist == "" {
+				req.Artist = "Unknown Artist"
+			}
+			req.AlbumTitle = strings.TrimSpace(req.AlbumTitle)
+			if req.AlbumTitle == "" {
+				req.AlbumTitle = "Single"
+			}
+
+			// Find existing canonical album or create one
+			var albumID string
+			err := db.QueryRow("SELECT id FROM albums WHERE LOWER(title) = LOWER(?) AND LOWER(artist) = LOWER(?)", req.AlbumTitle, req.Artist).Scan(&albumID)
+			if err != nil {
+				albumID = uuid.New().String()
+				now := time.Now().Format("2006-01-02 15:04:05")
+				_, err = db.Exec("INSERT INTO albums (id, title, artist, cover_image_url, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+					albumID, req.AlbumTitle, req.Artist, req.CoverArtURL, now, now)
+				if err != nil {
+					http.Error(w, "Failed to create album: "+err.Error(), 500)
+					return
+				}
+			}
+
+			trackID := uuid.New().String()
+			now := time.Now().Format("2006-01-02 15:04:05")
+			_, err = db.Exec(`INSERT INTO tracks (id, album_id, title, artist, duration_ms, spotify_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+				trackID, albumID, req.Title, req.Artist, req.DurationMs, req.SpotifyID, now)
+			if err != nil {
+				http.Error(w, "Failed to create track: "+err.Error(), 500)
+				return
+			}
+
+			// Insert into search index
+			_, _ = db.Exec("INSERT INTO search_fts (target_type, target_id, title, artist) VALUES ('track', ?, ?, ?)", trackID, req.Title, req.Artist)
+
+			w.WriteHeader(http.StatusCreated)
+			json.NewEncoder(w).Encode(map[string]string{
+				"id":          trackID,
+				"title":       req.Title,
+				"artist":      req.Artist,
+				"album_id":    albumID,
+				"album_title": req.AlbumTitle,
+			})
+			return
+		}
+
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", 405)
+			return
+		}
+
 		rows, err := db.Query(`
 			SELECT t.id, t.title, t.artist, t.duration_ms, COALESCE(t.spotify_id, ''),
 			       COALESCE(t.album_id, ''), COALESCE(a.title, ''), COALESCE(a.cover_image_url, ''), 0
 			FROM tracks t
 			LEFT JOIN albums a ON t.album_id = a.id
-			ORDER BY t.title ASC
+			ORDER BY t.created_at DESC, t.title ASC
 			LIMIT 500`)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
@@ -517,6 +792,103 @@ func main() {
 		}
 
 		json.NewEncoder(w).Encode(alb)
+	})
+
+	http.HandleFunc("/api/autocomplete", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		q := strings.TrimSpace(r.URL.Query().Get("q"))
+		if len(q) < 1 {
+			json.NewEncoder(w).Encode([]map[string]string{})
+			return
+		}
+
+		type AutoItem struct {
+			Title      string `json:"title"`
+			Artist     string `json:"artist"`
+			AlbumTitle string `json:"album_title"`
+		}
+
+		likePattern := "%" + strings.ToLower(q) + "%"
+		rows, err := db.Query(`
+			SELECT t.title, COALESCE(t.artist, ''), COALESCE(a.title, '')
+			FROM tracks t
+			LEFT JOIN albums a ON t.album_id = a.id
+			WHERE LOWER(t.title) LIKE ? OR LOWER(t.artist) LIKE ?
+			ORDER BY CASE WHEN LOWER(t.title) LIKE ? THEN 0 ELSE 1 END, t.title ASC
+			LIMIT 15`, likePattern, likePattern, strings.ToLower(q)+"%")
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		defer rows.Close()
+
+		var results []AutoItem
+		seen := make(map[string]bool)
+		for rows.Next() {
+			var item AutoItem
+			if err := rows.Scan(&item.Title, &item.Artist, &item.AlbumTitle); err == nil {
+				key := strings.ToLower(item.Title + " - " + item.Artist)
+				if !seen[key] {
+					seen[key] = true
+					results = append(results, item)
+				}
+			}
+		}
+		json.NewEncoder(w).Encode(results)
+	})
+
+	http.HandleFunc("/api/autocomplete/online", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		q := strings.TrimSpace(r.URL.Query().Get("q"))
+		if len(q) < 2 {
+			json.NewEncoder(w).Encode([]map[string]interface{}{})
+			return
+		}
+
+		apiURL := fmt.Sprintf("https://itunes.apple.com/search?term=%s&media=music&entity=song&limit=10", url.QueryEscape(q))
+		resp, err := http.Get(apiURL)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		defer resp.Body.Close()
+
+		var itunesRes struct {
+			Results []struct {
+				TrackName      string `json:"trackName"`
+				ArtistName     string `json:"artistName"`
+				CollectionName string `json:"collectionName"`
+				TrackTimeMillis int   `json:"trackTimeMillis"`
+				ArtworkUrl100  string `json:"artworkUrl100"`
+			} `json:"results"`
+		}
+
+		if err := json.NewDecoder(resp.Body).Decode(&itunesRes); err != nil {
+			json.NewEncoder(w).Encode([]map[string]interface{}{})
+			return
+		}
+
+		type OnlineResult struct {
+			Title       string `json:"title"`
+			Artist      string `json:"artist"`
+			AlbumTitle  string `json:"album_title"`
+			DurationMs  int    `json:"duration_ms"`
+			CoverArtURL string `json:"cover_image_url"`
+		}
+
+		var results []OnlineResult
+		for _, item := range itunesRes.Results {
+			// Upgrade 100x100 artwork to 300x300 for higher fidelity cover art
+			highResCover := strings.Replace(item.ArtworkUrl100, "100x100bb", "300x300bb", 1)
+			results = append(results, OnlineResult{
+				Title:       item.TrackName,
+				Artist:      item.ArtistName,
+				AlbumTitle:  item.CollectionName,
+				DurationMs:  item.TrackTimeMillis,
+				CoverArtURL: highResCover,
+			})
+		}
+		json.NewEncoder(w).Encode(results)
 	})
 
 	http.HandleFunc("/api/search", func(w http.ResponseWriter, r *http.Request) {
