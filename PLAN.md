@@ -66,9 +66,11 @@
 - [ ] Apple Music `Library.xml` parser (`POST /api/import/apple-music`). Target file: `/Users/daniel/apple-music-library/Library.xml` (~7.4 MB).
 - [ ] Shazam CSV / Webhook importer.
 
-### Step 5: Discogs Live Background Sync Engine (Deferred) ⬜
-- [ ] Implement Discogs client in Go (handling rate limits / 429 retries).
-- [ ] Add background ticker/worker to sync collection & wantlist into SQLite.
+### Step 5: Discogs Live Background Sync Engine ✅
+- [x] **Native Go Discogs Client (`discogs.go`):** Reads credentials from `../discogs-albums/.env` (`DISCOGS_TOKEN`) and authenticates user identity.
+- [x] **Collection & Wantlist Ingestion:** Syncs collection releases (`has_vinyl = 1`) and wantlist releases (`has_vinyl = 0`, `streaming_notes = 'Discogs Wantlist'`) into SQLite `releases` table.
+- [x] **CLI & API Endpoint:** Supports `-sync-discogs` CLI flag and `POST /api/sync/discogs` endpoint with live progress button in top navbar.
+- [x] **UI Visual Badges:** Displays `📀 Vinyl` badge for owned vinyl records and `🎯 Wantlist` badge for saved wantlist releases in Albums grid view.
 
 ### Step 6: Playlist Management & Mobile Polish ⬜
 - [ ] Complete internal playlist CRUD endpoints & UI modal/screens.
@@ -82,7 +84,8 @@
 - [x] **Step 1:** Core Go SQLite foundation initialized with pure Go driver (`modernc.org/sqlite`) & WAL mode in [`db.go`](file:///Users/daniel/my-music-lib/db.go). Full-Text Search table `search_fts` set up in [`schema.sql`](file:///Users/daniel/my-music-lib/schema.sql).
 - [x] **Step 2:** Notion Spotify CSV Importer built in [`importer.go`](file:///Users/daniel/my-music-lib/importer.go). Downloaded 19 playlist CSV files from `danielfalbo/notion` via `gh api` and ingested 2,780 tracks & 1,510 releases into `music.db`.
 - [x] **Step 3:** Blueprint Dark Mode Web UI (`bp5-dark`) in [`public/`](file:///Users/daniel/my-music-lib/public/) with collapsible sidebar, creation date sorting, 2x2 grid collage playlist covers, Library browsing by All Songs / Artists / Albums, FTS5 search (`GET /api/search`), and stats endpoint (`GET /api/stats`).
-- [x] **Step 4 (Docs):** [`README.md`](file:///Users/daniel/my-music-lib/README.md) written with local quickstart, Playwright screenshot test CLI command, and Tailscale Home Server deployment guide.
+- [x] **Step 4:** Discogs Sync Engine ([`discogs.go`](file:///Users/daniel/my-music-lib/discogs.go)) for collection & wantlist items with live navbar sync button (`POST /api/sync/discogs`) and UI vinyl/wantlist tags.
+- [x] **Step 5 (Docs):** [`README.md`](file:///Users/daniel/my-music-lib/README.md) written with local quickstart, Playwright screenshot test CLI command, and Tailscale Home Server deployment guide.
 
 ---
 
@@ -96,6 +99,9 @@
 ```bash
 # Run server locally
 go run . -port 8080
+
+# Trigger Discogs sync
+go run . -sync-discogs
 
 # Re-run Spotify importer if needed
 go run . -import-spotify /tmp/spotify_playlists

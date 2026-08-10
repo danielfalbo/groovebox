@@ -237,6 +237,11 @@ html, body {
   background: #232931;
 }
 
+.grid-card-art-wrap {
+  position: relative;
+  width: 100%;
+}
+
 .grid-card-art {
   width: 100%;
   aspect-ratio: 1;
@@ -244,6 +249,13 @@ html, body {
   object-fit: cover;
   background: #252a31;
   margin-bottom: 12px;
+}
+
+.album-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .grid-card-icon {

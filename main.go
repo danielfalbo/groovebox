@@ -38,6 +38,7 @@ type TrackDetail struct {
 
 func main() {
 	importDir := flag.String("import-spotify", "", "Path to directory containing Spotify export CSVs")
+	syncDiscogsFlag := flag.Bool("sync-discogs", false, "Sync Discogs collection & wantlist into database")
 	dbPath := flag.String("db", "music.db", "Path to SQLite database")
 	port := flag.Int("port", 8080, "Port to listen on")
 	flag.Parse()
@@ -47,6 +48,17 @@ func main() {
 		log.Fatalf("Database initialization failed: %v", err)
 	}
 	defer db.Close()
+
+	if *syncDiscogsFlag {
+		log.Println("Starting Discogs collection & wantlist sync...")
+		if err := SyncDiscogs(db); err != nil {
+			log.Fatalf("Discogs sync failed: %v", err)
+		}
+		log.Println("Discogs sync completed successfully!")
+		if len(os.Args) > 1 && strings.Contains(os.Args[1], "sync-discogs") {
+			return
+		}
+	}
 
 	if *importDir != "" {
 		log.Printf("Starting Spotify CSV import from %s...", *importDir)
@@ -60,6 +72,19 @@ func main() {
 	}
 
 	// API Routes
+	http.HandleFunc("/api/sync/discogs", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if err := SyncDiscogs(db); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": "Discogs sync completed"})
+	})
 	http.HandleFunc("/api/stats", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		var stats StatsResponse
@@ -214,23 +239,26 @@ func main() {
 	})
 
 	type AlbumSummary struct {
-		ID            string `json:"id"`
-		Title         string `json:"title"`
-		Artist        string `json:"artist"`
-		ReleaseYear   int    `json:"release_year"`
-		CoverImageURL string `json:"cover_image_url"`
-		TrackCount    int    `json:"track_count"`
+		ID             string `json:"id"`
+		Title          string `json:"title"`
+		Artist         string `json:"artist"`
+		ReleaseYear    int    `json:"release_year"`
+		CoverImageURL  string `json:"cover_image_url"`
+		HasVinyl       bool   `json:"has_vinyl"`
+		StreamingNotes string `json:"streaming_notes"`
+		TrackCount     int    `json:"track_count"`
 	}
 
 	http.HandleFunc("/api/albums", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		rows, err := db.Query(`
-			SELECT r.id, r.title, r.artist, COALESCE(r.release_year, 0), COALESCE(r.cover_image_url, ''), COUNT(t.id) as track_count
+			SELECT r.id, r.title, r.artist, COALESCE(r.release_year, 0), COALESCE(r.cover_image_url, ''),
+			       COALESCE(r.has_vinyl, 0), COALESCE(r.streaming_notes, ''), COUNT(t.id) as track_count
 			FROM releases r
 			LEFT JOIN tracks t ON r.id = t.release_id
 			GROUP BY r.id
 			ORDER BY r.title ASC
-			LIMIT 300`)
+			LIMIT 500`)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 			return
@@ -240,7 +268,9 @@ func main() {
 		var albums []AlbumSummary
 		for rows.Next() {
 			var alb AlbumSummary
-			if err := rows.Scan(&alb.ID, &alb.Title, &alb.Artist, &alb.ReleaseYear, &alb.CoverImageURL, &alb.TrackCount); err == nil {
+			var hasVinylInt int
+			if err := rows.Scan(&alb.ID, &alb.Title, &alb.Artist, &alb.ReleaseYear, &alb.CoverImageURL, &hasVinylInt, &alb.StreamingNotes, &alb.TrackCount); err == nil {
+				alb.HasVinyl = hasVinylInt == 1
 				albums = append(albums, alb)
 			}
 		}

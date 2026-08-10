@@ -161,8 +161,8 @@ async function showArtists() {
 async function showAlbums() {
   clearNavActive();
   document.getElementById('nav-albums').classList.add('bp5-active');
-  document.getElementById('view-title').textContent = 'Albums';
-  document.getElementById('view-subtitle').textContent = 'Browse releases and discography';
+  document.getElementById('view-title').textContent = 'Albums & Releases';
+  document.getElementById('view-subtitle').textContent = 'Browse releases, vinyl collection, and wantlist';
   
   document.getElementById('table-container').style.display = 'none';
   const grid = document.getElementById('grid-container');
@@ -187,8 +187,19 @@ async function showAlbums() {
         handleSearch(alb.title);
       };
       const coverUrl = alb.cover_image_url || 'https://via.placeholder.com/180';
+      
+      let badgeHTML = '';
+      if (alb.has_vinyl) {
+        badgeHTML = `<span class="bp5-tag bp5-intent-warning bp5-round album-badge">📀 Vinyl</span>`;
+      } else if (alb.streaming_notes === 'Discogs Wantlist') {
+        badgeHTML = `<span class="bp5-tag bp5-intent-primary bp5-round album-badge">🎯 Wantlist</span>`;
+      }
+
       card.innerHTML = `
-        <img class="grid-card-art" src="${coverUrl}" alt="cover" onerror="this.src='https://via.placeholder.com/180'">
+        <div class="grid-card-art-wrap">
+          <img class="grid-card-art" src="${coverUrl}" alt="cover" onerror="this.src='https://via.placeholder.com/180'">
+          ${badgeHTML}
+        </div>
         <div class="grid-card-title">${alb.title}</div>
         <div class="grid-card-subtitle">${alb.artist}${alb.release_year ? ' • ' + alb.release_year : ''}</div>
       `;
@@ -196,6 +207,32 @@ async function showAlbums() {
     });
   } catch (err) {
     console.error('Failed to load albums:', err);
+  }
+}
+
+async function triggerDiscogsSync() {
+  const btn = document.getElementById('discogs-sync-btn');
+  if (!btn) return;
+  
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Syncing Discogs...';
+
+  try {
+    const res = await fetch('/api/sync/discogs', { method: 'POST' });
+    const data = await res.json();
+    if (res.ok) {
+      alert('Discogs sync complete!');
+      loadStats();
+      showAlbums();
+    } else {
+      alert('Discogs sync error: ' + (data.error || 'Failed to sync'));
+    }
+  } catch (err) {
+    alert('Failed to connect to Discogs sync endpoint: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
   }
 }
 
