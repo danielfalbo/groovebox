@@ -16,3 +16,7 @@ server
 .DS_Store
 .vscode/
 .idea/
+
+# Environment / Credentials
+.env
+.env.*
