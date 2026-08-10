@@ -58,7 +58,10 @@
 These were part of the original V1 scope and were never completed — they dropped out of the plan during a docs rewrite rather than being finished or deliberately cut:
 
 - [x] **Apple Music Import** *(completed 2026-08-10)*: Integrated XML parser (`apple_music.go`) and CLI flag `-import-apple-music <path>`. Imported 3,556 tracks, 1,888 new albums, and 35 playlists from `/Users/daniel/apple-music-library/Library.xml` into SQLite. Track ISRCs and titles matched against existing catalog.
-- [x] **Historical Shazam Screenshot Import** *(completed 2026-08-10)*: OCR/extracted 30 recent Shazam history screenshots from `/Users/daniel/Downloads/shazam` and auto-populated corresponding monthly playlists (`2026-08`, `2026-07`, `2026-06`).
+- [x] **Historical Shazam Screenshot Import** *(completed 2026-08-10)*: OCR/extracted 30 recent Shazam history screenshots from `/Users/daniel/Downloads/shazam` and auto-populated corresponding monthly playlists (`2026-08`, `2026-07`, `2026-06`). Real album titles re-linked and deduplicated against canonical master albums.
+- [x] **Track Deduplication & Duration Cleanup** *(completed 2026-08-10)*: Deduplicated 602 redundant track records across identical albums and reassigned 897 playlist memberships. Cleaned 6 empty title tracks and populated missing track durations via iTunes API.
+- [x] **Batch High-Res Cover Art Fetch** *(completed 2026-08-10)*: Populated high-res 600x600 artwork for missing albums via iTunes Search API with fallback SVG cover handling.
+
 - [ ] **Future Shazam-like Ingestion & Offline Sync (Proposed Specification - Not Yet Implemented)**:
   - **`POST /api/shazam` API Handler**: Receives Shazam tag metadata (`artist`, `title`, `timestamp`). Automatically resolves/creates the target monthly playlist (`YYYY-MM`), fetches iTunes high-res cover art, and links the track.
   - **iOS Shortcut Sync & Offline Voice Note Recording**:

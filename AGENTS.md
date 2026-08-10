@@ -62,6 +62,11 @@
    - Track curation controls across views (`+` Add to playlist modal, `▲`/`▼` positional re-ordering, `✕` track removal).
    - Live autocompletion combines local `search_fts` / `tracks` table lookup (`/api/autocomplete`) with Apple Music's free iTunes Search API (`/api/autocomplete/online`) to auto-fill title, artist, album, duration, and 300x300 high-res cover art.
 
+7. **Historical Shazam Ingestion & Track Cleanups:**
+   - Imported 30 historical Shazam tracks directly into monthly playlists (`2026-08`, `2026-07`, `2026-06`).
+   - Deduplicated 602 redundant track records across identical albums and backfilled missing track durations via iTunes API.
+
+
 ## 🛠️ Essential Commands
 
 ```bash
