@@ -41,8 +41,22 @@ func initDB(dbPath string) (*sql.DB, error) {
 	if err := ensureColumn(db, "albums", "in_collection", "INTEGER DEFAULT 0"); err != nil {
 		return nil, fmt.Errorf("failed to migrate albums in_collection: %w", err)
 	}
+	if err := ensureColumn(db, "albums", "collection_added_at", "DATETIME"); err != nil {
+		return nil, fmt.Errorf("failed to migrate albums collection_added_at: %w", err)
+	}
 	if _, err := db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_playlists_spotify_id ON playlists(spotify_id) WHERE spotify_id IS NOT NULL"); err != nil {
 		return nil, fmt.Errorf("failed to create Spotify playlist index: %w", err)
+	}
+
+	// has_vinyl means "owned as physical vinyl", but earlier syncs also set it for
+	// vinyl pressings that only existed on the wantlist. Recompute strictly from
+	// collection-sourced release_versions so wantlist-only albums show correctly.
+	if _, err := db.Exec(`
+		UPDATE albums SET has_vinyl = (
+			SELECT COUNT(*) FROM release_versions rv
+			WHERE rv.album_id = albums.id AND rv.source = 'collection' AND rv.has_vinyl = 1
+		) > 0`); err != nil {
+		return nil, fmt.Errorf("failed to recompute albums has_vinyl: %w", err)
 	}
 
 	log.Printf("Database initialized at %s (WAL mode enabled)", dbPath)

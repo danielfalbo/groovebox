@@ -89,6 +89,7 @@ type DiscogsWantlistResponse struct {
 
 type DiscogsCollectionItem struct {
 	ID               int              `json:"id"`
+	DateAdded        string           `json:"date_added"`
 	BasicInformation DiscogsBasicInfo `json:"basic_information"`
 }
 
@@ -98,6 +99,17 @@ type DiscogsCollectionResponse struct {
 		Items int `json:"items"`
 	} `json:"pagination"`
 	Releases []DiscogsCollectionItem `json:"releases"`
+}
+
+// discogsDateIsNewer reports whether a's RFC3339 timestamp is after b's,
+// falling back to a plain string comparison if either fails to parse.
+func discogsDateIsNewer(a, b string) bool {
+	aTime, aErr := time.Parse(time.RFC3339, a)
+	bTime, bErr := time.Parse(time.RFC3339, b)
+	if aErr == nil && bErr == nil {
+		return aTime.After(bTime)
+	}
+	return a > b
 }
 
 func getDiscogsToken() string {
@@ -207,7 +219,7 @@ func SyncDiscogs(db *sql.DB) error {
 
 	page := 1
 	totalPages := 1
-	var collectionReleases []DiscogsBasicInfo
+	var collectionReleases []DiscogsCollectionItem
 
 	for page <= totalPages {
 		var resp DiscogsCollectionResponse
@@ -221,9 +233,7 @@ func SyncDiscogs(db *sql.DB) error {
 			return errFmt
 		}
 		totalPages = resp.Pagination.Pages
-		for _, item := range resp.Releases {
-			collectionReleases = append(collectionReleases, item.BasicInformation)
-		}
+		collectionReleases = append(collectionReleases, resp.Releases...)
 		
 		colPage := page
 		colTotalPages := totalPages
@@ -295,7 +305,7 @@ func SyncDiscogs(db *sql.DB) error {
 	}
 	defer tx.Rollback()
 
-	processDiscogsItem := func(info DiscogsBasicInfo, source string, hasVinyl bool) {
+	processDiscogsItem := func(info DiscogsBasicInfo, source string, hasVinyl bool, dateAdded string) {
 		artist := "Unknown"
 		if len(info.Artists) > 0 {
 			var artistNames []string
@@ -348,7 +358,7 @@ func SyncDiscogs(db *sql.DB) error {
 
 			isVinylFormat := strings.Contains(strings.ToLower(formatDesc), "vinyl") || strings.Contains(strings.ToLower(formatDesc), "flexi")
 			hasVinylInt := 0
-			if isVinylFormat {
+			if isVinylFormat && source == "collection" {
 				hasVinylInt = 1
 			}
 			inCollectionInt := 0
@@ -372,15 +382,23 @@ func SyncDiscogs(db *sql.DB) error {
 		} else {
 			if source == "collection" {
 				_, _ = tx.Exec("UPDATE albums SET in_collection = 1, cover_image_url = COALESCE(NULLIF(cover_image_url, ''), ?) WHERE id = ?", cover, albumID)
-			}
-			if strings.Contains(strings.ToLower(formatDesc), "vinyl") || strings.Contains(strings.ToLower(formatDesc), "flexi") {
-				_, _ = tx.Exec("UPDATE albums SET has_vinyl = 1, cover_image_url = COALESCE(NULLIF(cover_image_url, ''), ?) WHERE id = ?", cover, albumID)
+				if strings.Contains(strings.ToLower(formatDesc), "vinyl") || strings.Contains(strings.ToLower(formatDesc), "flexi") {
+					_, _ = tx.Exec("UPDATE albums SET has_vinyl = 1, cover_image_url = COALESCE(NULLIF(cover_image_url, ''), ?) WHERE id = ?", cover, albumID)
+				}
 			}
 			if source == "wantlist" {
 				_, _ = tx.Exec("UPDATE albums SET in_wantlist = 1 WHERE id = ?", albumID)
 			}
 			if info.MasterID > 0 {
 				_, _ = tx.Exec("UPDATE albums SET discogs_master_id = ? WHERE id = ? AND discogs_master_id IS NULL", info.MasterID, albumID)
+			}
+		}
+
+		if source == "collection" && dateAdded != "" {
+			var existing sql.NullString
+			_ = tx.QueryRow("SELECT collection_added_at FROM albums WHERE id = ?", albumID).Scan(&existing)
+			if !existing.Valid || existing.String == "" || discogsDateIsNewer(dateAdded, existing.String) {
+				_, _ = tx.Exec("UPDATE albums SET collection_added_at = ? WHERE id = ?", dateAdded, albumID)
 			}
 		}
 
@@ -415,12 +433,12 @@ func SyncDiscogs(db *sql.DB) error {
 		}
 	}
 
-	for _, info := range collectionReleases {
-		processDiscogsItem(info, "collection", true)
+	for _, item := range collectionReleases {
+		processDiscogsItem(item.BasicInformation, "collection", true, item.DateAdded)
 	}
 
 	for _, info := range wantlistReleases {
-		processDiscogsItem(info, "wantlist", false)
+		processDiscogsItem(info, "wantlist", false, "")
 	}
 
 	if err := tx.Commit(); err != nil {

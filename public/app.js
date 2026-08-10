@@ -681,7 +681,7 @@ async function openAlbumPage(albumId) {
     if (album.versions && album.versions.length > 0) {
       const vRows = album.versions.map(v => {
         let sourceBadge = '';
-        if (v.source === 'collection' || v.has_vinyl) {
+        if (v.source === 'collection') {
           sourceBadge = '<span class="bp5-tag bp5-intent-warning bp5-minimal bp5-round">📀 Collection</span>';
         } else if (v.source === 'wantlist') {
           sourceBadge = '<span class="bp5-tag bp5-intent-primary bp5-minimal bp5-round">🎯 Wantlist</span>';
@@ -1299,29 +1299,6 @@ async function removeTrackFromPlaylist(playlistID, trackID, position) {
   }
 }
 
-async function moveTrackInPlaylist(playlistID, currentIdx, direction, tracks) {
-  const newIdx = currentIdx + direction;
-  if (newIdx < 0 || newIdx >= tracks.length) return;
-
-  const trackIDs = tracks.map(t => t.id);
-  // Swap positions
-  const temp = trackIDs[currentIdx];
-  trackIDs[currentIdx] = trackIDs[newIdx];
-  trackIDs[newIdx] = temp;
-
-  try {
-    const res = await fetch(`/api/playlists/${playlistID}/tracks/reorder`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ track_ids: trackIDs })
-    });
-    if (!res.ok) throw new Error('Failed to reorder playlist');
-    selectPlaylist(playlistID, activePlaylistName, activePlaylistDesc);
-  } catch (err) {
-    alert(err.message);
-  }
-}
-
 async function selectPlaylist(id, name, description, elem) {
   clearNavActive();
   currentSectionView = 'playlist';
@@ -1492,12 +1469,7 @@ function renderTracks(tracks) {
 
     let playlistCurateBtns = '';
     if (isPlaylistView && activePlaylistID) {
-      const isFirst = (i === 0);
-      const isLast = (i === tracks.length - 1);
-      const upBtn = `<button class="bp5-button bp5-minimal bp5-small playlist-act-btn ${isFirst ? 'bp5-disabled' : ''}" onclick="moveTrackInPlaylist('${activePlaylistID}', ${i}, -1, rawSectionData)" title="Move Up"><span class="bp5-icon-standard bp5-icon-chevron-up"></span></button>`;
-      const downBtn = `<button class="bp5-button bp5-minimal bp5-small playlist-act-btn ${isLast ? 'bp5-disabled' : ''}" onclick="moveTrackInPlaylist('${activePlaylistID}', ${i}, 1, rawSectionData)" title="Move Down"><span class="bp5-icon-standard bp5-icon-chevron-down"></span></button>`;
-      const removeBtn = `<button class="bp5-button bp5-minimal bp5-small playlist-act-btn danger" onclick="removeTrackFromPlaylist('${activePlaylistID}', '${t.id}', ${t.position || i + 1})" title="Remove from Playlist"><span class="bp5-icon-standard bp5-icon-cross"></span></button>`;
-      playlistCurateBtns = `${upBtn}${downBtn}${removeBtn}`;
+      playlistCurateBtns = `<button class="bp5-button bp5-minimal bp5-small playlist-act-btn danger" onclick="removeTrackFromPlaylist('${activePlaylistID}', '${t.id}', ${t.position || i + 1})" title="Remove from Playlist"><span class="bp5-icon-standard bp5-icon-cross"></span></button>`;
     }
 
     tr.innerHTML = `

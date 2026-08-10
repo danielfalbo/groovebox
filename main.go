@@ -317,57 +317,8 @@ func main() {
 		}
 		playlistID := parts[0]
 
-		// Handle /api/playlists/:id/tracks or /api/playlists/:id/tracks/reorder
+		// Handle /api/playlists/:id/tracks
 		if len(parts) >= 2 && parts[1] == "tracks" {
-			if len(parts) == 3 && parts[2] == "reorder" {
-				if r.Method != http.MethodPut && r.Method != http.MethodPost {
-					http.Error(w, "Method not allowed", 405)
-					return
-				}
-				var req struct {
-					TrackIDs []string `json:"track_ids"`
-				}
-				if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-					http.Error(w, "Invalid payload", 400)
-					return
-				}
-				tx, err := db.Begin()
-				if err != nil {
-					http.Error(w, err.Error(), 500)
-					return
-				}
-				defer tx.Rollback()
-
-				_, err = tx.Exec("DELETE FROM playlist_tracks WHERE playlist_id = ?", playlistID)
-				if err != nil {
-					http.Error(w, err.Error(), 500)
-					return
-				}
-
-				now := time.Now().Format("2006-01-02 15:04:05")
-				stmt, err := tx.Prepare("INSERT INTO playlist_tracks (playlist_id, track_id, position, added_at) VALUES (?, ?, ?, ?)")
-				if err != nil {
-					http.Error(w, err.Error(), 500)
-					return
-				}
-				defer stmt.Close()
-
-				for idx, tID := range req.TrackIDs {
-					if _, err := stmt.Exec(playlistID, tID, idx+1, now); err != nil {
-						http.Error(w, err.Error(), 500)
-						return
-					}
-				}
-				_, _ = tx.Exec("UPDATE playlists SET updated_at = ? WHERE id = ?", now, playlistID)
-
-				if err := tx.Commit(); err != nil {
-					http.Error(w, err.Error(), 500)
-					return
-				}
-				json.NewEncoder(w).Encode(map[string]bool{"success": true})
-				return
-			}
-
 			if r.Method == http.MethodPost {
 				var req struct {
 					TrackID string `json:"track_id"`
@@ -762,16 +713,23 @@ func main() {
 			whereStr = "WHERE " + strings.Join(whereClauses, " AND ")
 		}
 
+		// Collection view sorts by most-recently-added-to-Discogs-collection first;
+		// albums without a recorded date (e.g. added before this field existed) sort last.
+		orderBy := "a.title ASC"
+		if filter == "collection" {
+			orderBy = "CASE WHEN a.collection_added_at IS NULL THEN 1 ELSE 0 END ASC, a.collection_added_at DESC, a.title ASC"
+		}
+
 		query := fmt.Sprintf(`
 			SELECT a.id, a.title, a.artist, COALESCE(a.release_year, 0), COALESCE(a.cover_image_url, ''),
 			       COALESCE(a.has_vinyl, 0), COALESCE(a.in_collection, 0), COALESCE(a.in_wantlist, 0), COALESCE(a.streaming_notes, ''),
-			       COALESCE((SELECT rv.format_description FROM release_versions rv WHERE rv.album_id = a.id AND rv.format_description IS NOT NULL AND rv.format_description != '' LIMIT 1), ''),
+			       COALESCE((SELECT rv.format_description FROM release_versions rv WHERE rv.album_id = a.id AND rv.source = 'collection' AND rv.format_description IS NOT NULL AND rv.format_description != '' LIMIT 1), ''),
 			       (SELECT COUNT(*) FROM release_versions rv WHERE rv.album_id = a.id) as version_count,
 			       (SELECT COUNT(*) FROM tracks t WHERE t.album_id = a.id) as track_count
 			FROM albums a
 			%s
-			ORDER BY a.title ASC
-			LIMIT 5000`, whereStr)
+			ORDER BY %s
+			LIMIT 5000`, whereStr, orderBy)
 
 		rows, err := db.Query(query, args...)
 		if err != nil {
