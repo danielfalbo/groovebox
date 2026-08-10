@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -989,9 +990,21 @@ func main() {
 		json.NewEncoder(w).Encode(tracks)
 	})
 
-	// Static file serving
+	// Static file serving, with SPA fallback to index.html for client-side routes
+	// (e.g. /albums/123, /artists/Some+Name) so deep links and page refreshes work.
 	fs := http.FileServer(http.Dir("public"))
-	http.Handle("/", fs)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/api/") {
+			http.NotFound(w, r)
+			return
+		}
+		cleanPath := filepath.Clean(r.URL.Path)
+		if fileInfo, err := os.Stat(filepath.Join("public", cleanPath)); err == nil && !fileInfo.IsDir() {
+			fs.ServeHTTP(w, r)
+			return
+		}
+		http.ServeFile(w, r, filepath.Join("public", "index.html"))
+	})
 
 	log.Printf("Server listening on http://localhost:%d", *port)
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil); err != nil {

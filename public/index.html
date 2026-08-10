@@ -19,7 +19,7 @@
     <nav class="bp5-navbar bp5-dark navbar-custom">
       <div class="bp5-navbar-group bp5-align-left">
         <button class="bp5-button bp5-minimal bp5-icon-menu sidebar-toggle-btn" id="sidebar-toggle-btn" onclick="toggleSidebar()" title="Toggle Playlists Sidebar"></button>
-        <div class="bp5-navbar-heading brand-title">
+        <div class="bp5-navbar-heading brand-title" onclick="goHome()" style="cursor: pointer;" title="Go home">
           <svg class="custom-navbar-logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="9.5"></circle>
             <circle cx="12" cy="12" r="7" stroke-dasharray="2 2" opacity="0.6"></circle>
@@ -61,15 +61,15 @@
           <h5 class="bp5-heading text-muted">LIBRARY</h5>
         </div>
         <div class="bp5-menu library-menu">
-          <a class="bp5-menu-item nav-item-btn" id="nav-all-songs" onclick="showAllSongs()">
+          <a class="bp5-menu-item nav-item-btn" id="nav-all-songs" onclick="navShowAllSongs()">
             <span class="bp5-icon-standard bp5-icon-music"></span>
             <span class="nav-item-text">All Songs</span>
           </a>
-          <a class="bp5-menu-item nav-item-btn" id="nav-artists" onclick="showArtists()">
+          <a class="bp5-menu-item nav-item-btn" id="nav-artists" onclick="navShowArtists()">
             <span class="bp5-icon-standard bp5-icon-user"></span>
             <span class="nav-item-text">Artists</span>
           </a>
-          <a class="bp5-menu-item nav-item-btn" id="nav-albums" onclick="showAlbums()">
+          <a class="bp5-menu-item nav-item-btn" id="nav-albums" onclick="navShowAlbums()">
             <svg class="custom-sidebar-icon vinyl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="9.5"></circle>
               <circle cx="12" cy="12" r="7" stroke-dasharray="2 2" opacity="0.6"></circle>

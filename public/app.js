@@ -1,13 +1,138 @@
 let currentPlaylistSort = localStorage.getItem('playlist-sort') || 'date_desc';
 const fallbackCover = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Crect width='180' height='180' fill='%23252a31' rx='6'/%3E%3Cpath fill='%23738091' d='M70 120v-40l40-10v42.5a10 10 0 1 1-10-9.5V85l-20 5v32.5A10 10 0 1 1 70 120z'/%3E%3C/svg%3E`;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   initSidebarState();
   initSortState();
-  loadPlaylists();
+  await loadPlaylists();
   startSyncPolling();
-  showAlbums('collection');
+  renderFromLocation();
 });
+
+window.addEventListener('popstate', () => renderFromLocation());
+
+// --- Routing -----------------------------------------------------------
+// URL shapes:
+//   /                          -> home (Albums > Collection)
+//   /albums?filter=&q=         -> albums grid
+//   /albums/:id                -> album detail
+//   /artists?q=                -> artists grid
+//   /artists/:name             -> artist detail
+//   /songs?q=                  -> all songs table
+//   /playlists/:id             -> playlist view
+//   /search?q=                 -> global search results
+
+function pushURL(path) {
+  if (location.pathname + location.search !== path) {
+    history.pushState({}, '', path);
+  }
+}
+
+function replaceURL(path) {
+  if (location.pathname + location.search !== path) {
+    history.replaceState({}, '', path);
+  }
+}
+
+function goHome() {
+  pushURL('/albums?filter=collection');
+  showAlbums('collection');
+}
+
+function navShowAllSongs() {
+  pushURL('/songs');
+  showAllSongs();
+}
+
+function navShowArtists() {
+  pushURL('/artists');
+  showArtists();
+}
+
+function navShowAlbums() {
+  pushURL(`/albums?filter=${encodeURIComponent(activeAlbumFilter || 'collection')}`);
+  showAlbums();
+}
+
+function navOpenArtistPage(artistName) {
+  pushURL(`/artists/${encodeURIComponent(artistName)}`);
+  openArtistPage(artistName);
+}
+
+function navOpenAlbumPage(albumId) {
+  pushURL(`/albums/${encodeURIComponent(albumId)}`);
+  openAlbumPage(albumId);
+}
+
+function navSelectPlaylist(id, name, description, elem) {
+  pushURL(`/playlists/${encodeURIComponent(id)}`);
+  selectPlaylist(id, name, description, elem);
+}
+
+function renderFromLocation() {
+  const parts = location.pathname.split('/').filter(Boolean);
+  const params = new URLSearchParams(location.search);
+  const q = params.get('q') || '';
+
+  const searchInput = document.getElementById('search-input');
+  if (searchInput) searchInput.value = (parts[0] === 'search') ? q : '';
+
+  if (parts.length === 0) {
+    replaceURL('/albums?filter=collection');
+    showAlbums('collection');
+    return;
+  }
+
+  if (parts[0] === 'albums' && parts[1]) {
+    openAlbumPage(decodeURIComponent(parts[1]));
+    return;
+  }
+  if (parts[0] === 'albums') {
+    showAlbums(params.get('filter') || undefined);
+    setSectionFilterInputValue(q);
+    if (q) handleSectionFilter(q);
+    return;
+  }
+  if (parts[0] === 'artists' && parts[1]) {
+    openArtistPage(decodeURIComponent(parts[1]));
+    return;
+  }
+  if (parts[0] === 'artists') {
+    showArtists();
+    setSectionFilterInputValue(q);
+    if (q) handleSectionFilter(q);
+    return;
+  }
+  if (parts[0] === 'songs') {
+    showAllSongs();
+    setSectionFilterInputValue(q);
+    if (q) handleSectionFilter(q);
+    return;
+  }
+  if (parts[0] === 'playlists' && parts[1]) {
+    const id = decodeURIComponent(parts[1]);
+    const cached = allPlaylistsCache.find(p => p.id === id);
+    selectPlaylist(id, cached ? cached.name : '', cached ? cached.description : '');
+    return;
+  }
+  if (parts[0] === 'search') {
+    if (!q) {
+      replaceURL('/songs');
+      showAllSongs();
+      return;
+    }
+    renderSearchResults(q);
+    return;
+  }
+
+  replaceURL('/albums?filter=collection');
+  showAlbums('collection');
+}
+
+function setSectionFilterInputValue(q) {
+  const input = document.getElementById('section-filter-input');
+  if (input) input.value = q;
+}
 
 function toggleSidebar() {
   const sidebar = document.getElementById('sidebar-panel');
@@ -45,7 +170,8 @@ async function loadPlaylists() {
     playlists.forEach(p => {
       const a = document.createElement('a');
       a.className = 'bp5-menu-item bp5-popover-dismiss playlist-item-btn';
-      a.onclick = () => selectPlaylist(p.id, p.name, p.description, a);
+      a.dataset.playlistId = p.id;
+      a.onclick = () => navSelectPlaylist(p.id, p.name, p.description, a);
       const formattedDate = formatDate(p.created_at);
 
       const urls = p.cover_art_urls || [];
@@ -146,11 +272,16 @@ async function setAlbumFilter(filter) {
     const filterInput = document.getElementById('section-filter-input');
     const q = filterInput ? filterInput.value.trim() : '';
 
-    let params = new URLSearchParams();
-    if (filter !== 'all') params.append('filter', filter);
-    if (q) params.append('q', q);
+    let apiParams = new URLSearchParams();
+    if (filter !== 'all') apiParams.append('filter', filter);
+    if (q) apiParams.append('q', q);
 
-    const url = `/api/albums${params.toString() ? '?' + params.toString() : ''}`;
+    let urlParams = new URLSearchParams();
+    urlParams.append('filter', filter);
+    if (q) urlParams.append('q', q);
+    replaceURL(`/albums?${urlParams.toString()}`);
+
+    const url = `/api/albums${apiParams.toString() ? '?' + apiParams.toString() : ''}`;
     const res = await fetch(url);
     rawSectionData = await res.json();
     renderAlbumCards(rawSectionData);
@@ -165,21 +296,23 @@ function handleSectionFilter(query) {
   const q = (query || '').toLowerCase().trim();
 
   if (currentSectionView === 'songs') {
+    replaceURL(q ? `/songs?q=${encodeURIComponent(q)}` : '/songs');
     if (!q) {
       renderTracks(rawSectionData);
       return;
     }
-    const filtered = rawSectionData.filter(t => 
+    const filtered = rawSectionData.filter(t =>
       (t.title && t.title.toLowerCase().includes(q)) ||
       (t.artist && t.artist.toLowerCase().includes(q)) ||
       (t.album_title && t.album_title.toLowerCase().includes(q))
     );
     renderTracks(filtered);
   } else if (currentSectionView === 'artists') {
+    replaceURL(q ? `/artists?q=${encodeURIComponent(q)}` : '/artists');
     const grid = document.getElementById('grid-container');
     grid.innerHTML = '';
     const filtered = !q ? rawSectionData : rawSectionData.filter(a => a.name && a.name.toLowerCase().includes(q));
-    
+
     if (filtered.length === 0) {
       grid.innerHTML = '<div class="bp5-text-muted">No matching artists</div>';
       return;
@@ -187,7 +320,12 @@ function handleSectionFilter(query) {
     renderArtistCards(filtered);
   } else if (currentSectionView === 'albums') {
     if (albumSearchDebounceTimer) clearTimeout(albumSearchDebounceTimer);
-    
+
+    let urlParams = new URLSearchParams();
+    urlParams.append('filter', activeAlbumFilter);
+    if (q) urlParams.append('q', q);
+    replaceURL(`/albums?${urlParams.toString()}`);
+
     albumSearchDebounceTimer = setTimeout(async () => {
       const grid = document.getElementById('grid-container');
       try {
@@ -279,7 +417,7 @@ function renderArtistCards(artists) {
   artists.forEach(a => {
     const card = document.createElement('div');
     card.className = 'grid-card';
-    card.onclick = () => openArtistPage(a.name);
+    card.onclick = () => navOpenArtistPage(a.name);
     let parts = [];
     if (a.album_count > 0) parts.push(`${a.album_count} ${a.album_count === 1 ? 'album' : 'albums'}`);
     if (a.track_count > 0) parts.push(`${a.track_count} ${a.track_count === 1 ? 'track' : 'tracks'}`);
@@ -324,7 +462,7 @@ function renderAlbumCards(albums) {
   albums.forEach(alb => {
     const card = document.createElement('div');
     card.className = 'grid-card';
-    card.onclick = () => openAlbumPage(alb.id);
+    card.onclick = () => navOpenAlbumPage(alb.id);
 
     const coverUrl = alb.cover_image_url || fallbackCover;
     
@@ -398,7 +536,7 @@ async function openArtistPage(artistName) {
         }
 
         return `
-          <div class="grid-card" onclick="openAlbumPage('${alb.id}')">
+          <div class="grid-card" onclick="navOpenAlbumPage('${alb.id}')">
             <div class="grid-card-art-wrap">
               <img class="grid-card-art" src="${coverUrl}" alt="cover" onerror="this.onerror=null;this.src='${fallbackCover}'">
               ${badgeHTML}
@@ -423,7 +561,7 @@ async function openArtistPage(artistName) {
       const tRows = artistData.tracks.map((t, idx) => {
         const isClickable = Boolean(t.album_id);
         const trAttrs = isClickable 
-          ? `class="clickable-track-row" title="View album: ${t.album_title || 'Album details'}" onclick="if(!event.target.closest('a, button, input, svg')) openAlbumPage('${t.album_id}')"`
+          ? `class="clickable-track-row" title="View album: ${t.album_title || 'Album details'}" onclick="if(!event.target.closest('a, button, input, svg')) navOpenAlbumPage('${t.album_id}')"`
           : '';
         return `
         <tr ${trAttrs}>
@@ -468,7 +606,7 @@ async function openArtistPage(artistName) {
     }
 
     container.innerHTML = `
-      <button class="bp5-button bp5-minimal bp5-icon-arrow-left back-btn" onclick="showArtists()">Back to Artists</button>
+      <button class="bp5-button bp5-minimal bp5-icon-arrow-left back-btn" onclick="navShowArtists()">Back to Artists</button>
       <div class="album-header-card bp5-card bp5-elevation-1">
         ${artistHeaderAvatar}
         <div class="album-header-info">
@@ -642,7 +780,7 @@ async function openAlbumPage(albumId) {
     }
 
     container.innerHTML = `
-      <button class="bp5-button bp5-minimal bp5-icon-arrow-left back-btn" onclick="showAlbums()">Back to Albums</button>
+      <button class="bp5-button bp5-minimal bp5-icon-arrow-left back-btn" onclick="navShowAlbums()">Back to Albums</button>
       <div class="album-header-card bp5-card bp5-elevation-1">
         <img class="album-header-art" src="${coverUrl}" alt="Album Art" onerror="this.onerror=null;this.src='${fallbackCover}'">
         <div class="album-header-info">
@@ -817,7 +955,7 @@ async function loadPlaylists() {
       if (activePlaylistID === p.id && currentSectionView === 'playlist') {
         a.classList.add('bp5-active');
       }
-      a.onclick = () => selectPlaylist(p.id, p.name, p.description, a);
+      a.onclick = () => navSelectPlaylist(p.id, p.name, p.description, a);
       const formattedDate = formatDate(p.created_at);
 
       const urls = p.cover_art_urls || [];
@@ -1030,6 +1168,7 @@ async function submitAddTrackForm() {
     }
 
     closeAddTrackModal();
+    pushURL('/songs');
     showAllSongs();
   } catch (err) {
     alert(err.message);
@@ -1072,6 +1211,7 @@ async function submitPlaylistForm() {
       const newPl = await res.json();
       closePlaylistModal();
       await loadPlaylists();
+      pushURL(`/playlists/${encodeURIComponent(newPl.id)}`);
       selectPlaylist(newPl.id, newPl.name, newPl.description);
     }
   } catch (err) {
@@ -1088,6 +1228,7 @@ async function deletePlaylistConfirm(id, name) {
     if (!res.ok) throw new Error('Failed to delete playlist');
     if (activePlaylistID === id) {
       activePlaylistID = null;
+      pushURL('/songs');
       showAllSongs();
     }
     await loadPlaylists();
@@ -1190,12 +1331,8 @@ async function selectPlaylist(id, name, description, elem) {
   hideSectionFilter();
 
   if (!elem) {
-    const sidebarItems = document.querySelectorAll('#sidebar-playlists .playlist-item-btn');
-    sidebarItems.forEach(el => {
-      if (el.onclick && el.onclick.toString().includes(id)) {
-        el.classList.add('bp5-active');
-      }
-    });
+    const match = document.querySelector(`#sidebar-playlists .playlist-item-btn[data-playlist-id="${id}"]`);
+    if (match) match.classList.add('bp5-active');
   } else {
     elem.classList.add('bp5-active');
   }
@@ -1264,17 +1401,26 @@ function renderPlaylistView(playlistID, name, description, tracks) {
 
 let searchDebounceTimer = null;
 
-async function handleSearch(query) {
-  if (!query || query.trim() === '') {
+function handleSearch(query) {
+  const trimmed = (query || '').trim();
+  if (!trimmed) {
+    replaceURL('/songs');
     showAllSongs();
     return;
   }
 
+  replaceURL(`/search?q=${encodeURIComponent(trimmed)}`);
+
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(() => renderSearchResults(trimmed), 200);
+}
+
+async function renderSearchResults(query) {
   clearNavActive();
   hideSectionFilter();
   const headerDiv = document.getElementById('playlist-view-header');
   if (headerDiv) headerDiv.style.display = 'none';
-  
+
   document.getElementById('grid-container').style.display = 'none';
   document.getElementById('table-container').style.display = 'block';
 
@@ -1290,17 +1436,14 @@ async function handleSearch(query) {
     </tr>
   `;
 
-  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
-  searchDebounceTimer = setTimeout(async () => {
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-      const tracks = await res.json();
-      renderTracks(tracks);
-    } catch (err) {
-      console.error('Search failed:', err);
-      tbody.innerHTML = '<tr><td colspan="5" class="bp5-text-muted" style="text-align: center; padding: 24px;">Search error</td></tr>';
-    }
-  }, 200);
+  try {
+    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+    const tracks = await res.json();
+    renderTracks(tracks);
+  } catch (err) {
+    console.error('Search failed:', err);
+    tbody.innerHTML = '<tr><td colspan="5" class="bp5-text-muted" style="text-align: center; padding: 24px;">Search error</td></tr>';
+  }
 }
 
 function clearNavActive() {
@@ -1333,7 +1476,7 @@ function renderTracks(tracks) {
       tr.title = `View album: ${t.album_title || 'Album details'}`;
       tr.onclick = (e) => {
         if (e.target.closest('a, button, input, svg')) return;
-        openAlbumPage(t.album_id);
+        navOpenAlbumPage(t.album_id);
       };
     }
 
