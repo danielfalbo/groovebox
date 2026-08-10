@@ -1201,23 +1201,7 @@ func DedupeAlbums(db *sql.DB) (int, error) {
 			}
 		}
 
-		// 4. Create a release_version record for secondary album if none exists
-		var existingVerCount int
-		_ = tx.QueryRow("SELECT COUNT(*) FROM release_versions WHERE album_id = ? AND title = ?", canonical.id, secondary.title).Scan(&existingVerCount)
-		if existingVerCount == 0 {
-			vID := uuid.New().String()
-			now := time.Now().Format("2006-01-02 15:04:05")
-			source := "digital"
-			if secondary.hasVinyl {
-				source = "collection"
-			} else if secondary.inWantlist {
-				source = "wantlist"
-			}
-			_, _ = tx.Exec(`INSERT INTO release_versions (id, album_id, title, artist, source, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
-				vID, canonical.id, secondary.title, secondary.artist, source, now)
-		}
-
-		// 5. Delete redundant secondary album
+		// 4. Delete redundant secondary album
 		_, _ = tx.Exec("DELETE FROM albums WHERE id = ?", secondary.id)
 
 		if err := tx.Commit(); err == nil {

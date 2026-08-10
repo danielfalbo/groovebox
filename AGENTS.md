@@ -3,7 +3,7 @@
 ## 🚀 Overview & Repository Structure
 `my-music-lib` is a self-hosted, local-first music archival and curation engine written in Go and SQLite with a vanilla HTML5/CSS3/JS Web UI.
 
-- `main.go`: Entry point, CLI flag handlers (`-port`, `-import-spotify`, `-import-spotify-account`, `-import-apple-music`, `-sync-discogs`), REST API routes (`/api/albums`, `/api/artists`, `/api/sync/discogs`, `/api/sync/status`).
+- `main.go`: Entry point, CLI flag handlers (`-port`, `-import-spotify`, `-import-spotify-account`, `-import-apple-music`, `-sync-discogs`, `-dedupe-albums`), REST API routes (`/api/albums`, `/api/artists`, `/api/sync/discogs`, `/api/sync/status`, `/api/albums/dedupe`), and `DedupeAlbums`/`NormalizeAlbumTitle` merge logic.
 - `db.go`: SQLite connection, WAL mode initialization, schema migration execution (`ensureColumn` helper for safe ALTER TABLE).
 - `schema.sql`: DDL for 1-to-1 canonical `albums`, `release_versions` (Discogs collection/wantlist pressings), `tracks`, `playlists`, `playlist_tracks`, and `search_fts` (FTS5 table). `playlists` and `tracks` carry `spotify_id` / `apple_music_id`; `playlist_tracks` carries `added_at`.
 - `importer.go`: Spotify CSV/Notion export parser linking imported tracks to canonical albums.
@@ -65,6 +65,10 @@
 7. **Historical Shazam Ingestion & Track Cleanups:**
    - Imported 30 historical Shazam tracks directly into monthly playlists (`2026-08`, `2026-07`, `2026-06`).
    - Deduplicated 602 redundant track records across identical albums and backfilled missing track durations via iTunes API.
+
+8. **Album Deduplication (`DedupeAlbums`):**
+   - Candidate pairs (same artist) qualify via matching `discogs_master_id` OR equal `NormalizeAlbumTitle` output — normalized title equality alone is sufficient merge evidence (do not additionally require track overlap; duplicate albums can have complementary, non-overlapping tracklists, e.g. a collection entry with only side-A tracks vs. a digital entry with only side-B tracks).
+   - Merges reassign the secondary album's `release_versions` and `tracks` onto the canonical album; never insert a placeholder `release_versions` row for the deleted secondary album — the Discogs Pressings table (`public/app.js`) renders every `release_versions` row as a real pressing, so synthetic rows show up as fake "Discogs Pressing" noise.
 
 
 ## 🛠️ Essential Commands

@@ -71,12 +71,13 @@ Access the UI locally at `http://localhost:8080`.
 - `GET /api/autocomplete/online` - Live global iTunes API autocomplete for auto-filling metadata & cover art.
 - `GET /api/artists` - Browse all artists (aggregating albums & tracks) with cover art avatars.
 - `GET /api/artists/:name` - Get dedicated artist detail view with albums grid & tracks.
-- `GET /api/albums?filter=[collection|wantlist]` - Browse canonical master albums. Optional filter by `collection` (has_vinyl=1) or `wantlist` (in_wantlist=1).
+- `GET /api/albums?filter=[collection|wantlist]&q=:query` - Browse canonical master albums. Optional filter by `collection` (in_collection=1, owned in Discogs) or `wantlist` (in_wantlist=1). Optional `q` searches title/artist.
 - `GET /api/albums/counts` - Get `{all, collection, wantlist}` album counts for UI badge display.
 - `GET /api/albums/:id` - Get dedicated album detail view (Discogs pressings table with thumbnails & tracklist).
 - `GET /api/search?q=:query` - Instant FTS5 full-text search across songs, artists, and releases.
 - `POST /api/sync/discogs` - Trigger async Discogs collection & wantlist sync.
-- `GET /api/sync/status` - Thread-safe live progress streaming (*stage*, *current_page*, *total_pages*, *items_fetched*, *last_synced_at*).
+- `POST /api/albums/dedupe` - Trigger async lossless master album deduplication (`DedupeAlbums`), merging duplicate albums matched by Discogs master ID, normalized title, or track overlap.
+- `GET /api/sync/status` - Thread-safe live progress streaming (*stage*: `idle`/`collection`/`wantlist`/`deduping`/etc, *current_page*, *total_pages*, *items_fetched*, *last_synced_at*, *last_deduped_at*).
 
 ---
 
@@ -155,7 +156,7 @@ npx -y playwright screenshot http://localhost:8080 screenshot.png
 
 ## 🗂️ Database Schema
 
-- **`albums`**: 1-to-1 canonical master release entities (`discogs_master_id`, title, artist, release year, cover image, collection vinyl & wantlist flags).
+- **`albums`**: 1-to-1 canonical master release entities (`discogs_master_id`, title, artist, release year, cover image, `has_vinyl`/`in_collection`/`in_wantlist` flags).
 - **`release_versions`**: Specific Discogs physical pressings & digital entries (`album_id`, `discogs_release_id`, label, cat#, format, source).
 - **`tracks`**: Individual songs linked to canonical albums (title, artist, duration, Spotify ID, Shazam ID, ISRC).
 - **`playlists`**: Internal playlists.
