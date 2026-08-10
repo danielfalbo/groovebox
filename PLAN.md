@@ -43,10 +43,10 @@
 
 ## 🚀 Execution Roadmap & TODOs
 
-### Step 1: Core Foundation & SQLite Setup ⏳
-- [ ] Initialize `go.mod` and add pure Go SQLite driver (`modernc.org/sqlite`).
-- [ ] Create `schema.sql` with table definitions, indexes, and FTS5 search table.
-- [ ] Write `db.go` to initialize database connection, execute schema migrations, and prepare helper queries.
+### Step 1: Core Foundation & SQLite Setup ✅
+- [x] Initialize `go.mod` and add pure Go SQLite driver (`modernc.org/sqlite`).
+- [x] Create `schema.sql` with table definitions, indexes, and FTS5 search table.
+- [x] Write `db.go` to initialize database connection, execute schema migrations, and prepare helper queries.
 
 ### Step 2: Minimal Web Server & Health Endpoint ⬜
 - [ ] Write `main.go` with Go `net/http` router.
