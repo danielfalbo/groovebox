@@ -3,47 +3,8 @@ let currentPlaylistSort = localStorage.getItem('playlist-sort') || 'date_desc';
 document.addEventListener('DOMContentLoaded', () => {
   initSidebarState();
   initSortState();
-  loadStats();
   loadPlaylists();
 });
-
-function toggleSidebar() {
-  const sidebar = document.getElementById('sidebar-panel');
-  const isCollapsed = sidebar.classList.toggle('collapsed');
-  localStorage.setItem('sidebar-collapsed', isCollapsed ? 'true' : 'false');
-}
-
-function initSidebarState() {
-  if (localStorage.getItem('sidebar-collapsed') === 'true') {
-    const sidebar = document.getElementById('sidebar-panel');
-    sidebar.classList.add('collapsed');
-  }
-}
-
-function initSortState() {
-  const select = document.getElementById('playlist-sort-select');
-  if (select) {
-    select.value = currentPlaylistSort;
-  }
-}
-
-function handleSortChange(sortValue) {
-  currentPlaylistSort = sortValue;
-  localStorage.setItem('playlist-sort', sortValue);
-  loadPlaylists();
-}
-
-async function loadStats() {
-  try {
-    const res = await fetch('/api/stats');
-    const data = await res.json();
-    document.getElementById('stat-tracks').textContent = data.total_tracks.toLocaleString();
-    document.getElementById('stat-releases').textContent = data.total_releases.toLocaleString();
-    document.getElementById('stat-playlists').textContent = data.total_playlists.toLocaleString();
-  } catch (err) {
-    console.error('Failed to load stats:', err);
-  }
-}
 
 async function loadPlaylists() {
   try {
@@ -223,7 +184,6 @@ async function triggerDiscogsSync() {
     const data = await res.json();
     if (res.ok) {
       alert('Discogs sync complete!');
-      loadStats();
       showAlbums();
     } else {
       alert('Discogs sync error: ' + (data.error || 'Failed to sync'));

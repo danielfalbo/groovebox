@@ -298,38 +298,6 @@ html, body {
   gap: 20px;
 }
 
-/* Stats Row */
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-}
-
-.stat-card {
-  background: #1c2127;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-  border-radius: 6px;
-}
-
-.stat-icon {
-  color: #2b95d6;
-}
-
-.stat-number {
-  font-size: 20px;
-  font-weight: 700;
-  color: #f5f8fa;
-}
-
-.stat-desc {
-  font-size: 12px;
-  color: #8f99a8;
-}
-
 /* View Title */
 .view-title-card {
   background: transparent;
