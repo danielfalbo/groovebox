@@ -41,8 +41,9 @@
   - Empty-state message when no pressings are linked yet.
   - Discogs release link replaced with inline SVG Discogs logo icon button (`discogs-icon-btn` in `app.js`).
   - Cleaner header status tags: `📀 In Collection` / `🎯 On Wantlist`.
-  - Discogs icon button styling (`.discogs-icon-btn`, `.discogs-svg-icon` in `public/style.css`) matching the Spotify/YouTube icon buttons.
-
+- [x] **Track Row Navigation to Album Details**: Returned `album_id` in track API responses (`TrackDetail` struct) and added clickable row handlers (`.clickable-track-row`) across tracklists to navigate directly to the track's album detail view.
+- [x] **Unified SVG Fallback Cover Art**: Integrated standard inline SVG vinyl fallback image (`fallbackCover`) across album cards, playlist collages, and pressing thumbnails with `onerror` safety to eliminate broken image icons and layout flicker.
+- [x] **Discogs & Qobuz Search Buttons**: Added action buttons to the Pressings section header on Album Detail pages to open Discogs Master releases (`https://www.discogs.com/master/:id`), search Discogs (`https://www.discogs.com/search/?q=...&type=master`), and search the Qobuz Download Store (`https://www.qobuz.com/gb-en/search/albums/...`).
 - [x] **One-time Spotify Account Import** *(completed 2026-08-10)*: Imported 76 owned playlists (19,607 track memberships, 14,517 unique tracks) directly from Spotify Web API via OAuth Authorization Code flow (`-import-spotify-account` CLI flag). Earliest track `added_at` used as playlist `created_at` proxy for sort ordering. Followed/external playlists skipped per Spotify API rules. No refresh-token storage or recurring sync.
 
 ---
@@ -68,4 +69,3 @@ These were part of the original V1 scope and were never completed — they dropp
 ## 📋 Recommended Future Tasks
 
 1. **Format & Genre Sub-Filters**: Add additional pill filters for media format (Vinyl LP, CD, Digital) and master genres within the Collection/Wantlist views.
-2. **Album Page: Discogs Master Link**: Surface Discogs master release URL in album header (`discogs_master_id` already returned by API — link to `https://www.discogs.com/master/:id`).

@@ -10,7 +10,7 @@ A self-hosted, local-first music archival engine that consolidates physical medi
 - **Database:** SQLite via `modernc.org/sqlite` (Pure Go, CGO-free, portable single binary)
 - **Search Engine:** SQLite FTS5 (Porter stemmer + unicode61 tokenizer for instant full-text search)
 - **Frontend:** Vanilla HTML5 + CSS3 (Glassmorphism dark mode with Blueprint BP5) + Vanilla JavaScript
-- **Features:** Collapsible sidebar, creation date playlist sorting, 2x2 grid collage playlist covers, Library view switching (All Songs, Artists with avatars, Albums grid, Dedicated Album & Artist pages)
+- **Features:** Collapsible sidebar, creation date playlist sorting, 2x2 grid collage playlist covers, Library view switching (All Songs, Artists with avatars, Albums grid, Dedicated Album & Artist pages), clickable track rows navigating to Album pages, SVG cover art fallback error handling, and Discogs + Qobuz store master release search links.
 - **Networking:** Localhost & Tailscale VPN ready
 
 ---

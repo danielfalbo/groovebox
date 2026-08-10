@@ -1,4 +1,5 @@
 let currentPlaylistSort = localStorage.getItem('playlist-sort') || 'date_desc';
+const fallbackCover = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Crect width='180' height='180' fill='%23252a31' rx='6'/%3E%3Cpath fill='%23738091' d='M70 120v-40l40-10v42.5a10 10 0 1 1-10-9.5V85l-20 5v32.5A10 10 0 1 1 70 120z'/%3E%3C/svg%3E`;
 
 document.addEventListener('DOMContentLoaded', () => {
   initSidebarState();
@@ -51,8 +52,8 @@ async function loadPlaylists() {
       if (urls.length > 0) {
         const gridImgs = [];
         for (let i = 0; i < 4; i++) {
-          const imgUrl = urls[i % urls.length] || 'https://via.placeholder.com/38';
-          gridImgs.push(`<img class="playlist-cover-img" src="${imgUrl}" alt="art" onerror="this.src='https://via.placeholder.com/38'">`);
+          const imgUrl = urls[i % urls.length] || fallbackCover;
+          gridImgs.push(`<img class="playlist-cover-img" src="${imgUrl}" alt="art" onerror="this.onerror=null;this.src='${fallbackCover}'">`);
         }
         coverHTML = `<div class="playlist-cover-grid">${gridImgs.join('')}</div>`;
       } else {
@@ -305,7 +306,7 @@ function renderAlbumCards(albums) {
     card.className = 'grid-card';
     card.onclick = () => openAlbumPage(alb.id);
 
-    const coverUrl = alb.cover_image_url || 'https://via.placeholder.com/180';
+    const coverUrl = alb.cover_image_url || fallbackCover;
     
     let badgeHTML = '';
     if (alb.has_vinyl) {
@@ -321,7 +322,7 @@ function renderAlbumCards(albums) {
 
     card.innerHTML = `
       <div class="grid-card-art-wrap">
-        <img class="grid-card-art" src="${coverUrl}" alt="cover" onerror="this.src='https://via.placeholder.com/180'">
+        <img class="grid-card-art" src="${coverUrl}" alt="cover" onerror="this.onerror=null;this.src='${fallbackCover}'">
         ${badgeHTML}
       </div>
       <div class="grid-card-title">${alb.title}</div>
@@ -350,7 +351,7 @@ async function openArtistPage(artistName) {
     let albumsGridHTML = '';
     if (artistData.albums && artistData.albums.length > 0) {
       const cards = artistData.albums.map(alb => {
-        const coverUrl = alb.cover_image_url || 'https://via.placeholder.com/180';
+        const coverUrl = alb.cover_image_url || fallbackCover;
         let badgeHTML = '';
         if (alb.has_vinyl) {
           badgeHTML = `<span class="bp5-tag bp5-intent-warning bp5-round album-badge">📀 Vinyl</span>`;
@@ -365,7 +366,7 @@ async function openArtistPage(artistName) {
         return `
           <div class="grid-card" onclick="openAlbumPage('${alb.id}')">
             <div class="grid-card-art-wrap">
-              <img class="grid-card-art" src="${coverUrl}" alt="cover" onerror="this.src='https://via.placeholder.com/180'">
+              <img class="grid-card-art" src="${coverUrl}" alt="cover" onerror="this.onerror=null;this.src='${fallbackCover}'">
               ${badgeHTML}
             </div>
             <div class="grid-card-title">${alb.title}</div>
@@ -385,8 +386,13 @@ async function openArtistPage(artistName) {
 
     let tracksHTML = '';
     if (artistData.tracks && artistData.tracks.length > 0) {
-      const tRows = artistData.tracks.map((t, idx) => `
-        <tr>
+      const tRows = artistData.tracks.map((t, idx) => {
+        const isClickable = Boolean(t.album_id);
+        const trAttrs = isClickable 
+          ? `class="clickable-track-row" title="View album: ${t.album_title || 'Album details'}" onclick="if(!event.target.closest('a, button, input, svg')) openAlbumPage('${t.album_id}')"`
+          : '';
+        return `
+        <tr ${trAttrs}>
           <td>${idx + 1}</td>
           <td>
             <div class="track-title-text">${t.title}</div>
@@ -398,7 +404,8 @@ async function openArtistPage(artistName) {
             ${t.spotify_id ? `<a href="https://open.spotify.com/track/${t.spotify_id}" target="_blank" class="bp5-button bp5-minimal bp5-small spotify-icon-btn" title="Open in Spotify"><svg class="spotify-svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.48-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141 4.38-1.38 9.841-.72 13.44 1.5.42.301.6.841.301 1.32zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.539.301.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg></a>` : ''}
           </td>
         </tr>
-      `).join('');
+      `;
+      }).join('');
 
       tracksHTML = `
         <div class="album-section">
@@ -471,7 +478,7 @@ async function openAlbumPage(albumId) {
     if (!res.ok) throw new Error('Album not found');
     const album = await res.json();
 
-    const coverUrl = album.cover_image_url || 'https://via.placeholder.com/220';
+    const coverUrl = album.cover_image_url || fallbackCover;
     let badgesHTML = '';
     if (album.has_vinyl) {
       badgesHTML += `<span class="bp5-tag bp5-intent-warning bp5-round album-detail-badge">📀 In Collection</span>`;
@@ -479,6 +486,23 @@ async function openAlbumPage(albumId) {
     if (album.in_wantlist) {
       badgesHTML += `<span class="bp5-tag bp5-intent-primary bp5-round album-detail-badge">🎯 On Wantlist</span>`;
     }
+
+    const discogsSvg = `<svg class="discogs-svg-icon" viewBox="0 0 24 24" fill="currentColor" style="display: inline-block; vertical-align: text-bottom; margin-right: 4px;"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 4.2a7.8 7.8 0 1 1 0 15.6 7.8 7.8 0 0 1 0-15.6zm0 4.2a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2zm0 2.1a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z"/></svg>`;
+    const qobuzSvg = `<svg viewBox="0 0 24 24" fill="currentColor" style="width: 16px; height: 16px; display: inline-block; vertical-align: text-bottom; margin-right: 4px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm2.5-5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/></svg>`;
+
+    const searchQuery = encodeURIComponent(`${album.artist} ${album.title}`);
+    const discogsSearchUrl = `https://www.discogs.com/search/?q=${searchQuery}&type=master`;
+    const qobuzSearchUrl = `https://www.qobuz.com/gb-en/search/albums/${searchQuery}`;
+    
+    let discogsMasterBtn = '';
+    if (album.discogs_master_id) {
+      discogsMasterBtn = `<a href="https://www.discogs.com/master/${album.discogs_master_id}" target="_blank" class="bp5-button bp5-outlined bp5-small">${discogsSvg} Open Master #${album.discogs_master_id} ↗</a>`;
+    }
+
+    const discogsSearchBtn = `<a href="${discogsSearchUrl}" target="_blank" class="bp5-button bp5-outlined bp5-small">${discogsSvg} Search Discogs ↗</a>`;
+    const qobuzSearchBtn = `<a href="${qobuzSearchUrl}" target="_blank" class="bp5-button bp5-outlined bp5-small">${qobuzSvg} Search Qobuz Store ↗</a>`;
+
+    const pressingsActionBtns = `<div style="display: flex; align-items: center; gap: 8px;">${discogsMasterBtn}${discogsSearchBtn}${qobuzSearchBtn}</div>`;
 
     // Versions Table (Pressings & Wants)
     let versionsHTML = '';
@@ -498,7 +522,7 @@ async function openAlbumPage(albumId) {
         return `
           <tr>
             <td style="width: 44px;">
-              <img src="${pressingArt}" alt="pressing art" class="version-pressing-art" onerror="this.src='https://via.placeholder.com/40'">
+              <img src="${pressingArt}" alt="pressing art" class="version-pressing-art" onerror="this.onerror=null;this.src='${fallbackCover}'">
             </td>
             <td>
               <div class="version-item-title">
@@ -517,7 +541,10 @@ async function openAlbumPage(albumId) {
 
       versionsHTML = `
         <div class="album-section">
-          <h4 class="bp5-heading section-heading"><span class="bp5-icon-standard bp5-icon-layers"></span> Discogs Collection & Wantlist Pressings (${album.versions.length})</h4>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <h4 class="bp5-heading section-heading" style="margin: 0;"><span class="bp5-icon-standard bp5-icon-layers"></span> Discogs Collection & Wantlist Pressings (${album.versions.length})</h4>
+            ${pressingsActionBtns}
+          </div>
           <table class="bp5-html-table bp5-html-table-striped bp5-compact full-width-table">
             <thead>
               <tr>
@@ -535,7 +562,10 @@ async function openAlbumPage(albumId) {
     } else {
       versionsHTML = `
         <div class="album-section">
-          <h4 class="bp5-heading section-heading"><span class="bp5-icon-standard bp5-icon-layers"></span> Pressings</h4>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <h4 class="bp5-heading section-heading" style="margin: 0;"><span class="bp5-icon-standard bp5-icon-layers"></span> Pressings</h4>
+            ${pressingsActionBtns}
+          </div>
           <div class="bp5-text-muted" style="font-size: 13px;">No specific Discogs physical release pressings linked to this canonical album yet.</div>
         </div>
       `;
@@ -580,14 +610,14 @@ async function openAlbumPage(albumId) {
     container.innerHTML = `
       <button class="bp5-button bp5-minimal bp5-icon-arrow-left back-btn" onclick="showAlbums()">Back to Albums</button>
       <div class="album-header-card bp5-card bp5-elevation-1">
-        <img class="album-header-art" src="${coverUrl}" alt="Album Art" onerror="this.src='https://via.placeholder.com/220'">
+        <img class="album-header-art" src="${coverUrl}" alt="Album Art" onerror="this.onerror=null;this.src='${fallbackCover}'">
         <div class="album-header-info">
           <div class="album-header-badges">${badgesHTML}</div>
           <h1 class="bp5-heading album-header-title">${album.title}</h1>
           <h3 class="bp5-heading album-header-artist">${album.artist}</h3>
           <div class="album-header-meta">
             ${album.release_year ? `<span>Release Year: ${album.release_year}</span>` : ''}
-            ${album.discogs_master_id ? `<span>Discogs Master ID: <a href="https://www.discogs.com/master/${album.discogs_master_id}" target="_blank">#${album.discogs_master_id} ↗</a></span>` : ''}
+            ${album.discogs_master_id ? `<span>Discogs Master ID: #${album.discogs_master_id}</span>` : ''}
           </div>
         </div>
       </div>
@@ -775,6 +805,15 @@ function renderTracks(tracks) {
 
   tracks.forEach((t, i) => {
     const tr = document.createElement('tr');
+    if (t.album_id) {
+      tr.classList.add('clickable-track-row');
+      tr.title = `View album: ${t.album_title || 'Album details'}`;
+      tr.onclick = (e) => {
+        if (e.target.closest('a, button, input, svg')) return;
+        openAlbumPage(t.album_id);
+      };
+    }
+
     const coverUrl = t.cover_image_url || fallbackCover;
     const duration = formatDuration(t.duration_ms);
     const ytBtn = `<a href="https://www.youtube.com/results?search_query=${encodeURIComponent((t.artist || '') + ' ' + t.title)}" target="_blank" class="bp5-button bp5-minimal bp5-small youtube-icon-btn" title="Search on YouTube"><svg class="youtube-svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></a>`;

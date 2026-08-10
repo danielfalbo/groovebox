@@ -31,6 +31,7 @@ type TrackDetail struct {
 	Artist        string `json:"artist"`
 	DurationMs    int    `json:"duration_ms"`
 	SpotifyID     string `json:"spotify_id"`
+	AlbumID       string `json:"album_id"`
 	AlbumTitle    string `json:"album_title"`
 	CoverImageURL string `json:"cover_image_url"`
 	Position      int    `json:"position"`
@@ -236,7 +237,7 @@ func main() {
 
 		rows, err := db.Query(`
 			SELECT t.id, t.title, t.artist, t.duration_ms, COALESCE(t.spotify_id, ''),
-			       COALESCE(a.title, ''), COALESCE(a.cover_image_url, ''), pt.position
+			       COALESCE(t.album_id, ''), COALESCE(a.title, ''), COALESCE(a.cover_image_url, ''), pt.position
 			FROM playlist_tracks pt
 			JOIN tracks t ON pt.track_id = t.id
 			LEFT JOIN albums a ON t.album_id = a.id
@@ -251,7 +252,7 @@ func main() {
 		var tracks []TrackDetail
 		for rows.Next() {
 			var t TrackDetail
-			if err := rows.Scan(&t.ID, &t.Title, &t.Artist, &t.DurationMs, &t.SpotifyID, &t.AlbumTitle, &t.CoverImageURL, &t.Position); err == nil {
+			if err := rows.Scan(&t.ID, &t.Title, &t.Artist, &t.DurationMs, &t.SpotifyID, &t.AlbumID, &t.AlbumTitle, &t.CoverImageURL, &t.Position); err == nil {
 				tracks = append(tracks, t)
 			}
 		}
@@ -262,7 +263,7 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		rows, err := db.Query(`
 			SELECT t.id, t.title, t.artist, t.duration_ms, COALESCE(t.spotify_id, ''),
-			       COALESCE(a.title, ''), COALESCE(a.cover_image_url, ''), 0
+			       COALESCE(t.album_id, ''), COALESCE(a.title, ''), COALESCE(a.cover_image_url, ''), 0
 			FROM tracks t
 			LEFT JOIN albums a ON t.album_id = a.id
 			ORDER BY t.title ASC
@@ -276,7 +277,7 @@ func main() {
 		var tracks []TrackDetail
 		for rows.Next() {
 			var t TrackDetail
-			if err := rows.Scan(&t.ID, &t.Title, &t.Artist, &t.DurationMs, &t.SpotifyID, &t.AlbumTitle, &t.CoverImageURL, &t.Position); err == nil {
+			if err := rows.Scan(&t.ID, &t.Title, &t.Artist, &t.DurationMs, &t.SpotifyID, &t.AlbumID, &t.AlbumTitle, &t.CoverImageURL, &t.Position); err == nil {
 				tracks = append(tracks, t)
 			}
 		}
@@ -365,7 +366,7 @@ func main() {
 		// Query tracks by artist
 		tRows, tErr := db.Query(`
 			SELECT t.id, t.title, t.artist, t.duration_ms, COALESCE(t.spotify_id, ''),
-			       COALESCE(a.title, ''), COALESCE(a.cover_image_url, ''), 0
+			       COALESCE(t.album_id, ''), COALESCE(a.title, ''), COALESCE(a.cover_image_url, ''), 0
 			FROM tracks t
 			LEFT JOIN albums a ON t.album_id = a.id
 			WHERE LOWER(t.artist) = LOWER(?)
@@ -373,7 +374,7 @@ func main() {
 		if tErr == nil {
 			for tRows.Next() {
 				var t TrackDetail
-				if tRows.Scan(&t.ID, &t.Title, &t.Artist, &t.DurationMs, &t.SpotifyID, &t.AlbumTitle, &t.CoverImageURL, &t.Position) == nil {
+				if tRows.Scan(&t.ID, &t.Title, &t.Artist, &t.DurationMs, &t.SpotifyID, &t.AlbumID, &t.AlbumTitle, &t.CoverImageURL, &t.Position) == nil {
 					detail.Tracks = append(detail.Tracks, t)
 				}
 			}
@@ -480,7 +481,7 @@ func main() {
 		// Get tracks
 		tRows, tErr := db.Query(`
 			SELECT t.id, t.title, t.artist, t.duration_ms, COALESCE(t.spotify_id, ''),
-			       a.title, COALESCE(a.cover_image_url, ''), 0
+			       COALESCE(t.album_id, ''), a.title, COALESCE(a.cover_image_url, ''), 0
 			FROM tracks t
 			JOIN albums a ON t.album_id = a.id
 			WHERE t.album_id = ?
@@ -488,7 +489,7 @@ func main() {
 		if tErr == nil {
 			for tRows.Next() {
 				var t TrackDetail
-				if tRows.Scan(&t.ID, &t.Title, &t.Artist, &t.DurationMs, &t.SpotifyID, &t.AlbumTitle, &t.CoverImageURL, &t.Position) == nil {
+				if tRows.Scan(&t.ID, &t.Title, &t.Artist, &t.DurationMs, &t.SpotifyID, &t.AlbumID, &t.AlbumTitle, &t.CoverImageURL, &t.Position) == nil {
 					alb.Tracks = append(alb.Tracks, t)
 				}
 			}
@@ -529,7 +530,7 @@ func main() {
 		ftsQuery := query + "*"
 		rows, err := db.Query(`
 			SELECT t.id, t.title, t.artist, t.duration_ms, COALESCE(t.spotify_id, ''),
-			       COALESCE(a.title, ''), COALESCE(a.cover_image_url, ''), 0
+			       COALESCE(t.album_id, ''), COALESCE(a.title, ''), COALESCE(a.cover_image_url, ''), 0
 			FROM search_fts fts
 			JOIN tracks t ON fts.target_id = t.id
 			LEFT JOIN albums a ON t.album_id = a.id
@@ -544,7 +545,7 @@ func main() {
 		var tracks []TrackDetail
 		for rows.Next() {
 			var t TrackDetail
-			if err := rows.Scan(&t.ID, &t.Title, &t.Artist, &t.DurationMs, &t.SpotifyID, &t.AlbumTitle, &t.CoverImageURL, &t.Position); err == nil {
+			if err := rows.Scan(&t.ID, &t.Title, &t.Artist, &t.DurationMs, &t.SpotifyID, &t.AlbumID, &t.AlbumTitle, &t.CoverImageURL, &t.Position); err == nil {
 				tracks = append(tracks, t)
 			}
 		}

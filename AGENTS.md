@@ -46,10 +46,13 @@
    - Uses Blueprint dark theme CSS (`bp5-dark`) with custom dark mode tweaks (`#111418` background).
    - Favicon: `public/favicon.svg` (vector vinyl SVG) + `public/favicon.jpg` (hi-res fallback).
    - Navbar brand: custom animated vinyl SVG icon (rotates 90° on hover via `.custom-navbar-logo-icon`).
-   - Dedicated views for **Album Details** (pressings table with 32×32px thumbnails, source badges, Discogs logo icon button) and **Artist Pages** (albums grid & tracks).
+   - Dedicated views for **Album Details** (pressings table with 32×32px thumbnails, source badges, Discogs & Qobuz action buttons) and **Artist Pages** (albums grid & tracks).
    - Segmented filter pills on Albums grid: `All Albums` / `📀 Collection` / `🎯 Wantlist` with live count badges.
    - Section-specific local search filter bar with loading spinners.
    - Micro-interaction buttons (YouTube direct search & Spotify links on every track; Discogs SVG logo icon on every pressing row).
+   - Track rows are clickable (`.clickable-track-row`) across all tracklists, automatically navigating to the track's canonical Album Details page.
+   - Solid SVG fallback cover art (`fallbackCover`) used consistently across all album cards, playlist thumbnails, and pressing images to eliminate image broken state/flicker.
+   - Pressings section header includes action buttons to open/search master releases on Discogs (`https://www.discogs.com/search/?q=...&type=master`) and Qobuz Download Store (`https://www.qobuz.com/gb-en/search/albums/...`).
    - Sidebar collapse state stored in `localStorage` (`sidebar-collapsed`).
    - **Icon button pattern**: `.spotify-icon-btn`, `.youtube-icon-btn`, `.discogs-icon-btn` — all 28px circle buttons with brand-colored SVG icons and hover background. See `style.css` for `.spotify-icon-btn` / `.youtube-icon-btn` as the reference to follow for adding new icon buttons.
 

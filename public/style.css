@@ -761,3 +761,13 @@ html, body {
   height: 18px;
   display: block;
 }
+
+.clickable-track-row {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.clickable-track-row:hover {
+  background-color: rgba(43, 149, 214, 0.12) !important;
+}
+
