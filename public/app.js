@@ -698,9 +698,6 @@ async function selectPlaylist(id, name, description, elem) {
   hideSectionFilter();
   if (elem) elem.classList.add('bp5-active');
 
-  document.getElementById('view-title').textContent = name;
-  document.getElementById('view-subtitle').textContent = description || 'Playlist tracks';
-
   document.getElementById('grid-container').style.display = 'none';
   document.getElementById('table-container').style.display = 'block';
 
