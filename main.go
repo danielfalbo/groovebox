@@ -51,17 +51,17 @@ type ReleaseVersion struct {
 }
 
 type AlbumDetailResponse struct {
-	ID               string           `json:"id"`
-	Title            string           `json:"title"`
-	Artist           string           `json:"artist"`
-	ReleaseYear      int              `json:"release_year"`
-	DiscogsMasterID  int              `json:"discogs_master_id"`
-	CoverImageURL    string           `json:"cover_image_url"`
-	HasVinyl         bool             `json:"has_vinyl"`
-	InWantlist       bool             `json:"in_wantlist"`
-	StreamingNotes   string           `json:"streaming_notes"`
-	Tracks           []TrackDetail    `json:"tracks"`
-	Versions         []ReleaseVersion `json:"versions"`
+	ID              string           `json:"id"`
+	Title           string           `json:"title"`
+	Artist          string           `json:"artist"`
+	ReleaseYear     int              `json:"release_year"`
+	DiscogsMasterID int              `json:"discogs_master_id"`
+	CoverImageURL   string           `json:"cover_image_url"`
+	HasVinyl        bool             `json:"has_vinyl"`
+	InWantlist      bool             `json:"in_wantlist"`
+	StreamingNotes  string           `json:"streaming_notes"`
+	Tracks          []TrackDetail    `json:"tracks"`
+	Versions        []ReleaseVersion `json:"versions"`
 }
 
 type AlbumSummary struct {
@@ -80,6 +80,7 @@ type AlbumSummary struct {
 func main() {
 	importDir := flag.String("import-spotify", "", "Path to directory containing Spotify export CSVs")
 	importSpotifyAccount := flag.Bool("import-spotify-account", false, "Import current Spotify account playlists through OAuth")
+	importSpotifyTop := flag.Bool("import-spotify-top", false, "Import all-time top tracks from Spotify as a ranked playlist (requires user-top-read scope)")
 	syncDiscogsFlag := flag.Bool("sync-discogs", false, "Sync Discogs collection & wantlist into database")
 	dbPath := flag.String("db", "music.db", "Path to SQLite database")
 	port := flag.Int("port", 8080, "Port to listen on")
@@ -119,6 +120,15 @@ func main() {
 			log.Fatalf("Spotify account import failed: %v", err)
 		}
 		log.Println("Spotify account import completed successfully!")
+		return
+	}
+
+	if *importSpotifyTop {
+		log.Println("Starting Spotify top tracks import...")
+		if err := ImportSpotifyTopTracks(db); err != nil {
+			log.Fatalf("Spotify top tracks import failed: %v", err)
+		}
+		log.Println("Spotify top tracks import completed successfully!")
 		return
 	}
 

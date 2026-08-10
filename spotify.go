@@ -420,3 +420,191 @@ func spotifyArtistNames(artists []struct {
 	}
 	return strings.Join(names, ", ")
 }
+
+// spotifyTopTracksPage is the response shape for /v1/me/top/tracks.
+type spotifyTopTracksPage struct {
+	Items  []spotifyTrack `json:"items"`
+	Next   string         `json:"next"`
+	Total  int            `json:"total"`
+	Offset int            `json:"offset"`
+}
+
+// ImportSpotifyTopTracks fetches the user's all-time top tracks (up to 2,000
+// via offset pagination) and stores them as a synthetic playlist named
+// "Spotify Top Tracks — All Time". Requires user-top-read scope; runs OAuth
+// independently so it can be invoked without re-importing all playlists.
+func ImportSpotifyTopTracks(db *sql.DB) error {
+	clientID := os.Getenv("SPOTIFY_CLIENT_ID")
+	clientSecret := os.Getenv("SPOTIFY_CLIENT_SECRET")
+	if clientSecret == "" {
+		clientSecret = os.Getenv("SPOTIFY_TOKEN")
+	}
+	if clientID == "" || clientSecret == "" {
+		return fmt.Errorf("SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET (or legacy SPOTIFY_TOKEN) must be set")
+	}
+
+	accessToken, err := spotifyAuthorizeWithScope(clientID, clientSecret, "user-top-read")
+	if err != nil {
+		return err
+	}
+
+	tracks, err := spotifyTopTracks(accessToken)
+	if err != nil {
+		return err
+	}
+	log.Printf("Fetched %d all-time top tracks from Spotify", len(tracks))
+
+	return storeTopTracksPlaylist(db, tracks)
+}
+
+// spotifyAuthorizeWithScope is like spotifyAuthorize but accepts a custom scope string.
+func spotifyAuthorizeWithScope(clientID, clientSecret, scope string) (string, error) {
+	stateBytes := make([]byte, 24)
+	if _, err := rand.Read(stateBytes); err != nil {
+		return "", fmt.Errorf("generate OAuth state: %w", err)
+	}
+	state := base64.RawURLEncoding.EncodeToString(stateBytes)
+
+	listener, err := net.Listen("tcp", "127.0.0.1:8787")
+	if err != nil {
+		return "", fmt.Errorf("listen for Spotify callback at %s: %w", spotifyRedirectURI, err)
+	}
+
+	result := make(chan spotifyOAuthResult, 1)
+	server := &http.Server{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/callback" {
+			http.NotFound(w, r)
+			return
+		}
+		if r.URL.Query().Get("state") != state {
+			http.Error(w, "Invalid OAuth state", http.StatusBadRequest)
+			result <- spotifyOAuthResult{err: fmt.Errorf("Spotify returned invalid OAuth state")}
+			return
+		}
+		if spotifyErr := r.URL.Query().Get("error"); spotifyErr != "" {
+			http.Error(w, "Spotify authorization denied", http.StatusForbidden)
+			result <- spotifyOAuthResult{err: fmt.Errorf("Spotify authorization denied: %s", spotifyErr)}
+			return
+		}
+		code := r.URL.Query().Get("code")
+		if code == "" {
+			http.Error(w, "Spotify did not return an authorization code", http.StatusBadRequest)
+			result <- spotifyOAuthResult{err: fmt.Errorf("Spotify did not return an authorization code")}
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = io.WriteString(w, "<p>Spotify authorization complete. Return to Groovebox terminal.</p>")
+		result <- spotifyOAuthResult{code: code}
+	})}
+	go func() {
+		if err := server.Serve(listener); err != nil && err != http.ErrServerClosed {
+			log.Printf("Spotify OAuth callback server error: %v", err)
+		}
+	}()
+	defer server.Close()
+
+	params := url.Values{
+		"client_id":     {clientID},
+		"response_type": {"code"},
+		"redirect_uri":  {spotifyRedirectURI},
+		"scope":         {scope},
+		"state":         {state},
+	}
+	log.Printf("Open this URL in browser and approve Spotify access:\nhttps://accounts.spotify.com/authorize?%s", params.Encode())
+
+	select {
+	case oauthResult := <-result:
+		if oauthResult.err != nil {
+			return "", oauthResult.err
+		}
+		return spotifyExchangeCode(clientID, clientSecret, oauthResult.code)
+	case <-time.After(5 * time.Minute):
+		return "", fmt.Errorf("timed out waiting for Spotify authorization")
+	}
+}
+
+// spotifyTopTracks pages through /v1/me/top/tracks?time_range=long_term with
+// offset pagination, collecting up to 2,000 tracks (Spotify's hard cap).
+func spotifyTopTracks(accessToken string) ([]spotifyTrack, error) {
+	const maxOffset = 2000
+	var all []spotifyTrack
+	offset := 0
+	for {
+		endpoint := fmt.Sprintf(
+			"https://api.spotify.com/v1/me/top/tracks?time_range=long_term&limit=50&offset=%d", offset)
+		var page spotifyTopTracksPage
+		if err := spotifyGet(accessToken, endpoint, &page); err != nil {
+			return nil, err
+		}
+		all = append(all, page.Items...)
+		if page.Next == "" || len(all) >= maxOffset {
+			break
+		}
+		offset += len(page.Items)
+	}
+	return all, nil
+}
+
+// storeTopTracksPlaylist upserts the synthetic "Spotify Top Tracks — All Time"
+// playlist and replaces its track membership with the ranked top-tracks list.
+func storeTopTracksPlaylist(db *sql.DB, tracks []spotifyTrack) error {
+	const playlistName = "Spotify Top Tracks — All Time"
+	const playlistDesc = "Your all-time most-played tracks, ranked by Spotify affinity (long_term). Imported via Groovebox."
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var playlistID string
+	err = tx.QueryRow("SELECT id FROM playlists WHERE name = ? LIMIT 1", playlistName).Scan(&playlistID)
+	if err == sql.ErrNoRows {
+		playlistID = uuid.New().String()
+		if _, err := tx.Exec(
+			"INSERT INTO playlists (id, name, description, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
+			playlistID, playlistName, playlistDesc,
+		); err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	} else {
+		if _, err := tx.Exec(
+			"UPDATE playlists SET description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+			playlistDesc, playlistID,
+		); err != nil {
+			return err
+		}
+	}
+
+	if _, err := tx.Exec("DELETE FROM playlist_tracks WHERE playlist_id = ?", playlistID); err != nil {
+		return err
+	}
+
+	for i, track := range tracks {
+		if track.ID == "" {
+			continue
+		}
+		albumID, err := spotifyAlbumID(tx, track)
+		if err != nil {
+			return fmt.Errorf("upsert album for top track %q: %w", track.Name, err)
+		}
+		trackID, err := spotifyTrackID(tx, albumID, track)
+		if err != nil {
+			return fmt.Errorf("upsert track %q: %w", track.Name, err)
+		}
+		if _, err := tx.Exec(
+			"INSERT INTO playlist_tracks (playlist_id, track_id, position) VALUES (?, ?, ?)",
+			playlistID, trackID, i+1,
+		); err != nil {
+			return err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	log.Printf("Stored %d top tracks in playlist %q (id=%s)", len(tracks), playlistName, playlistID)
+	return nil
+}
