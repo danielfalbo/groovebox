@@ -23,13 +23,18 @@
         </div>
         <span class="bp5-navbar-divider"></span>
         <button class="bp5-button bp5-minimal bp5-icon-dashboard" onclick="showDashboard()">Dashboard</button>
-        <button class="bp5-button bp5-minimal bp5-icon-refresh" id="discogs-sync-btn" onclick="triggerDiscogsSync()">Sync Discogs</button>
       </div>
 
       <div class="bp5-navbar-group bp5-align-right search-container">
         <div class="bp5-input-group bp5-round">
           <span class="bp5-icon bp5-icon-search"></span>
           <input type="text" class="bp5-input" id="search-input" placeholder="Search tracks, artists, albums..." oninput="handleSearch(this.value)" />
+        </div>
+        <div class="settings-menu-wrap">
+          <button class="bp5-button bp5-minimal bp5-icon-cog settings-gear-btn" id="settings-gear-btn" onclick="toggleSettingsMenu(event)" title="Settings & Sync"></button>
+          <div class="bp5-menu bp5-elevation-2 settings-dropdown-menu" id="settings-dropdown-menu" style="display: none;">
+            <a class="bp5-menu-item bp5-icon-refresh" id="discogs-sync-btn" onclick="triggerDiscogsSync()">Sync Discogs Collection</a>
+          </div>
         </div>
       </div>
     </nav>

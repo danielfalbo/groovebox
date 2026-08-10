@@ -195,12 +195,31 @@ async function showAlbums() {
   }
 }
 
+function toggleSettingsMenu(event) {
+  event.stopPropagation();
+  const menu = document.getElementById('settings-dropdown-menu');
+  if (!menu) return;
+  const isVisible = menu.style.display === 'block';
+  menu.style.display = isVisible ? 'none' : 'block';
+}
+
+document.addEventListener('click', (e) => {
+  const menuWrap = document.querySelector('.settings-menu-wrap');
+  const menu = document.getElementById('settings-dropdown-menu');
+  if (menu && menuWrap && !menuWrap.contains(e.target)) {
+    menu.style.display = 'none';
+  }
+});
+
 async function triggerDiscogsSync() {
+  const menu = document.getElementById('settings-dropdown-menu');
+  if (menu) menu.style.display = 'none';
+
   const btn = document.getElementById('discogs-sync-btn');
   if (!btn) return;
   
   const originalText = btn.textContent;
-  btn.disabled = true;
+  btn.classList.add('bp5-disabled');
   btn.textContent = 'Syncing Discogs...';
 
   try {
@@ -215,7 +234,7 @@ async function triggerDiscogsSync() {
   } catch (err) {
     alert('Failed to connect to Discogs sync endpoint: ' + err.message);
   } finally {
-    btn.disabled = false;
+    btn.classList.remove('bp5-disabled');
     btn.textContent = originalText;
   }
 }

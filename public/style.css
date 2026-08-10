@@ -36,6 +36,34 @@ html, body {
 
 .search-container {
   min-width: 320px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-menu-wrap {
+  position: relative;
+}
+
+.settings-gear-btn {
+  color: #8f99a8 !important;
+}
+
+.settings-gear-btn:hover {
+  color: #f5f8fa !important;
+}
+
+.settings-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  width: 220px;
+  background-color: #1c2127 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  z-index: 100;
+  padding: 6px !important;
 }
 
 /* App Body Layout */
