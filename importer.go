@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -135,18 +136,51 @@ func ImportSpotifyCSVDirectory(db *sql.DB, dirPath string) error {
 			continue
 		}
 
+		// Find earliest AddedAt date from records to set accurate playlist creation date
+		var earliestDate *time.Time
+
+		for _, rec := range records {
+			if rec.AddedAt == "" {
+				continue
+			}
+			cleanDate := strings.Trim(rec.AddedAt, `" `)
+			// Remove timezone string in parentheses if present e.g. (GMT+1) -> GMT+1 -> parse manually
+			if idx := strings.Index(cleanDate, " ("); idx != -1 {
+				cleanDate = cleanDate[:idx]
+			}
+			for _, layout := range []string{"January 2, 2006 3:04 PM", "January 2, 2006"} {
+				if t, pErr := time.Parse(layout, cleanDate); pErr == nil {
+					if earliestDate == nil || t.Before(*earliestDate) {
+						earliestDate = &t
+					}
+					break
+				}
+			}
+		}
+
+		createdAtStr := time.Now().Format("2006-01-02 15:04:05")
+		if earliestDate != nil {
+			createdAtStr = earliestDate.Format("2006-01-02 15:04:05")
+		}
+
 		tx, err := db.Begin()
 		if err != nil {
 			return err
 		}
 
-		playlistID := uuid.New().String()
-		_, err = tx.Exec("INSERT INTO playlists (id, name, description) VALUES (?, ?, ?)",
-			playlistID, playlistName, fmt.Sprintf("Imported from Spotify Notion Export (%d tracks)", len(records)))
-		if err != nil {
-			tx.Rollback()
-			log.Printf("Error creating playlist %s: %v", playlistName, err)
-			continue
+		var playlistID string
+		err = tx.QueryRow("SELECT id FROM playlists WHERE name = ?", playlistName).Scan(&playlistID)
+		if err == sql.ErrNoRows {
+			playlistID = uuid.New().String()
+			_, err = tx.Exec("INSERT INTO playlists (id, name, description, created_at) VALUES (?, ?, ?, ?)",
+				playlistID, playlistName, fmt.Sprintf("Imported from Spotify Notion Export (%d tracks)", len(records)), createdAtStr)
+			if err != nil {
+				tx.Rollback()
+				log.Printf("Error creating playlist %s: %v", playlistName, err)
+				continue
+			}
+		} else if err == nil {
+			_, _ = tx.Exec("UPDATE playlists SET created_at = ? WHERE id = ?", createdAtStr, playlistID)
 		}
 
 		for pos, rec := range records {
@@ -193,14 +227,11 @@ func ImportSpotifyCSVDirectory(db *sql.DB, dirPath string) error {
 				)
 			}
 
-			_, err = tx.Exec(`
-				INSERT INTO playlist_tracks (playlist_id, track_id, position)
+			_, _ = tx.Exec(`
+				INSERT OR IGNORE INTO playlist_tracks (playlist_id, track_id, position)
 				VALUES (?, ?, ?)`,
 				playlistID, trackID, pos+1,
 			)
-			if err != nil {
-				log.Printf("Error linking track to playlist: %v", err)
-			}
 		}
 
 		if err := tx.Commit(); err != nil {
