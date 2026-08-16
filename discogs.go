@@ -437,6 +437,11 @@ func SyncDiscogs(db *sql.DB) error {
 		processDiscogsItem(item.BasicInformation, "collection", true, item.DateAdded)
 	}
 
+	// Reset wantlist membership before re-marking current wantlist items, so
+	// albums removed from the Discogs wantlist disappear on re-sync instead of
+	// lingering with in_wantlist stuck at 1.
+	_, _ = tx.Exec("UPDATE albums SET in_wantlist = 0")
+
 	for _, info := range wantlistReleases {
 		processDiscogsItem(info, "wantlist", false, "")
 	}
