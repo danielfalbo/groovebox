@@ -305,7 +305,10 @@ func SyncDiscogs(db *sql.DB) error {
 	}
 	defer tx.Rollback()
 
+	seenReleaseIDs := make(map[int]bool)
+
 	processDiscogsItem := func(info DiscogsBasicInfo, source string, hasVinyl bool, dateAdded string) {
+		seenReleaseIDs[info.ID] = true
 		artist := "Unknown"
 		if len(info.Artists) > 0 {
 			var artistNames []string
@@ -444,6 +447,70 @@ func SyncDiscogs(db *sql.DB) error {
 
 	for _, info := range wantlistReleases {
 		processDiscogsItem(info, "wantlist", false, "")
+	}
+
+	// Cleanup: drop Discogs-sourced release_versions (and orphaned albums) that are
+	// no longer in the current collection or wantlist. Upserts above covers current
+	// items, so anything left that wasn't seen in this sync is stale.
+	rows, err := tx.Query("SELECT id, discogs_release_id FROM release_versions WHERE source IN ('collection','wantlist')")
+	if err == nil {
+		var staleIDs []string
+		for rows.Next() {
+			var id string
+			var rid int
+			if err := rows.Scan(&id, &rid); err == nil && !seenReleaseIDs[rid] {
+				staleIDs = append(staleIDs, id)
+			}
+		}
+		rows.Close()
+
+		for i := 0; i < len(staleIDs); i += 500 {
+			end := i + 500
+			if end > len(staleIDs) {
+				end = len(staleIDs)
+			}
+			chunk := staleIDs[i:end]
+			placeholders := strings.Repeat("?,", len(chunk))
+			placeholders = strings.TrimSuffix(placeholders, ",")
+			args := make([]interface{}, len(chunk))
+			for j, v := range chunk {
+				args[j] = v
+			}
+			if _, err := tx.Exec("DELETE FROM release_versions WHERE id IN ("+placeholders+")", args...); err != nil {
+				log.Printf("Error deleting stale release versions: %v", err)
+			}
+		}
+		if len(staleIDs) > 0 {
+			log.Printf("Cleaned up %d stale release version(s) no longer on Discogs", len(staleIDs))
+		}
+	}
+
+	// Drop now-orphaned Discogs albums (no versions, no tracks, no longer in
+	// collection/wantlist). Deleting cascades release_versions; albums referenced by
+	// tracks are excluded so those tracks are never cascade-deleted.
+	var orphanedAlbums []string
+	rows, err = tx.Query(`
+		SELECT id FROM albums
+		WHERE in_collection = 0 AND in_wantlist = 0
+		  AND streaming_notes LIKE 'Discogs%'
+		  AND NOT EXISTS (SELECT 1 FROM tracks WHERE tracks.album_id = albums.id)
+		  AND NOT EXISTS (SELECT 1 FROM release_versions WHERE release_versions.album_id = albums.id)`)
+	if err == nil {
+		for rows.Next() {
+			var id string
+			if err := rows.Scan(&id); err == nil {
+				orphanedAlbums = append(orphanedAlbums, id)
+			}
+		}
+		rows.Close()
+
+		for _, id := range orphanedAlbums {
+			_, _ = tx.Exec("DELETE FROM search_fts WHERE target_type = 'album' AND target_id = ?", id)
+			_, _ = tx.Exec("DELETE FROM albums WHERE id = ?", id)
+		}
+		if len(orphanedAlbums) > 0 {
+			log.Printf("Removed %d orphaned album(s) no longer on Discogs", len(orphanedAlbums))
+		}
 	}
 
 	if err := tx.Commit(); err != nil {
