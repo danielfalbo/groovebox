@@ -1063,6 +1063,12 @@ func savesKeys(keys []string) string {
 }
 
 func appendToPlaylist(db *sql.DB, playlistID, trackID string) error {
+	// Guard against duplicates: if the track is already in the playlist, skip.
+	var count int
+	_ = db.QueryRow("SELECT COUNT(*) FROM playlist_tracks WHERE playlist_id=? AND track_id=?", playlistID, trackID).Scan(&count)
+	if count > 0 {
+		return nil
+	}
 	var max int
 	_ = db.QueryRow("SELECT COALESCE(MAX(position),0) FROM playlist_tracks WHERE playlist_id=?", playlistID).Scan(&max)
 	now := time.Now().Format("2006-01-02 15:04:05")
@@ -1075,20 +1081,24 @@ func appendToPlaylist(db *sql.DB, playlistID, trackID string) error {
 }
 
 // ensureLocalTrack inserts a Tidal track (with its canonical album) if unknown.
+// On any match (ISRC or title+artist), it backfills missing ISRC + tidal_id so
+// subsequent syncs produce the same join key on both sides.
 func ensureLocalTrack(db *sql.DB, tr TidalTrack) (string, error) {
 	// 1) exact match by isrc
 	if tr.ISRC != "" {
 		var id string
 		err := db.QueryRow("SELECT id FROM tracks WHERE isrc=? LIMIT 1", tr.ISRC).Scan(&id)
 		if err == nil {
-			return linkTidalID(db, id, tr.ID)
+			backfillTrack(db, id, tr)
+			return id, nil
 		}
 	}
 	// 2) normalized title+artist match
 	var existing string
 	err := db.QueryRow("SELECT id FROM tracks WHERE lower(title)=lower(?) AND lower(artist)=lower(?) LIMIT 1", tr.Title, tr.Artist).Scan(&existing)
 	if err == nil {
-		return linkTidalID(db, existing, tr.ID)
+		backfillTrack(db, existing, tr)
+		return existing, nil
 	}
 	// 3) create album + track
 	albumID := findOrCreateTidalAlbum(db, tr.Artist, tr.Title)
@@ -1102,11 +1112,15 @@ func ensureLocalTrack(db *sql.DB, tr TidalTrack) (string, error) {
 	return trackID, nil
 }
 
-func linkTidalID(db *sql.DB, trackID, tidalID string) (string, error) {
-	if tidalID != "" {
-		_, _ = db.Exec("UPDATE tracks SET tidal_id=? WHERE id=? AND (tidal_id IS NULL OR tidal_id='')", tidalID, trackID)
+// backfillTrack updates missing ISRC and tidal_id on an existing track from
+// the Tidal counterpart, so future syncs match on the same key.
+func backfillTrack(db *sql.DB, trackID string, tr TidalTrack) {
+	if tr.ISRC != "" {
+		_, _ = db.Exec("UPDATE tracks SET isrc=? WHERE id=? AND (isrc IS NULL OR isrc='')", tr.ISRC, trackID)
 	}
-	return trackID, nil
+	if tr.ID != "" {
+		_, _ = db.Exec("UPDATE tracks SET tidal_id=? WHERE id=? AND (tidal_id IS NULL OR tidal_id='')", tr.ID, trackID)
+	}
 }
 
 // findOrCreateTidalAlbum returns an album by normalized title+artist or creates one.
