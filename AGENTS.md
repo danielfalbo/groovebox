@@ -3,10 +3,11 @@
 ## 🚀 Overview & Repository Structure
 `my-music-lib` is a self-hosted, local-first music archival and curation engine written in Go and SQLite with a vanilla HTML5/CSS3/JS Web UI.
 
-- `main.go`: Entry point, CLI flag handlers (`-port`, `-sync-discogs`, `-dedupe-albums`), REST API routes (`/api/albums`, `/api/artists`, `/api/sync/discogs`, `/api/sync/status`, `/api/albums/dedupe`), and `DedupeAlbums`/`NormalizeAlbumTitle` merge logic.
+- `main.go`: Entry point, CLI flag handlers (`-port`, `-sync-discogs`, `-dedupe-albums`), REST API routes (`/api/albums`, `/api/artists`, `/api/sync/discogs`, `/api/sync/status`, `/api/albums/dedupe`, `/api/tidal/*`), and `DedupeAlbums`/`NormalizeAlbumTitle` merge logic.
 - `db.go`: SQLite connection, WAL mode initialization, schema migration execution (`ensureColumn` helper for safe ALTER TABLE).
-- `schema.sql`: DDL for 1-to-1 canonical `albums`, `release_versions` (Discogs collection/wantlist pressings), `tracks`, `playlists`, `playlist_tracks`, and `search_fts` (FTS5 table). `playlists` and `tracks` carry `spotify_id` / `apple_music_id` columns (historical import data; no code writes them anymore).
+- `schema.sql`: DDL for 1-to-1 canonical `albums`, `release_versions` (Discogs collection/wantlist pressings), `tracks`, `playlists`, `playlist_tracks`, and `search_fts` (FTS5 table). `playlists` and `tracks` carry `spotify_id` / `apple_music_id` columns (historical import data; no code writes them anymore). `tracks.tidal_id` and `playlists.tidal_*` columns are live (Tidal sync).
 - `discogs.go`: Discogs collection (71 items) and wantlist (5,478 items) client with thread-safe live progress streaming (`GetSyncProgress`).
+- `tidal.go`: Tidal two-way playlist sync — OAuth device flow, playlist CRUD, and a safe 3-way merge reconcile engine. Uses hardcoded tidalapi device-flow client credentials (public) with `.env` / `TIDAL_DEVICE_*` overrides. OAuth tokens persisted in `.tidal-session.json` (gitignored, never in music.db).
 - `public/`: Static Web UI (`index.html`, `style.css`, `app.js`) branded as **Groovebox**.
 
 ---
@@ -92,3 +93,22 @@ go run . -sync-discogs
 # Playwright Visual Regression Screenshot
 npx -y playwright screenshot http://localhost:8080 screenshot.png
 ```
+
+## 🌊 Tidal Two-Way Playlist Sync (`tidal.go`)
+
+Two-way playlist sync between Groovebox and Tidal, using a safe 3-way merge per connected playlist:
+
+- **Auto-connect**: `POST /api/tidal/sync` pulls all Tidal playlists, creates local counterparts for any not yet connected, and reconciles every connection.
+- **Manual connect**: `POST /api/tidal/connect/:playlistID` creates a Tidal playlist for an existing groovebox playlist and links them.
+- **Per-playlist sync**: `POST /api/tidal/sync/:playlistID` reconciles a single connection.
+- **Disconnect**: `DELETE /api/tidal/connect/:playlistID` unlinks without deleting either side.
+- **Auth**: `POST /api/tidal/auth` starts device login (returns a link); `GET /api/tidal/auth` polls / reflects auth state.
+
+**Sync algorithm** (snapshot-based 3-way merge, `tidal_snap_local` / `tidal_snap_tidal` columns on `playlists`):
+- Adds: tracks present on one side but not the other are added to the other (ISRC join, fallback to normalized title+artist).
+- Deletes: a track is only removed if it was in the last-known snapshot (we knew about it) and vanished from the source side, and was not freshly added on the target (adds win over staggered deletes).
+- Order: append-only, never fight reorders between the two sides.
+
+**Track matching**: `tracks.tidal_id` is the bidirectional link. When pushing local → Tidal, the Tidal ID is resolved via v1 search + ISRC match (`ResolveTidalID`). Tidal API requires an `If-None-Match` etag header for playlist mutations (fetched via `fetchETag`).
+
+**Credentials**: hardcoded tidalapi device-flow client credentials (public, from the open-source Python library). Override via `.env` with `TIDAL_DEVICE_CLIENT_ID` / `TIDAL_DEVICE_SECRET`. OAuth tokens are stored in `.tidal-session.json` (gitignored).

@@ -25,12 +25,15 @@ type StatsResponse struct {
 }
 
 type PlaylistSummary struct {
-	ID           string   `json:"id"`
-	Name         string   `json:"name"`
-	Description  string   `json:"description"`
-	TrackCount   int      `json:"track_count"`
-	CreatedAt    string   `json:"created_at"`
-	CoverArtURLs []string `json:"cover_art_urls"`
+	ID              string   `json:"id"`
+	Name            string   `json:"name"`
+	Description     string   `json:"description"`
+	TrackCount      int      `json:"track_count"`
+	CreatedAt       string   `json:"created_at"`
+	CoverArtURLs    []string `json:"cover_art_urls"`
+	TidalConnected bool     `json:"tidal_connected"`
+	TidalPlaylistID string   `json:"tidal_playlist_id,omitempty"`
+	TidalSyncedAt   string   `json:"tidal_last_synced_at,omitempty"`
 }
 
 type TrackDetail struct {
@@ -144,6 +147,153 @@ func main() {
 		json.NewEncoder(w).Encode(map[string]string{"status": "started", "message": "Discogs sync started in background"})
 	})
 
+	// ---- Tidal two-way playlist sync ----
+	tidal, tidErr := newTidalClient(*dbPath)
+	if tidErr == nil {
+		updateSyncProgress(func(p *SyncProgress) {
+			p.TidalAuthenticated = tidal.Ready()
+		})
+	}
+
+	http.HandleFunc("/api/tidal/auth", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if tidErr != nil {
+			http.Error(w, tidErr.Error(), 500)
+			return
+		}
+		if r.Method == http.MethodPost {
+			login, err := tidal.StartDeviceLogin()
+			if err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"verification_url": login.VerifyURL,
+				"user_code":        login.UserCode,
+				"expires_in":       login.ExpiresAt - time.Now().Unix(),
+			})
+			return
+		}
+		// GET: poll pending device login or reflect persisted session
+		done, err := tidal.PollDeviceCode()
+		resp := map[string]interface{}{}
+		if err == nil {
+			if tidal.Ready() {
+				done = true
+			}
+			resp["authenticated"] = done
+		} else {
+			resp["authenticated"] = done
+			resp["error"] = err.Error()
+		}
+		if done {
+			updateSyncProgress(func(p *SyncProgress) { p.TidalAuthenticated = true })
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+
+	http.HandleFunc("/api/tidal/sync", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if tidErr != nil {
+			http.Error(w, tidErr.Error(), 500)
+			return
+		}
+		prog := GetSyncProgress()
+		if prog.IsSyncing || prog.IsTidalSyncing {
+			w.WriteHeader(http.StatusConflict)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Sync already in progress"})
+			return
+		}
+		go func() {
+			if err := RunTidalSync(db, tidal); err != nil {
+				log.Printf("Tidal sync error: %v", err)
+			}
+		}()
+		json.NewEncoder(w).Encode(map[string]string{"status": "started", "message": "Tidal sync started in background"})
+	})
+
+	http.HandleFunc("/api/tidal/connect/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if tidErr != nil {
+			http.Error(w, tidErr.Error(), 500)
+			return
+		}
+		id := strings.TrimPrefix(r.URL.Path, "/api/tidal/connect/")
+		if id == "" {
+			http.Error(w, "playlist id required", 400)
+			return
+		}
+		if r.Method == http.MethodDelete {
+			if err := DisconnectPlaylist(db, id); err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			json.NewEncoder(w).Encode(map[string]bool{"success": true})
+			return
+		}
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", 405)
+			return
+		}
+		if !tidal.Ready() {
+			http.Error(w, "Not authenticated with Tidal. POST /api/tidal/auth first", 401)
+			return
+		}
+		go func() {
+			updateSyncProgress(func(p *SyncProgress) {
+				p.IsTidalSyncing = true
+				p.TidalStage = "connect"
+				p.TidalMessage = "Connecting playlist..."
+			})
+			defer updateSyncProgress(func(p *SyncProgress) { p.IsTidalSyncing = false })
+			if _, err := ConnectLocalPlaylist(db, tidal, id); err != nil {
+				updateSyncProgress(func(p *SyncProgress) { p.TidalLastError = err.Error() })
+				log.Printf("tidal: connect %s: %v", id, err)
+				return
+			}
+			_, _, _ = SyncOneConnection(db, tidal, id)
+		}()
+		json.NewEncoder(w).Encode(map[string]string{"status": "started", "message": "Tidal connect started in background"})
+	})
+
+	http.HandleFunc("/api/tidal/sync/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", 405)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if tidErr != nil {
+			http.Error(w, tidErr.Error(), 500)
+			return
+		}
+		id := strings.TrimPrefix(r.URL.Path, "/api/tidal/sync/")
+		if id == "" {
+			http.Error(w, "playlist id required", 400)
+			return
+		}
+		go func() {
+			updateSyncProgress(func(p *SyncProgress) {
+				p.IsTidalSyncing = true
+				p.TidalStage = "sync"
+				p.TidalMessage = "Syncing playlist..."
+			})
+			defer updateSyncProgress(func(p *SyncProgress) { p.IsTidalSyncing = false })
+			a, b, err := SyncOneConnection(db, tidal, id)
+			if err != nil {
+				updateSyncProgress(func(p *SyncProgress) { p.TidalLastError = err.Error() })
+				log.Printf("tidal sync %s: %v", id, err)
+			} else {
+				log.Printf("tidal sync %s: +%d local, +%d remote", id, a, b)
+			}
+			updateSyncProgress(func(p *SyncProgress) { p.TidalSynced++ })
+		}()
+		json.NewEncoder(w).Encode(map[string]string{"status": "started", "message": "Tidal playlist sync started in background"})
+	})
+
 	http.HandleFunc("/api/sync/status", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(GetSyncProgress())
@@ -225,7 +375,8 @@ func main() {
 		}
 
 		query := fmt.Sprintf(`
-			SELECT p.id, p.name, COALESCE(p.description, ''), COUNT(pt.track_id), COALESCE(p.created_at, '')
+			SELECT p.id, p.name, COALESCE(p.description, ''), COUNT(pt.track_id), COALESCE(p.created_at, ''),
+			       COALESCE(p.tidal_playlist_id, ''), COALESCE(p.tidal_last_synced_at, '')
 			FROM playlists p
 			LEFT JOIN playlist_tracks pt ON p.id = pt.playlist_id
 			GROUP BY p.id
@@ -241,7 +392,8 @@ func main() {
 		var playlists []PlaylistSummary
 		for rows.Next() {
 			var p PlaylistSummary
-			if err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.TrackCount, &p.CreatedAt); err == nil {
+			if err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.TrackCount, &p.CreatedAt, &p.TidalPlaylistID, &p.TidalSyncedAt); err == nil {
+				p.TidalConnected = p.TidalPlaylistID != ""
 				coverRows, cErr := db.Query(`
 					SELECT DISTINCT a.cover_image_url
 					FROM playlist_tracks pt

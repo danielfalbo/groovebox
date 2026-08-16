@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS tracks (
     isrc TEXT,
     spotify_id TEXT,
     apple_music_id TEXT,
+    tidal_id TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 

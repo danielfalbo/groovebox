@@ -26,6 +26,17 @@ type SyncProgress struct {
 	LastError     string `json:"last_error,omitempty"`
 	LastSyncedAt  string `json:"last_synced_at,omitempty"`
 	LastDedupedAt string `json:"last_deduped_at,omitempty"`
+
+	// Tidal mirror fields (populated by tidal.go; run either in the same
+	// background window or a separate one depending on what triggered).
+	TidalAuthenticated bool   `json:"tidal_authenticated"`
+	IsTidalSyncing      bool   `json:"is_tidal_syncing"`
+	TidalStage          string `json:"tidal_stage"`
+	TidalMessage        string `json:"tidal_message,omitempty"`
+	TidalLastError      string `json:"tidal_last_error,omitempty"`
+	TidalLastSyncedAt   string `json:"tidal_last_synced_at,omitempty"`
+	TidalConnected      int    `json:"tidal_connected"`
+	TidalSynced         int    `json:"tidal_synced"`
 }
 
 var (

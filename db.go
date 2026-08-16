@@ -38,6 +38,34 @@ func initDB(dbPath string) (*sql.DB, error) {
 	if err := ensureColumn(db, "playlists", "spotify_id", "TEXT"); err != nil {
 		return nil, fmt.Errorf("failed to migrate playlists: %w", err)
 	}
+	// Tidal two-way playlist sync connection state (nullable: disconnection == unset).
+	// See tidal.go for the sync algorithm.
+	if err := ensureColumn(db, "playlists", "tidal_playlist_id", "TEXT"); err != nil {
+		return nil, fmt.Errorf("failed to migrate playlists tidal_playlist_id: %w", err)
+	}
+	if err := ensureColumn(db, "playlists", "tidal_direction", "TEXT NOT NULL DEFAULT 'bidirectional'"); err != nil {
+		return nil, fmt.Errorf("failed to migrate playlists tidal_direction: %w", err)
+	}
+	if err := ensureColumn(db, "playlists", "tidal_connected_at", "DATETIME"); err != nil {
+		return nil, fmt.Errorf("failed to migrate playlists tidal_connected_at: %w", err)
+	}
+	if err := ensureColumn(db, "playlists", "tidal_last_synced_at", "DATETIME"); err != nil {
+		return nil, fmt.Errorf("failed to migrate playlists tidal_last_synced_at: %w", err)
+	}
+	if err := ensureColumn(db, "playlists", "tidal_last_error", "TEXT"); err != nil {
+		return nil, fmt.Errorf("failed to migrate playlists tidal_last_error: %w", err)
+	}
+	// last-known ordered membership snapshots (JSON arrays of keys) used to tell
+	// genuine deletions from recurring availability differences between the two sides.
+	if err := ensureColumn(db, "playlists", "tidal_snap_local", "TEXT"); err != nil {
+		return nil, fmt.Errorf("failed to migrate playlists tidal_snap_local: %w", err)
+	}
+	if err := ensureColumn(db, "playlists", "tidal_snap_tidal", "TEXT"); err != nil {
+		return nil, fmt.Errorf("failed to migrate playlists tidal_snap_tidal: %w", err)
+	}
+	if err := ensureColumn(db, "tracks", "tidal_id", "TEXT"); err != nil {
+		return nil, fmt.Errorf("failed to migrate tracks tidal_id: %w", err)
+	}
 	if err := ensureColumn(db, "albums", "in_collection", "INTEGER DEFAULT 0"); err != nil {
 		return nil, fmt.Errorf("failed to migrate albums in_collection: %w", err)
 	}
@@ -46,6 +74,12 @@ func initDB(dbPath string) (*sql.DB, error) {
 	}
 	if _, err := db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_playlists_spotify_id ON playlists(spotify_id) WHERE spotify_id IS NOT NULL"); err != nil {
 		return nil, fmt.Errorf("failed to create Spotify playlist index: %w", err)
+	}
+	if _, err := db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_playlists_tidal_id ON playlists(tidal_playlist_id) WHERE tidal_playlist_id IS NOT NULL"); err != nil {
+		return nil, fmt.Errorf("failed to create Tidal playlist index: %w", err)
+	}
+	if _, err := db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_tracks_tidal_id ON tracks(tidal_id) WHERE tidal_id IS NOT NULL"); err != nil {
+		return nil, fmt.Errorf("failed to create Tidal track index: %w", err)
 	}
 
 	// has_vinyl means "owned as physical vinyl", but earlier syncs also set it for

@@ -1498,6 +1498,7 @@ function renderPlaylistView(playlistID, name, description, tracks) {
           <h1 class="bp5-heading album-header-title" style="margin: 0;">${name}</h1>
           <div class="playlist-header-actions" style="display: flex; gap: 6px;">
             <button class="bp5-button bp5-small bp5-intent-primary bp5-icon-plus" onclick="openAddSongsToPlaylistModal()" title="Add songs to this playlist">Add Songs</button>
+            <span id="tidal-btn-${playlistID}" class="tidal-btn-placeholder"></span>
             <button class="bp5-button bp5-outlined bp5-small bp5-icon-edit" onclick="openEditPlaylistModal('${playlistID}', '${name.replace(/'/g, "\\'")}', '${(description||'').replace(/'/g, "\\'")}')">Edit</button>
             <button class="bp5-button bp5-outlined bp5-intent-danger bp5-small bp5-icon-trash" onclick="deletePlaylistConfirm('${playlistID}', '${name.replace(/'/g, "\\'")}')">Delete</button>
           </div>
@@ -1511,9 +1512,73 @@ function renderPlaylistView(playlistID, name, description, tracks) {
   `;
 
   renderTracks(tracks);
+  refreshTidalButton('${playlistID}');
 }
 
 let searchDebounceTimer = null;
+
+// Tidal two-way playlist sync UI helpers
+async function refreshTidalButton(playlistID) {
+  const el = document.getElementById('tidal-btn-' + playlistID);
+  if (!el) return;
+  try {
+    const res = await fetch('/api/playlists');
+    const pls = await res.json();
+    const pl = pls.find(p => p.id === playlistID);
+    if (pl && pl.tidal_connected) {
+      el.innerHTML = `<button class="bp5-button bp5-outlined bp5-small" style="color:#16a34a;" onclick="syncTidalPlaylist('${playlistID}')" title="Sync with Tidal">🌊 Sync</button>`;
+    } else {
+      el.innerHTML = `<button class="bp5-button bp5-outlined bp5-small" onclick="connectTidalPlaylist('${playlistID}')" title="Connect to Tidal">🔗 Tidal</button>`;
+    }
+  } catch(e) { el.innerHTML = ''; }
+}
+
+async function connectTidalPlaylist(playlistID) {
+  // Check Tidal auth first
+  try {
+    let authRes = await fetch('/api/tidal/auth');
+    let authData = await authRes.json();
+    if (!authData.authenticated) {
+      // Start device login
+      let loginRes = await fetch('/api/tidal/auth', {method:'POST'});
+      let loginData = await loginRes.json();
+      if (loginData.verification_url) {
+        alert('Open this URL to authenticate with Tidal:\n\nhttps://' + loginData.verification_url + '\n\nThen click Connect again after logging in.');
+        // Poll for auth
+        pollTidalAuth();
+        return;
+      }
+    }
+  } catch(e) { alert('Tidal auth check failed: ' + e.message); return; }
+  // Authenticated — connect the playlist
+  fetch('/api/tidal/connect/' + playlistID, {method:'POST'})
+    .then(r => r.json())
+    .then(() => { alert('Connecting to Tidal... tracks will sync shortly.'); refreshTidalButton(playlistID); })
+    .catch(e => alert('Connect failed: ' + e.message));
+}
+
+async function syncTidalPlaylist(playlistID) {
+  fetch('/api/tidal/sync/' + playlistID, {method:'POST'})
+    .then(r => r.json())
+    .then(d => { alert('Tidal sync started. Check status in a few seconds.'); })
+    .catch(e => alert('Sync failed: ' + e.message));
+}
+
+function pollTidalAuth() {
+  let attempts = 0;
+  const timer = setInterval(async () => {
+    attempts++;
+    try {
+      const res = await fetch('/api/tidal/auth');
+      const data = await res.json();
+      if (data.authenticated) {
+        clearInterval(timer);
+        alert('Tidal authenticated successfully! You can now connect playlists.');
+      }
+    } catch(e) {}
+    if (attempts > 60) clearInterval(timer);
+  }, 5000);
+}
 
 function handleSearch(query) {
   const trimmed = (query || '').trim();

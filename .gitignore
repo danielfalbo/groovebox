@@ -25,3 +25,4 @@ groovebox
 # Screenshots
 *.png
 
+.tidal-session.json
