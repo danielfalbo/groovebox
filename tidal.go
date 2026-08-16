@@ -900,7 +900,7 @@ func SyncOneConnection(db *sql.DB, tc *TidalClient, playlistID string) (int, int
 		_ = db.QueryRow("SELECT COALESCE(isrc,''),COALESCE(artist,''),COALESCE(title,''),COALESCE(tidal_id,'') FROM tracks WHERE id=?", currentLocal[k]).
 			Scan(&isrc, &artist, &title, &tidalID)
 		tid := tidalID
-		if tid == "" && isrc != "" {
+		if tid == "" {
 			if id, ok := tc.ResolveTidalID(isrc, title, artist); ok {
 				tid = id
 				_, _ = db.Exec("UPDATE tracks SET tidal_id=? WHERE id=?", id, currentLocal[k])
