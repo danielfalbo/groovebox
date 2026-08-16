@@ -37,7 +37,17 @@ type SyncProgress struct {
 	TidalLastSyncedAt   string `json:"tidal_last_synced_at,omitempty"`
 	TidalConnected      int    `json:"tidal_connected"`
 	TidalSynced         int    `json:"tidal_synced"`
+
+	// Per-playlist fidelity: which playlist is being reconciled and where we
+	// are within the set, plus add/remove tallies for the current pass (mirrors
+	// the rich per-page progress the Discogs sync exposes).
+	TidalPlaylistName  string `json:"tidal_playlist_name,omitempty"`
+	TidalPlaylistIdx   int    `json:"tidal_playlist_idx"`   // 1-based position in the batch; 0 = single-playlist sync
+	TidalPlaylistTotal int    `json:"tidal_playlist_total"` // 0 when syncing a single playlist
+	TidalAdded         int    `json:"tidal_added"`          // local tracks added this pass
+	TidalAddedRemote   int    `json:"tidal_added_remote"`   // remote (Tidal) tracks added this pass
 }
+
 
 var (
 	syncMutex    sync.Mutex

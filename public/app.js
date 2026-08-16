@@ -904,6 +904,15 @@ async function checkSyncStatus() {
       tidalTimeDiv.textContent = `Last synced Tidal: ${data.tidal_last_synced_at}`;
     }
 
+    // Reflect any Tidal failure prominently (idle or active).
+    const tidalError = data.tidal_last_error;
+    if (tidalError && tidalTimeDiv) {
+      tidalTimeDiv.textContent = `Tidal sync error: ${tidalError}`;
+      tidalTimeDiv.classList.add('sync-error-text');
+    } else if (tidalTimeDiv) {
+      tidalTimeDiv.classList.remove('sync-error-text');
+    }
+
     if (data.is_syncing) {
       if (bannerWrap) bannerWrap.style.display = 'inline-flex';
       if (statusText) statusText.textContent = data.message || 'Operation in Progress...';
@@ -948,8 +957,14 @@ async function checkSyncStatus() {
     }
     // Tidal-only sync (independent of Discogs)
     if (data.is_tidal_syncing) {
+      const pos = data.tidal_playlist_total
+        ? `[${data.tidal_playlist_idx}/${data.tidal_playlist_total}] `
+        : '';
+      const tally = (data.tidal_added || data.tidal_added_remote)
+        ? ` (+${data.tidal_added||0} local, +${data.tidal_added_remote||0} Tidal)`
+        : '';
       if (bannerWrap) bannerWrap.style.display = 'inline-flex';
-      if (statusText) statusText.textContent = data.tidal_message || 'Tidal sync in progress...';
+      if (statusText) statusText.textContent = pos + (data.tidal_message || 'Tidal sync in progress...') + tally;
       if (tidalBtn) {
         tidalBtn.textContent = 'Tidal Sync in Progress...';
         tidalBtn.classList.add('bp5-disabled');
@@ -1619,18 +1634,45 @@ async function connectTidalPlaylist(playlistID) {
       }
     }
   } catch(e) { alert('Tidal auth check failed: ' + e.message); return; }
-  // Authenticated — connect the playlist
-  fetch('/api/tidal/connect/' + playlistID, {method:'POST'})
-    .then(r => r.json())
-    .then(() => { alert('Connecting to Tidal... tracks will sync shortly.'); refreshTidalButton(playlistID); })
-    .catch(e => alert('Connect failed: ' + e.message));
+  const btn = document.getElementById('tidal-btn-' + playlistID);
+  if (btn) btn.innerHTML = `<span class="bp5-spinner bp5-spinner-small"></span> Connecting...`;
+  try {
+    const res = await fetch('/api/tidal/connect/' + playlistID, {method:'POST'});
+    const data = await res.json();
+    if (!res.ok) { alert(data.error || 'Connect failed'); refreshTidalButton(playlistID); return; }
+    await new Promise(r => setTimeout(r, 600));
+    refreshTidalButton(playlistID);
+    startSyncPolling(); // live banner shows reconciliation progress
+  } catch(e) { alert('Connect failed: ' + e.message); refreshTidalButton(playlistID); }
 }
 
 async function syncTidalPlaylist(playlistID) {
-  fetch('/api/tidal/sync/' + playlistID, {method:'POST'})
-    .then(r => r.json())
-    .then(d => { alert('Tidal sync started. Check status in a few seconds.'); })
-    .catch(e => alert('Sync failed: ' + e.message));
+  const btn = document.getElementById('tidal-btn-' + playlistID);
+  if (btn) btn.innerHTML = '<span class="bp5-spinner"></span> Syncing...';
+  try {
+    const res = await fetch('/api/tidal/sync/' + playlistID, {method:'POST'});
+    const data = await res.json();
+    if (!res.ok) { alert(data.error || 'Sync failed'); refreshTidalButton(playlistID); return; }
+    startSyncPolling(); // live banner shows per-playlist progress
+    waitForTidalIdle(playlistID);
+  } catch(e) { alert('Sync failed: ' + e.message); refreshTidalButton(playlistID); }
+}
+
+// Poll until Tidal sync is no longer running, then refresh the per-playlist
+// button. Capped so it never spins forever even if a poll is missed.
+async function waitForTidalIdle(playlistID) {
+  for (let i = 0; i < 60; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+    try {
+      const res = await fetch('/api/sync/status');
+      const s = await res.json();
+      if (s && s.is_tidal_syncing === false) {
+        refreshTidalButton(playlistID);
+        return;
+      }
+    } catch(e) {}
+  }
+  refreshTidalButton(playlistID);
 }
 
 function pollTidalAuth() {

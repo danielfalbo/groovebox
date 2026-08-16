@@ -805,7 +805,14 @@ func DisconnectPlaylist(db *sql.DB, playlistID string) error {
 }
 
 // SyncOneConnection reconciles a single connected playlist.
-func SyncOneConnection(db *sql.DB, tc *TidalClient, playlistID string) (int, int, error) {
+// SyncOneConnection reconciles a single connected playlist. report, if non-nil,
+// is invoked with stage and human-readable message after each phase so callers
+// (global sync, per-playlist sync, connect) can surface live idempotent progress.
+// Returns (addedLocal, addedRemote, error).
+func SyncOneConnection(db *sql.DB, tc *TidalClient, playlistID string, report func(stage, msg string)) (int, int, error) {
+	if report == nil {
+		report = func(string, string) {}
+	}
 	var name, remoteID, snapLocal, snapTidal string
 	err := db.QueryRow(`
 		SELECT COALESCE(name,''), COALESCE(tidal_playlist_id,''), COALESCE(tidal_snap_local,''), COALESCE(tidal_snap_tidal,'')
@@ -816,6 +823,7 @@ func SyncOneConnection(db *sql.DB, tc *TidalClient, playlistID string) (int, int
 	if remoteID == "" {
 		return 0, 0, fmt.Errorf("playlist %s not connected to Tidal", playlistID)
 	}
+	report("sync", fmt.Sprintf("Reading local playlist %q\u2026", name))
 
 	// --- Local membership (ordered). ---
 	type localItem struct {
@@ -846,6 +854,7 @@ func SyncOneConnection(db *sql.DB, tc *TidalClient, playlistID string) (int, int
 			localKeyOrder = append(localKeyOrder, k)
 		}
 	}
+	report("pull", fmt.Sprintf("Pulling %q from Tidal", name))
 
 	// --- Pull remote. ---
 	remoteTracks, err := tc.PlaylistTracks(remoteID)
@@ -870,6 +879,7 @@ func SyncOneConnection(db *sql.DB, tc *TidalClient, playlistID string) (int, int
 
 	addedLocal := 0
 	addedRemote := 0
+	report("sync", fmt.Sprintf("Reconciling %q\u2026", name))
 
 	// Add: remote (Tidal) -> local.
 	for _, k := range remoteKeyOrder {
@@ -951,6 +961,7 @@ func SyncOneConnection(db *sql.DB, tc *TidalClient, playlistID string) (int, int
 	_, _ = db.Exec("UPDATE playlists SET tidal_snap_local=? , tidal_snap_tidal=?, tidal_last_synced_at=? WHERE id=?",
 		savesKeys(localKeyOrder), savesKeys(remoteKeyOrder), time.Now().Format("2006-01-02 15:04:05"), playlistID)
 
+	report("sync", fmt.Sprintf("%q done: +%d local, +%d Tidal tracks", name, addedLocal, addedRemote))
 	return addedLocal, addedRemote, nil
 }
 
@@ -998,6 +1009,11 @@ func RunTidalSync(db *sql.DB, tc *TidalClient) error {
 		p.TidalStage = "pull"
 		p.TidalMessage = "Listing Tidal playlists..."
 		p.TidalLastError = ""
+		p.TidalAdded = 0
+		p.TidalAddedRemote = 0
+		p.TidalPlaylistName = ""
+		p.TidalPlaylistIdx = 0
+		p.TidalPlaylistTotal = 0
 	})
 	defer func() {
 		updateSyncProgress(func(p *SyncProgress) {
@@ -1019,21 +1035,50 @@ func RunTidalSync(db *sql.DB, tc *TidalClient) error {
 	updateSyncProgress(func(p *SyncProgress) {
 		p.TidalConnected = len(ids)
 		p.TidalStage = "sync"
+		p.TidalPlaylistTotal = len(ids)
+		p.TidalPlaylistIdx = 0
 	})
 
 	synced := 0
-	for _, id := range ids {
-		_, _, err := SyncOneConnection(db, tc, id)
+	for i, id := range ids {
+		cur := i + 1
+		updateSyncProgress(func(p *SyncProgress) {
+			p.TidalPlaylistIdx = cur
+			p.TidalPlaylistTotal = len(ids)
+		})
+		name, a, b, err := func() (string, int, int, error) {
+			var name string
+			_ = db.QueryRow("SELECT COALESCE(name,'') FROM playlists WHERE id=?", id).Scan(&name)
+			addedL, addedR, e := SyncOneConnection(db, tc, id, func(stage, msg string) {
+				updateSyncProgress(func(p *SyncProgress) {
+					p.TidalPlaylistName = name
+					p.TidalPlaylistIdx = cur
+					p.TidalPlaylistTotal = len(ids)
+					p.TidalStage = stage
+					p.TidalMessage = msg
+				})
+			})
+			return name, addedL, addedR, e
+		}()
 		if err != nil {
 			updateSyncProgress(func(p *SyncProgress) { p.TidalLastError = err.Error() })
-			log.Printf("tidal sync %s: %v", id, err)
+			log.Printf("tidal sync %s (%s): %v", id, name, err)
 			continue
 		}
+		updateSyncProgress(func(p *SyncProgress) {
+			p.TidalAdded += a
+			p.TidalAddedRemote += b
+			p.TidalPlaylistIdx = cur
+			p.TidalMessage = fmt.Sprintf("[%d/%d] %s done: +%d local, +%d Tidal tracks", cur, len(ids), name, a, b)
+		})
 		synced++
 	}
+
 	updateSyncProgress(func(p *SyncProgress) {
 		p.TidalSynced = synced
 		p.TidalStage = "idle"
+		p.TidalPlaylistIdx = 0
+		p.TidalPlaylistTotal = 0
 		p.TidalMessage = "Tidal sync complete"
 	})
 	return nil

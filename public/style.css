@@ -111,6 +111,10 @@ html, body {
   margin-top: 4px;
 }
 
+.sync-last-time.sync-error-text {
+  color: #f55656;
+}
+
 /* App Body Layout */
 .app-body {
   display: flex;

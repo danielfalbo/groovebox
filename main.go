@@ -255,7 +255,13 @@ func main() {
 				log.Printf("tidal: connect %s: %v", id, err)
 				return
 			}
-			_, _, _ = SyncOneConnection(db, tidal, id)
+			addedL, addedR, _ := SyncOneConnection(db, tidal, id, func(stage, msg string) {
+				updateSyncProgress(func(p *SyncProgress) {
+					p.TidalStage = stage
+					p.TidalMessage = msg
+				})
+			})
+			log.Printf("tidal connect %s: +%d local, +%d remote", id, addedL, addedR)
 		}()
 		json.NewEncoder(w).Encode(map[string]string{"status": "started", "message": "Tidal connect started in background"})
 	})
@@ -275,23 +281,53 @@ func main() {
 			http.Error(w, "playlist id required", 400)
 			return
 		}
+		prog := GetSyncProgress()
+		if prog.IsSyncing || prog.IsTidalSyncing {
+			w.WriteHeader(http.StatusConflict)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Sync already in progress"})
+			return
+		}
 		go func() {
+			var name string
+			_ = db.QueryRow("SELECT COALESCE(name,'') FROM playlists WHERE id=?", id).Scan(&name)
 			updateSyncProgress(func(p *SyncProgress) {
 				p.IsTidalSyncing = true
 				p.TidalStage = "sync"
-				p.TidalMessage = "Syncing playlist..."
+				p.TidalPlaylistName = name
+				p.TidalPlaylistIdx = 1
+				p.TidalPlaylistTotal = 0
+				p.TidalMessage = fmt.Sprintf("Syncing playlist %q\u2026", name)
+				p.TidalLastError = ""
+				p.TidalAdded = 0
+				p.TidalAddedRemote = 0
 			})
 			defer updateSyncProgress(func(p *SyncProgress) { p.IsTidalSyncing = false })
-			a, b, err := SyncOneConnection(db, tidal, id)
+			a, b, err := SyncOneConnection(db, tidal, id, func(stage, msg string) {
+				updateSyncProgress(func(p *SyncProgress) {
+					p.TidalStage = stage
+					p.TidalMessage = msg
+					p.TidalPlaylistName = name
+				})
+			})
 			if err != nil {
-				updateSyncProgress(func(p *SyncProgress) { p.TidalLastError = err.Error() })
+				updateSyncProgress(func(p *SyncProgress) {
+					p.TidalLastError = err.Error()
+					p.TidalMessage = "Tidal sync failed"
+				})
 				log.Printf("tidal sync %s: %v", id, err)
 			} else {
 				log.Printf("tidal sync %s: +%d local, +%d remote", id, a, b)
+				updateSyncProgress(func(p *SyncProgress) {
+					p.TidalAdded += a
+					p.TidalAddedRemote += b
+					p.TidalMessage = fmt.Sprintf("%q done: +%d local, +%d Tidal tracks", name, a, b)
+				})
 			}
-			updateSyncProgress(func(p *SyncProgress) { p.TidalSynced++ })
+			updateSyncProgress(func(p *SyncProgress) {
+				p.TidalSynced++
+			})
 		}()
-		json.NewEncoder(w).Encode(map[string]string{"status": "started", "message": "Tidal playlist sync started in background"})
+		json.NewEncoder(w).Encode(map[string]string{"status": "started", "message": "Tidal playlist sync started"})
 	})
 
 	http.HandleFunc("/api/sync/status", func(w http.ResponseWriter, r *http.Request) {
