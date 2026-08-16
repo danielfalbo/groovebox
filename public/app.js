@@ -891,12 +891,17 @@ async function checkSyncStatus() {
     const lastTimeDiv = document.getElementById('sync-last-time');
     const dedupeTimeDiv = document.getElementById('dedupe-last-time');
     const dedupeBtn = document.getElementById('dedupe-albums-btn');
+    const tidalBtn = document.getElementById('tidal-sync-btn');
+    const tidalTimeDiv = document.getElementById('tidal-sync-last-time');
 
     if (lastTimeDiv && data.last_synced_at) {
       lastTimeDiv.textContent = `Last synced Discogs: ${data.last_synced_at}`;
     }
     if (dedupeTimeDiv && data.last_deduped_at) {
       dedupeTimeDiv.textContent = `Last merged: ${data.last_deduped_at}`;
+    }
+    if (tidalTimeDiv && data.tidal_last_synced_at) {
+      tidalTimeDiv.textContent = `Last synced Tidal: ${data.tidal_last_synced_at}`;
     }
 
     if (data.is_syncing) {
@@ -908,21 +913,20 @@ async function checkSyncStatus() {
           dedupeBtn.textContent = 'Merging Duplicates...';
           dedupeBtn.classList.add('bp5-disabled');
         }
-        if (syncBtn) {
-          syncBtn.classList.add('bp5-disabled');
-        }
+        if (syncBtn) syncBtn.classList.add('bp5-disabled');
+        if (tidalBtn) tidalBtn.classList.add('bp5-disabled');
       } else {
         if (syncBtn) {
           syncBtn.textContent = 'Sync in Progress...';
           syncBtn.classList.add('bp5-disabled');
         }
-        if (dedupeBtn) {
-          dedupeBtn.classList.add('bp5-disabled');
-        }
+        if (dedupeBtn) dedupeBtn.classList.add('bp5-disabled');
+        if (tidalBtn) tidalBtn.classList.add('bp5-disabled');
       }
     } else {
       const wasSyncing = bannerWrap && bannerWrap.style.display !== 'none';
-      if (bannerWrap) bannerWrap.style.display = 'none';
+      const wasTidalSyncing = tidalBtn && tidalBtn.classList.contains('bp5-disabled') && !data.is_tidal_syncing;
+      if (bannerWrap && !data.is_tidal_syncing) bannerWrap.style.display = 'none';
       if (syncBtn) {
         syncBtn.textContent = 'Sync Discogs (Collection & Wantlist)';
         syncBtn.classList.remove('bp5-disabled');
@@ -931,9 +935,27 @@ async function checkSyncStatus() {
         dedupeBtn.textContent = 'Merge Duplicate Albums';
         dedupeBtn.classList.remove('bp5-disabled');
       }
+      if (tidalBtn) {
+        tidalBtn.textContent = 'Sync Tidal (Two-Way Playlists)';
+        tidalBtn.classList.remove('bp5-disabled');
+      }
       if (wasSyncing && currentSectionView === 'albums') {
         showAlbums();
       }
+      if (wasTidalSyncing && currentSectionView === 'playlists') {
+        showPlaylists();
+      }
+    }
+    // Tidal-only sync (independent of Discogs)
+    if (data.is_tidal_syncing) {
+      if (bannerWrap) bannerWrap.style.display = 'inline-flex';
+      if (statusText) statusText.textContent = data.tidal_message || 'Tidal sync in progress...';
+      if (tidalBtn) {
+        tidalBtn.textContent = 'Tidal Sync in Progress...';
+        tidalBtn.classList.add('bp5-disabled');
+      }
+      if (syncBtn) syncBtn.classList.add('bp5-disabled');
+      if (dedupeBtn) dedupeBtn.classList.add('bp5-disabled');
     }
   } catch (err) {
     console.error('Failed to fetch sync status:', err);
@@ -961,6 +983,53 @@ async function triggerDiscogsSync() {
   } catch (err) {
     alert(`Sync failed: ${err.message}`);
     btn.textContent = 'Sync Discogs (Collection & Wantlist)';
+    btn.classList.remove('bp5-disabled');
+  }
+}
+
+async function triggerTidalSync() {
+  const menu = document.getElementById('settings-dropdown-menu');
+  if (menu) menu.style.display = 'none';
+
+  const btn = document.getElementById('tidal-sync-btn');
+  btn.textContent = 'Starting Sync...';
+  btn.classList.add('bp5-disabled');
+
+  // Check Tidal auth first
+  try {
+    const authRes = await fetch('/api/tidal/auth');
+    const authData = await authRes.json();
+    if (!authData.authenticated) {
+      const loginRes = await fetch('/api/tidal/auth', { method: 'POST' });
+      const loginData = await loginRes.json();
+      if (loginData.verification_url) {
+        alert('Open this URL to authenticate with Tidal:\n\nhttps://' + loginData.verification_url + '\n\nThen click Sync Tidal again after logging in.');
+        pollTidalAuth();
+        btn.textContent = 'Sync Tidal (Two-Way Playlists)';
+        btn.classList.remove('bp5-disabled');
+        return;
+      }
+    }
+  } catch (e) {
+    alert('Tidal auth check failed: ' + e.message);
+    btn.textContent = 'Sync Tidal (Two-Way Playlists)';
+    btn.classList.remove('bp5-disabled');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/tidal/sync', { method: 'POST' });
+    const data = await res.json();
+    if (res.ok) {
+      startSyncPolling();
+    } else {
+      alert(`Tidal sync failed: ${data.error || 'Unknown error'}`);
+      btn.textContent = 'Sync Tidal (Two-Way Playlists)';
+      btn.classList.remove('bp5-disabled');
+    }
+  } catch (err) {
+    alert(`Tidal sync failed: ${err.message}`);
+    btn.textContent = 'Sync Tidal (Two-Way Playlists)';
     btn.classList.remove('bp5-disabled');
   }
 }
