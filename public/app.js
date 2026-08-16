@@ -1512,7 +1512,7 @@ function renderPlaylistView(playlistID, name, description, tracks) {
   `;
 
   renderTracks(tracks);
-  refreshTidalButton('${playlistID}');
+  refreshTidalButton(playlistID);
 }
 
 let searchDebounceTimer = null;
