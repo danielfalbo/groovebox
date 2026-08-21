@@ -654,20 +654,21 @@ func (t *TidalClient) AddTracks(uuid string, trackIDs []string) ([]string, error
 	if len(trackIDs) == 0 {
 		return nil, nil
 	}
-	// Fetch etag required for playlist mutations.
-	_ = t.fetchETag(uuid)
-	t.mu.Lock()
-	etag := t.etag
-	t.mu.Unlock()
-	hdrs := map[string]string{}
-	if etag != "" {
-		hdrs["If-None-Match"] = etag
-	}
 	var added []string
 	for start := 0; start < len(trackIDs); start += 50 {
 		end := start + 50
 		if end > len(trackIDs) {
 			end = len(trackIDs)
+		}
+		// Each mutation changes the playlist's etag, so re-fetch it per batch;
+		// reusing a stale etag across batches yields Tidal HTTP 412.
+		_ = t.fetchETag(uuid)
+		t.mu.Lock()
+		etag := t.etag
+		t.mu.Unlock()
+		hdrs := map[string]string{}
+		if etag != "" {
+			hdrs["If-None-Match"] = etag
 		}
 		data := url.Values{
 			"trackIds":            {strings.Join(trackIDs[start:end], ",")},
@@ -693,14 +694,6 @@ func (t *TidalClient) RemoveByIndices(uuid string, indices []int) error {
 	if len(indices) == 0 {
 		return nil
 	}
-	_ = t.fetchETag(uuid)
-	t.mu.Lock()
-	etag := t.etag
-	t.mu.Unlock()
-	hdrs := map[string]string{}
-	if etag != "" {
-		hdrs["If-None-Match"] = etag
-	}
 	var idxStrs []string
 	for _, i := range indices {
 		idxStrs = append(idxStrs, fmt.Sprint(i))
@@ -709,6 +702,15 @@ func (t *TidalClient) RemoveByIndices(uuid string, indices []int) error {
 		end := start + 50
 		if end > len(idxStrs) {
 			end = len(idxStrs)
+		}
+		// Re-fetch etag per batch (each mutation rotates the etag).
+		_ = t.fetchETag(uuid)
+		t.mu.Lock()
+		etag := t.etag
+		t.mu.Unlock()
+		hdrs := map[string]string{}
+		if etag != "" {
+			hdrs["If-None-Match"] = etag
 		}
 		_, err := t.req("DELETE", tidalAPIv1, "playlists/"+uuid+"/items/"+strings.Join(idxStrs[start:end], ","), nil, nil, hdrs)
 		if err != nil {
