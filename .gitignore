@@ -7,8 +7,10 @@ groovebox
 *.so
 *.dylib
 
-# music.db is intentionally git-tracked (the actual library data).
-# Transient WAL-mode artifacts are not — they're not the persisted data.
+# music.db is 3-2-1 backed up (restic: Hetzner nightly + local HDD) —
+# see homeserver-infra/docs/groovebox-backups.md. No longer in git.
+music.db
+# Transient WAL-mode artifacts are not the persisted data.
 *.db-journal
 *.db-wal
 *.db-shm
