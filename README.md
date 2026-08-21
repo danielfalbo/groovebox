@@ -1,3 +1,5 @@
+https://github.com/user-attachments/assets/04be43fc-4c7f-4a01-8dc4-3890d28e896e
+
 # 🎵 Groovebox
 
 A self-hosted, local-first music archival engine that consolidates physical media (Discogs collection & wantlist) and custom playlists into a single portable SQLite database with instant full-text search and a sleek mobile-first web interface.
