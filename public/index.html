@@ -51,6 +51,11 @@
             <div class="bp5-menu-divider"></div>
             <a class="bp5-menu-item bp5-icon-clean" id="dedupe-albums-btn" onclick="triggerDedupeAlbums()">Merge Duplicate Albums</a>
             <div class="sync-last-time" id="dedupe-last-time">Never merged duplicates</div>
+            <div class="bp5-menu-divider"></div>
+            <a class="bp5-menu-item bp5-icon-refresh" id="local-sync-btn" onclick="triggerLocalSync()">Sync Local Library</a>
+            <div class="sync-last-time" id="local-sync-last-time">Never synced local library</div>
+            <div class="bp5-menu-divider"></div>
+            <a class="bp5-menu-item bp5-icon-volume-up" onclick="stopEverything()">Stop Playback</a>
           </div>
         </div>
       </div>
@@ -82,6 +87,10 @@
               <circle cx="12" cy="12" r="1" fill="#181d24"></circle>
             </svg>
             <span class="nav-item-text">Albums</span>
+          </a>
+          <a class="bp5-menu-item nav-item-btn" id="nav-local" onclick="navShowLocal()">
+            <span class="bp5-icon-standard bp5-icon-folder-open"></span>
+            <span class="nav-item-text">Local Library</span>
           </a>
         </div>
         <div class="sidebar-divider"></div>
@@ -128,6 +137,11 @@
               <input type="text" class="bp5-input" id="section-filter-input" placeholder="Filter current view..." oninput="handleSectionFilter(this.value)" />
             </div>
           </div>
+        </div>
+
+        <!-- Local Library Views -->
+        <div class="local-container" id="local-container" style="display: none;">
+          <!-- dynamically rendered -->
         </div>
 
         <!-- Dedicated Album Detail Page View -->
@@ -280,6 +294,27 @@
     </div>
   </div>
 
+  <!-- Now Playing bar (server-driven; browser tab is a best-effort mirror) -->
+  <div class="now-playing-bar" id="now-playing-bar" style="display: none;">
+    <img id="np-cover" alt="" onerror="this.onerror=null;this.src=window.fallbackCover">
+    <div class="np-meta">
+      <div class="np-title" id="np-title">—</div>
+      <div class="np-artist" id="np-artist">—</div>
+      <div class="np-time"><span id="np-time">0:00</span> / <span id="np-dur">0:00</span></div>
+      <div class="np-seek-wrap">
+        <input type="range" id="np-seek" min="0" max="1000" value="0" oninput="npSeekPreview(this)" onchange="npSeekCommit()" title="Seek">
+        <input type="range" id="np-volume" min="0" max="100" value="80" onchange="npVolume(this.value)" title="Volume">
+      </div>
+    </div>
+    <div class="np-controls">
+      <button class="bp5-button bp5-minimal" onclick="npAction('prev')" title="Previous">⏮</button>
+      <button class="bp5-button bp5-large" id="np-toggle" onclick="npAction('toggle')" title="Play/Pause">▶</button>
+      <button class="bp5-button bp5-minimal" onclick="npAction('next')" title="Next">⏭</button>
+      <button class="bp5-button bp5-minimal" onclick="npAction('stop')" title="Stop">⏹</button>
+    </div>
+  </div>
+
   <script src="/app.js"></script>
+  <script src="/local.js"></script>
 </body>
 </html>

@@ -85,3 +85,30 @@ CREATE VIRTUAL TABLE IF NOT EXISTS search_fts USING fts5(
     isrc,
     tokenize = 'porter unicode61'
 );
+
+-- Local audio files indexed from the Syncthing music library.
+-- kind='track' -> a playable per-song file linked to `tracks` (track_id set).
+-- kind='raw'   -> a continuous whole-side/recording file (e.g. un-split vinyl
+--                 A.wav/B.wav, Audacity projects' source). track_id stays NULL;
+--                 a user may manually link a release_versions row to it.
+-- filepath is absolute; relpath is relative to the scanned music root (unique).
+CREATE TABLE IF NOT EXISTS audio_files (
+    id TEXT PRIMARY KEY,               -- UUID
+    album_id TEXT REFERENCES albums(id) ON DELETE CASCADE,
+    track_id TEXT REFERENCES tracks(id) ON DELETE SET NULL,
+    release_id TEXT,                   -- optional manual link to a vinyl pressing
+    relpath TEXT NOT NULL UNIQUE,      -- e.g. "Ben Howard/I Forget.../[2014 CD Rip] [FLAC 16-44.1]/01 Small Things.flac"
+    kind TEXT NOT NULL DEFAULT 'track' CHECK (kind IN ('track','raw')),
+    source TEXT,                       -- 'cd'|'vinyl'|'playback'
+    format TEXT,                       -- 'flac'|'wav'
+    bit_depth INTEGER,
+    sample_rate INTEGER,
+    size_bytes INTEGER,
+    mtime INTEGER,
+    sha256 TEXT,
+    duration_ms INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_audio_files_album ON audio_files(album_id);
+CREATE INDEX IF NOT EXISTS idx_audio_files_track ON audio_files(track_id);

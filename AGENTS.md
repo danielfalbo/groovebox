@@ -73,8 +73,54 @@
 
 ## 🚫 Non-Goals
 
-- **Local audio playback / streaming**: out of scope — this is an archival/indexing tool, not a player. Do not add playback UI.
+- ~~Local audio playback / streaming~~ — **FLIPPED 2026-08-22**: Groovebox is now also
+  a local music streamer (see “🎧 Local Streamer” below).
 - **Discogs OAuth login UI**: no in-app Discogs authentication flow; sync continues to use a token from `.env` / `../discogs-albums/.env`.
+
+---
+
+## 🎧 Local Streamer (BUILT 2026-08-22)
+
+Groovebox **plays local audio** and syncs the local music library **one-way**
+(filesystem → DB). Layout contract: `~/syncthing/archive/music/LIBRARY.md`.
+
+### Scanner / library sync (`library.go`, `local_api.go`)
+- One-way sync: filesystem is truth of **existence**; DB is truth of
+  **identity/curation**. `POST /api/sync/local` walks `GROOVEBOX_MUSIC_ROOT`
+  (default = the const `musicLibrary` in `library.go` =
+  `/home/me/syncthing/archive/music`). Manual “Sync Local Library” button in the
+  settings menu, Discogs/Tidal style.
+- Creates/joins canonical albums (title+artist match), a `release_versions` row
+  per source dir (so vinyl/raw pressings have a stable id to link to), per-track
+  rows, and an `audio_files` index row per file.
+- Local art (`folder.jpg`/`large_cover.jpg`/`cover.jpg`) served via
+  `/api/local/cover?rel=...`; used as a fallback when the album has no remote cover.
+- Deletions/renames on disk are detected (absent rows pruned). Empty dirs ignored.
+- Raw vinyl sides (`A.wav`/`B.wav`, un-split whole sides) are `kind='raw'`,
+  `track_id NULL`; they surface as continuous playable items and can be manually
+  linked to a `release_versions` row via `POST /api/local/link`.
+
+### Playback (`playback.go`)
+- Server-side player: Groovebox **owns ALSA hw:0** (single writer) via an
+  `ffmpeg -> aplay` pipeline (decode/resample to S16LE 44.1k stereo). No MPD.
+- State is authoritative server-side; a browser tab only mirrors it by polling
+  `/api/playback/state`.
+- API: `GET /api/playback/state`; `POST /api/playback/{pause|resume|toggle|stop|clear|next|prev|seek|volume}`.
+- Queue: `POST /api/local/play` (whole album) and `POST /api/local/play-file`
+  (track or raw) both enqueue the full album starting at the chosen slot.
+
+### Data model
+- `audio_files` table (`schema.sql`): `{id, album_id, track_id NULL, release_id,
+  relpath UNIQUE, kind(track|raw), source(cd|vinyl|playback), format, bit_depth,
+  sample_rate, size_bytes, mtime, sha256, duration_ms}`.
+- Albums that matched an existing Discogs/catalog row keep remote art; otherwise
+  local art (a `/api/local/cover` path) is stored.
+
+### Web UI (`public/local.js`, `public/local.js`)  
+- “Local Library” sidebar item → grid of local albums; per-album detail lists
+  tracks + raw sides with per-file ▶ play.
+- Bottom now-playing bar mirrors server state (title/artist/seek/volume) and is
+  best-effort: it re-reads `/api/playback/state` every 2s even across tab reloads.
 
 ## 💡 Future Ideas (not started)
 

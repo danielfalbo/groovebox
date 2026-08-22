@@ -1152,3 +1152,35 @@ html, body {
 }
 
 
+
+/* ---- Now Playing bar (server-driven) ---- */
+.now-playing-bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+  display: flex; align-items: center; gap: 14px; padding: 8px 16px;
+  background: #151a20; border-top: 1px solid #252a31; backdrop-filter: blur(6px);
+  box-shadow: 0 -4px 18px rgba(0,0,0,.35);
+}
+.now-playing-bar img { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex: 0 0 auto; }
+.np-meta { flex: 1 1 auto; min-width: 0; }
+.np-title { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.np-artist { color: #8a95a1; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.np-time { color: #5c6c7f; font-size: 11px; margin-top: 2px; }
+.np-seek-wrap { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+.np-seek-wrap input[type=range] { flex: 1 1 auto; }
+.np-seek-wrap input[type=range].vol { flex: 0 0 90px; }
+.np-controls { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+.np-controls button { font-size: 16px; }
+
+/* room for the fixed bar */
+.main-panel { padding-bottom: 84px; }
+
+.local-container { padding: 18px; }
+.local-hdr { margin-bottom: 14px; }
+.album-detail-hero { display: flex; gap: 20px; align-items: flex-start; margin-bottom: 18px; }
+.album-detail-art { width: 140px; height: 140px; border-radius: 8px; object-fit: cover; flex: 0 0 auto; }
+.card-play-btn { position: absolute; right: 10px; bottom: 10px; transition: opacity .15s; }
+.grid-card { position: relative; }
+@media (prefers-reduced-motion: no-preference) {
+  .grid-card:hover .card-play-btn { opacity: 1; }
+}
+.card-play-btn { opacity: .9; }

@@ -1095,6 +1095,60 @@ func main() {
 		json.NewEncoder(w).Encode(tracks)
 	})
 
+	// ---- Local music library + playback ----
+	http.HandleFunc("/api/sync/local", postSyncLocal(db))
+	http.HandleFunc("/api/local/albums/", getLocalAlbum(db))
+	http.HandleFunc("/api/local/albums", getLocalAlbums(db))
+	http.HandleFunc("/api/local/cover", serveLocalCover())
+	http.HandleFunc("/api/local/play", playAlbum(db))
+	http.HandleFunc("/api/local/play-file", playFile(db))
+	http.HandleFunc("/api/local/link", linkRaw(db))
+
+	http.HandleFunc("/api/playback/state", getPlaybackState())
+	// POST /api/playback/{action} where action in pause|resume|stop|next|prev|clear
+	http.HandleFunc("/api/playback/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", 405)
+			return
+		}
+		action := strings.TrimPrefix(r.URL.Path, "/api/playback/")
+		switch action {
+		case "pause":
+			player.Pause()
+		case "resume":
+			player.Resume()
+		case "toggle":
+			if player.State().Status == "paused" {
+				player.Resume()
+			} else {
+				player.Pause()
+			}
+		case "stop":
+			player.Stop()
+		case "clear":
+			player.Clear()
+		case "next":
+			player.Next()
+		case "prev":
+			player.Prev()
+		case "seek":
+			ms := playerKey(r, "position_ms")
+			if ms >= 0 {
+				player.SeekTo(int64(ms))
+			}
+		case "volume":
+			v := playerKey(r, "volume")
+			if v >= 0 {
+				player.SetVolume(v)
+			}
+		default:
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(player.State())
+	})
+
 	// Static file serving, with SPA fallback to index.html for client-side routes
 	// (e.g. /albums/123, /artists/Some+Name) so deep links and page refreshes work.
 	fs := http.FileServer(http.Dir("public"))
