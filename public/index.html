@@ -302,7 +302,7 @@
       <div class="np-artist" id="np-artist">—</div>
       <div class="np-time"><span id="np-time">0:00</span> / <span id="np-dur">0:00</span></div>
       <div class="np-seek-wrap">
-        <input type="range" id="np-seek" min="0" max="1000" value="0" oninput="npSeekPreview(this)" onchange="npSeekCommit()" title="Seek">
+        <input type="range" id="np-seek" min="0" max="1000" value="0" onpointerdown="npSeekStart()" oninput="npSeekPreview(this)" onpointerup="npSeekEnd()" onchange="npSeekCommit()" title="Seek">
         <input type="range" id="np-volume" min="0" max="100" value="80" onchange="npVolume(this.value)" title="Volume">
       </div>
     </div>

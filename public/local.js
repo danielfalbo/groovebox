@@ -116,12 +116,20 @@ async function npAction(action) {
   npRefresh();
 }
 let npDurMs = 0;
-async function npSeekCommit() {
-  const v = document.getElementById('np-seek').value;
+let npSeeking = false;
+let npLastCommit = -1;
+function npSeekStart() { npSeeking = true; }
+async function npCommitSeek() {
+  const v = parseInt(document.getElementById('np-seek').value, 10);
+  if (isNaN(v) || v === npLastCommit) return; // dedupe pointerup+change firing back-to-back
+  npLastCommit = v;
   const ms = Math.round((v / 1000) * npDurMs);
   await fetch('/api/playback/seek', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({position_ms: ms})});
   npRefresh();
 }
+// pointerup is the reliable gesture-end signal; change is kept for keyboard arrows.
+function npSeekEnd() { npSeeking = false; npCommitSeek(); }
+function npSeekCommit() { npSeekEnd(); }
 function npSeekPreview(input) { /* live thumb callout optional */ }
 async function npVolume(v) {
   await fetch('/api/playback/volume', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({volume: parseInt(v,10)})});
@@ -144,7 +152,7 @@ async function npRefresh() {
   const dur = cur.duration_ms || 1;
   const pct = Math.min(1000, Math.max(0, Math.floor(st.position_ms / dur * 1000)));
   const seek = document.getElementById('np-seek');
-  if (document.activeElement !== seek) seek.value = pct;
+  if (!npSeeking && document.activeElement !== seek) seek.value = pct;
   const toggle = document.getElementById('np-toggle');
   toggle.textContent = st.status === 'paused' ? '▶' : '⏸';
 }
