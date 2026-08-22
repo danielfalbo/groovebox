@@ -116,7 +116,7 @@ Groovebox **plays local audio** and syncs the local music library **one-way**
 - Albums that matched an existing Discogs/catalog row keep remote art; otherwise
   local art (a `/api/local/cover` path) is stored.
 
-### Web UI (`public/local.js`, `public/local.js`)  
+### Web UI (`public/local.js`)  
 - “Local Library” sidebar item → grid of local albums; per-album detail lists
   tracks + raw sides with per-file ▶ play.
 - Bottom now-playing bar mirrors server state (title/artist/seek/volume) and is

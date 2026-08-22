@@ -38,6 +38,8 @@ type Player struct {
 	cmd       *exec.Cmd
 	pgid      int
 	volume    int
+
+	sess uint64 // bumped on each (re)launch; stale watch goroutines bail out
 }
 
 var player = &Player{index: -1, status: "idle", volume: 80}
@@ -76,6 +78,7 @@ func (p *Player) launch(entry QueueEntry) error {
 	}
 	p.cmd = cmd
 	p.pgid = cmd.Process.Pid
+	p.sess++ // mark this process as the current session
 	p.status = "playing"
 	p.startedAt = time.Now()
 	p.pausedAt = time.Time{}
@@ -92,20 +95,23 @@ func (p *Player) startLocked() error {
 		p.status = "failed"
 		return err
 	}
-	go p.watch()
+	go p.watch(p.sess)
 	return nil
 }
 
 // watch advances to the next queue item when the current one exits naturally.
-func (p *Player) watch() {
-	if p.cmd == nil {
+// sess is the launcher's session id: if a stop/seek/next has relaunched a new
+// process underneath (sess bumped), this stale watcher must not act.
+func (p *Player) watch(sess uint64) {
+	cm := p.cmd
+	if cm == nil {
 		return
 	}
-	_ = p.cmd.Wait() // blocks until the pipeline process ends
+	_ = cm.Wait()
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if p.status != "playing" {
-		return // pause/stop/seek already took over
+	if p.sess != sess || p.status != "playing" {
+		return // superseded or explicitly stopped/paused
 	}
 	if p.index < len(p.queue)-1 {
 		p.index++
@@ -117,13 +123,12 @@ func (p *Player) watch() {
 	}
 }
 
-// stopProcessLocked kills the whole process group (ffmpeg + aplay).
+// stopProcessLocked kills the whole process group (ffmpeg + aplay). It does not
+// Wait() here: each launched pipeline has its own watch goroutine that reaps it.
+// We SIGTERM and let that goroutine finish the Wait, guarded by the sess epoch.
 func (p *Player) stopProcessLocked() {
-	if p.cmd != nil {
-		if p.cmd.Process != nil {
-			_ = syscall.Kill(-p.pgid, syscall.SIGTERM)
-		}
-		_ = p.cmd.Wait()
+	if p.cmd != nil && p.cmd.Process != nil {
+		_ = syscall.Kill(-p.pgid, syscall.SIGTERM)
 	}
 	p.cmd = nil
 	p.pgid = 0

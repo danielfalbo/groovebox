@@ -107,6 +107,10 @@ func localFilesForAlbum(db *sql.DB, albumID string) ([]LocalFileRow, error) {
 				f.ReleaseID = &releaseID
 			}
 			f.AbsPath = filepath.Join(root, filepath.FromSlash(f.Relpath))
+			if f.Kind == "raw" {
+				// no track row: derive a title from the file name
+				f.Title = strings.TrimSuffix(filepath.Base(f.Relpath), filepath.Ext(f.Relpath))
+			}
 			list = append(list, f)
 		}
 	}
