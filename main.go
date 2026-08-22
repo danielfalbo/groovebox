@@ -31,8 +31,9 @@ type PlaylistSummary struct {
 	TrackCount      int      `json:"track_count"`
 	CreatedAt       string   `json:"created_at"`
 	CoverArtURLs    []string `json:"cover_art_urls"`
-	TidalConnected bool     `json:"tidal_connected"`
+	TidalConnected  bool     `json:"tidal_connected"`
 	TidalPlaylistID string   `json:"tidal_playlist_id,omitempty"`
+	TidalDirection  string   `json:"tidal_direction,omitempty"`
 	TidalSyncedAt   string   `json:"tidal_last_synced_at,omitempty"`
 }
 
@@ -412,7 +413,7 @@ func main() {
 
 		query := fmt.Sprintf(`
 			SELECT p.id, p.name, COALESCE(p.description, ''), COUNT(pt.track_id), COALESCE(p.created_at, ''),
-			       COALESCE(p.tidal_playlist_id, ''), COALESCE(p.tidal_last_synced_at, '')
+			       COALESCE(p.tidal_playlist_id, ''), COALESCE(p.tidal_direction, 'bidirectional'), COALESCE(p.tidal_last_synced_at, '')
 			FROM playlists p
 			LEFT JOIN playlist_tracks pt ON p.id = pt.playlist_id
 			GROUP BY p.id
@@ -428,7 +429,7 @@ func main() {
 		var playlists []PlaylistSummary
 		for rows.Next() {
 			var p PlaylistSummary
-			if err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.TrackCount, &p.CreatedAt, &p.TidalPlaylistID, &p.TidalSyncedAt); err == nil {
+			if err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.TrackCount, &p.CreatedAt, &p.TidalPlaylistID, &p.TidalDirection, &p.TidalSyncedAt); err == nil {
 				p.TidalConnected = p.TidalPlaylistID != ""
 				coverRows, cErr := db.Query(`
 					SELECT DISTINCT a.cover_image_url

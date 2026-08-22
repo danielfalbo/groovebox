@@ -1610,7 +1610,10 @@ async function refreshTidalButton(playlistID) {
     const pls = await res.json();
     const pl = pls.find(p => p.id === playlistID);
     if (pl && pl.tidal_connected) {
-      el.innerHTML = `<button class="bp5-button bp5-outlined bp5-small" style="color:#16a34a;" onclick="syncTidalPlaylist('${playlistID}')" title="Sync with Tidal">🌊 Sync</button>`;
+      const pullOnly = pl.tidal_direction === 'pull';
+      const tip = pullOnly ? 'Pull from Tidal (saved/favorite playlist — read-only)' : 'Sync with Tidal';
+      const lbl = pullOnly ? '⬇️ Pull' : '🌊 Sync';
+      el.innerHTML = `<button class="bp5-button bp5-outlined bp5-small" style="color:#16a34a;" onclick="syncTidalPlaylist('${playlistID}')" title="${tip}">${lbl}</button>`;
     } else {
       el.innerHTML = `<button class="bp5-button bp5-outlined bp5-small" onclick="connectTidalPlaylist('${playlistID}')" title="Connect to Tidal">🔗 Tidal</button>`;
     }

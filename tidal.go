@@ -495,6 +495,10 @@ type tidalUserPlaylist struct {
 	Title       string
 	Description string
 	NumTracks   int
+	// IsFavorite marks a playlist the user saved/favorited (not created by
+	// them). Favorited playlists belong to other users, so they sync pull-only
+	// (Tidal -> local) and are never mutated on the Tidal side.
+	IsFavorite bool
 }
 
 func (t *TidalClient) userID() string {
@@ -535,6 +539,56 @@ func (t *TidalClient) UserPlaylists() ([]tidalUserPlaylist, error) {
 		}
 		for _, it := range j.Items {
 			out = append(out, tidalUserPlaylist{UUID: it.UUID, Title: it.Title, Description: it.Description, NumTracks: it.NumberOfTracks})
+		}
+		order++
+		if len(j.Items) < 50 {
+			break
+		}
+	}
+	return out, nil
+}
+
+// FavoritePlaylists lists the user's saved/favorited playlists via the v2
+// collection folder endpoint. This returns everything in the user's Playlists
+// collection (both playlists they created and ones they saved/favorited from
+// others); callers filter out the owned ones (see UserPlaylists) to isolate
+// true favorites. Items come back wrapped under a `data` key.
+func (t *TidalClient) FavoritePlaylists() ([]tidalUserPlaylist, error) {
+	if t.userID() == "" {
+		return nil, fmt.Errorf("not authenticated with Tidal")
+	}
+	var out []tidalUserPlaylist
+	order := 0
+	for {
+		params := url.Values{
+			"folderId":    {"root"},
+			"includeOnly": {"PLAYLIST"},
+			"limit":       {"50"},
+			"offset":      {fmt.Sprint(order * 50)},
+		}
+		body, err := t.req("GET", tidalAPIv2, "my-collection/playlists/folders", params, nil, nil)
+		if err != nil {
+			return nil, err
+		}
+		var j struct {
+			Items []struct {
+				Data struct {
+					UUID           string `json:"uuid"`
+					Title          string `json:"title"`
+					Description    string `json:"description"`
+					NumberOfTracks int    `json:"numberOfTracks"`
+				} `json:"data"`
+			} `json:"items"`
+		}
+		if err := json.Unmarshal([]byte(body), &j); err != nil {
+			return nil, err
+		}
+		if len(j.Items) == 0 {
+			break
+		}
+		for _, it := range j.Items {
+			d := it.Data
+			out = append(out, tidalUserPlaylist{UUID: d.UUID, Title: d.Title, Description: d.Description, NumTracks: d.NumberOfTracks})
 		}
 		order++
 		if len(j.Items) < 50 {
@@ -815,15 +869,21 @@ func SyncOneConnection(db *sql.DB, tc *TidalClient, playlistID string, report fu
 	if report == nil {
 		report = func(string, string) {}
 	}
-	var name, remoteID, snapLocal, snapTidal string
+	var name, remoteID, snapLocal, snapTidal, direction string
 	err := db.QueryRow(`
-		SELECT COALESCE(name,''), COALESCE(tidal_playlist_id,''), COALESCE(tidal_snap_local,''), COALESCE(tidal_snap_tidal,'')
-		FROM playlists WHERE id=?`, playlistID).Scan(&name, &remoteID, &snapLocal, &snapTidal)
+		SELECT COALESCE(name,''), COALESCE(tidal_playlist_id,''), COALESCE(tidal_snap_local,''), COALESCE(tidal_snap_tidal,''), COALESCE(tidal_direction,'bidirectional')
+		FROM playlists WHERE id=?`, playlistID).Scan(&name, &remoteID, &snapLocal, &snapTidal, &direction)
 	if err != nil {
 		return 0, 0, err
 	}
 	if remoteID == "" {
 		return 0, 0, fmt.Errorf("playlist %s not connected to Tidal", playlistID)
+	}
+	// pullOnly (e.g. favorited/saved playlists that belong to other users) means
+	// we only mirror Tidal -> local and never mutate the Tidal playlist.
+	pullOnly := direction != "" && direction != "bidirectional"
+	if pullOnly {
+		report("sync", fmt.Sprintf("Pulling (read-only) %q from Tidal…", name))
 	}
 	report("sync", fmt.Sprintf("Reading local playlist %q\u2026", name))
 
@@ -903,30 +963,32 @@ func SyncOneConnection(db *sql.DB, tc *TidalClient, playlistID string, report fu
 	}
 
 	// Add: local -> Tidal.
-	var toAdd []string
-	for _, k := range localKeyOrder {
-		if _, exists := currentRemote[k]; exists {
-			continue
-		}
-		var isrc, artist, title, tidalID string
-		_ = db.QueryRow("SELECT COALESCE(isrc,''),COALESCE(artist,''),COALESCE(title,''),COALESCE(tidal_id,'') FROM tracks WHERE id=?", currentLocal[k]).
-			Scan(&isrc, &artist, &title, &tidalID)
-		tid := tidalID
-		if tid == "" {
-			if id, ok := tc.ResolveTidalID(isrc, title, artist); ok {
-				tid = id
-				_, _ = db.Exec("UPDATE tracks SET tidal_id=? WHERE id=?", id, currentLocal[k])
+	if !pullOnly {
+		var toAdd []string
+		for _, k := range localKeyOrder {
+			if _, exists := currentRemote[k]; exists {
+				continue
 			}
+			var isrc, artist, title, tidalID string
+			_ = db.QueryRow("SELECT COALESCE(isrc,''),COALESCE(artist,''),COALESCE(title,''),COALESCE(tidal_id,'') FROM tracks WHERE id=?", currentLocal[k]).
+				Scan(&isrc, &artist, &title, &tidalID)
+			tid := tidalID
+			if tid == "" {
+				if id, ok := tc.ResolveTidalID(isrc, title, artist); ok {
+					tid = id
+					_, _ = db.Exec("UPDATE tracks SET tidal_id=? WHERE id=?", id, currentLocal[k])
+				}
+			}
+			if tid == "" {
+				continue // no local mapping to a Tidal track; skip (never blind-guess)
+			}
+			toAdd = append(toAdd, tid)
+			addedRemote++
 		}
-		if tid == "" {
-			continue // no local mapping to a Tidal track; skip (never blind-guess)
-		}
-		toAdd = append(toAdd, tid)
-		addedRemote++
-	}
-	if len(toAdd) > 0 {
-		if _, err := tc.AddTracks(remoteID, toAdd); err != nil {
-			return addedLocal, addedRemote, fmt.Errorf("adding %d tracks to Tidal: %w", len(toAdd), err)
+		if len(toAdd) > 0 {
+			if _, err := tc.AddTracks(remoteID, toAdd); err != nil {
+				return addedLocal, addedRemote, fmt.Errorf("adding %d tracks to Tidal: %w", len(toAdd), err)
+			}
 		}
 	}
 
@@ -945,15 +1007,17 @@ func SyncOneConnection(db *sql.DB, tc *TidalClient, playlistID string, report fu
 	}
 
 	// Delete: local removed a song -> remove from Tidal (by current index).
-	for k := range lastLocal {
-		if _, onRemote := currentRemote[k]; !onRemote {
-			continue
-		}
-		if _, onLocal := currentLocal[k]; !onLocal {
-			for i, rk := range remoteKeyOrder {
-				if rk == k {
-					_ = tc.RemoveByIndices(remoteID, []int{i})
-					break
+	if !pullOnly {
+		for k := range lastLocal {
+			if _, onRemote := currentRemote[k]; !onRemote {
+				continue
+			}
+			if _, onLocal := currentLocal[k]; !onLocal {
+				for i, rk := range remoteKeyOrder {
+					if rk == k {
+						_ = tc.RemoveByIndices(remoteID, []int{i})
+						break
+					}
 				}
 			}
 		}
@@ -970,10 +1034,34 @@ func SyncOneConnection(db *sql.DB, tc *TidalClient, playlistID string, report fu
 // PullTidalPlaylists lists Tidal playlists, creating local counterparts that
 // aren't connected yet, then returns all connected playlist ids.
 func PullTidalPlaylists(db *sql.DB, tc *TidalClient) ([]string, error) {
-	pls, err := tc.UserPlaylists()
+	owned, err := tc.UserPlaylists() // playlists created by the user
 	if err != nil {
 		return nil, err
 	}
+	collection, err := tc.FavoritePlaylists() // created + favorited
+	if err != nil {
+		return nil, err
+	}
+
+	// Favorites = everything in the collection folder that isn't one the user
+	// created. Both share the same uuid namespace, so dedupe by uuid.
+	ownedIDs := map[string]bool{}
+	var pls []tidalUserPlaylist
+	seen := map[string]bool{}
+	for _, p := range owned {
+		ownedIDs[p.UUID] = true
+		seen[p.UUID] = true
+		pls = append(pls, p)
+	}
+	for _, p := range collection {
+		if seen[p.UUID] {
+			continue
+		}
+		seen[p.UUID] = true
+		p.IsFavorite = true
+		pls = append(pls, p)
+	}
+
 	var connected []string
 	for _, p := range pls {
 		// already connected?
@@ -990,14 +1078,18 @@ func PullTidalPlaylists(db *sql.DB, tc *TidalClient) ([]string, error) {
 		if name == "" {
 			name = "Tidal Playlist"
 		}
+		direction := "bidirectional"
+		if p.IsFavorite {
+			direction = "pull" // saved others' playlist: Tidal -> local only
+		}
 		_, err = db.Exec(`INSERT INTO playlists (id, name, description, created_at, updated_at,
-			tidal_playlist_id, tidal_connected_at, tidal_last_synced_at) VALUES (?,?,?,?,?,?,?,?)`,
-			newID, name, p.Description, now, now, p.UUID, now, now)
+			tidal_playlist_id, tidal_connected_at, tidal_last_synced_at, tidal_direction) VALUES (?,?,?,?,?,?,?,?,?)`,
+			newID, name, p.Description, now, now, p.UUID, now, now, direction)
 		if err != nil {
 			log.Printf("tidal: failed creating local playlist for %q: %v", p.Title, err)
 			continue
 		}
-		log.Printf("Tidal: auto-connected playlist %q (Tidal %s) as %s", p.Title, p.UUID, newID)
+		log.Printf("Tidal: auto-connected playlist %q (Tidal %s) as %s [%s]", p.Title, p.UUID, newID, direction)
 		connected = append(connected, newID)
 	}
 	return connected, nil
