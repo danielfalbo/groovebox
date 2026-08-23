@@ -130,9 +130,16 @@ async function npCommitSeek() {
 // pointerup is the reliable gesture-end signal; change is kept for keyboard arrows.
 function npSeekEnd() { npSeeking = false; npCommitSeek(); }
 function npSeekCommit() { npSeekEnd(); }
-function npSeekPreview(input) { /* live thumb callout optional */ }
+function npSeekPreview(input) {
+  // live accent-fill while dragging (also fires on plain clicks)
+  input.style.setProperty('--p', ((parseInt(input.value, 10) || 0) / 10).toFixed(1) + '%');
+}
+function npVolPreview(v) {
+  document.getElementById('np-volume').style.setProperty('--p', (parseInt(v, 10) || 0) + '%');
+}
 async function npVolume(v) {
   await fetch('/api/playback/volume', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({volume: parseInt(v,10)})});
+  npVolPreview(v);
 }
 async function npRefresh() {
   let st; try { st = await (await fetch('/api/playback/state')).json(); } catch(e){ return; }
@@ -152,7 +159,16 @@ async function npRefresh() {
   const dur = cur.duration_ms || 1;
   const pct = Math.min(1000, Math.max(0, Math.floor(st.position_ms / dur * 1000)));
   const seek = document.getElementById('np-seek');
-  if (!npSeeking && document.activeElement !== seek) seek.value = pct;
+  if (!npSeeking && document.activeElement !== seek) {
+    seek.value = pct;
+    seek.style.setProperty('--p', (pct / 10).toFixed(1) + '%');
+  }
+  const volEl = document.getElementById('np-volume');
+  if (document.activeElement !== volEl) {
+    const v = st.volume != null ? st.volume : 80;
+    volEl.value = v;
+    volEl.style.setProperty('--p', v + '%');
+  }
   const toggle = document.getElementById('np-toggle');
   toggle.textContent = st.status === 'paused' ? '▶' : '⏸';
 }

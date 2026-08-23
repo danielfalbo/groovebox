@@ -296,21 +296,36 @@
 
   <!-- Now Playing bar (server-driven; browser tab is a best-effort mirror) -->
   <div class="now-playing-bar" id="now-playing-bar" style="display: none;">
-    <img id="np-cover" alt="" onerror="this.onerror=null;this.src=window.fallbackCover">
-    <div class="np-meta">
-      <div class="np-title" id="np-title">—</div>
-      <div class="np-artist" id="np-artist">—</div>
-      <div class="np-time"><span id="np-time">0:00</span> / <span id="np-dur">0:00</span></div>
-      <div class="np-seek-wrap">
-        <input type="range" id="np-seek" min="0" max="1000" value="0" onpointerdown="npSeekStart()" oninput="npSeekPreview(this)" onpointerup="npSeekEnd()" onchange="npSeekCommit()" title="Seek">
-        <input type="range" id="np-volume" min="0" max="100" value="80" onchange="npVolume(this.value)" title="Volume">
+    <div class="np-now">
+      <img class="np-cover" id="np-cover" alt="" onerror="this.onerror=null;this.src=window.fallbackCover">
+      <div class="np-meta">
+        <div class="np-title" id="np-title">—</div>
+        <div class="np-artist" id="np-artist">—</div>
       </div>
     </div>
-    <div class="np-controls">
-      <button class="bp5-button bp5-minimal" onclick="npAction('prev')" title="Previous">⏮</button>
-      <button class="bp5-button bp5-large" id="np-toggle" onclick="npAction('toggle')" title="Play/Pause">▶</button>
-      <button class="bp5-button bp5-minimal" onclick="npAction('next')" title="Next">⏭</button>
-      <button class="bp5-button bp5-minimal" onclick="npAction('stop')" title="Stop">⏹</button>
+
+    <div class="np-center">
+      <div class="np-seek-row">
+        <span class="np-time" id="np-time">0:00</span>
+        <input type="range" id="np-seek" min="0" max="1000" value="0" aria-label="Seek"
+          onpointerdown="npSeekStart()" oninput="npSeekPreview(this)"
+          onpointerup="npSeekEnd()" onchange="npSeekCommit()" title="Seek">
+        <span class="np-time" id="np-dur">0:00</span>
+      </div>
+    </div>
+
+    <div class="np-side">
+      <div class="np-vol">
+        <span class="np-vol-ic" title="Volume">🔊</span>
+        <input type="range" id="np-volume" class="vol" min="0" max="100" value="80" aria-label="Volume"
+          oninput="npVolPreview(this.value)" onchange="npVolume(this.value)" title="Volume">
+      </div>
+      <div class="np-controls">
+        <button class="np-btn" onclick="npAction('prev')" title="Previous">⏮</button>
+        <button class="np-btn np-btn-primary" id="np-toggle" onclick="npAction('toggle')" title="Play/Pause">▶</button>
+        <button class="np-btn" onclick="npAction('next')" title="Next">⏭</button>
+        <button class="np-btn np-btn-stop" onclick="npAction('stop')" title="Stop">⏹</button>
+      </div>
     </div>
   </div>
 
