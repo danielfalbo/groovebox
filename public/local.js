@@ -149,6 +149,12 @@ async function npRefresh() {
     return;
   }
   if (bar) bar.style.display = 'flex';
+  // Belt-and-suspenders: pin the bar to the OS viewport via inline styles so a
+  // stale/overridden stylesheet can never leave the bar sitting in normal flow
+  // at the bottom of the page (position:fixed must stay in effect).
+  bar.style.position = 'fixed';
+  bar.style.left = '0'; bar.style.right = '0'; bar.style.bottom = '0'; bar.style.top = 'auto';
+  bar.style.zIndex = '1000';
   const cur = st.current;
   document.getElementById('np-cover').src = cur.cover_url || fallbackCover;
   document.getElementById('np-title').textContent = cur.title || '—';
