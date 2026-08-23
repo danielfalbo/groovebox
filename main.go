@@ -1159,6 +1159,10 @@ func main() {
 		}
 		cleanPath := filepath.Clean(r.URL.Path)
 		if fileInfo, err := os.Stat(filepath.Join("public", cleanPath)); err == nil && !fileInfo.IsDir() {
+			// Don't let browsers cache the UI assets indefinitely: every load
+			// revalidates (Last-Modified/ETag) so a stale stylesheet can never
+			// keep serving an old, non-floating now-playing bar.
+			w.Header().Set("Cache-Control", "no-cache")
 			fs.ServeHTTP(w, r)
 			return
 		}
