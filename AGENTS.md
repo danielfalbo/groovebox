@@ -122,6 +122,27 @@ Groovebox **plays local audio** and syncs the local music library **one-way**
 - Bottom now-playing bar mirrors server state (title/artist/seek/volume) and is
   best-effort: it re-reads `/api/playback/state` every 2s even across tab reloads.
 
+### Playback learnings (verified 2026-08-23)
+- **ALSA hw:0 single-writer race on relaunch**: killing the old pipeline and
+  IMMEDIATELY starting a new `aplay` fails with `Device or resource busy` (the
+  previous aplay still holds the PCM). `stopProcessLocked` must wait for the old
+  process group to fully die before a seek/skip relaunch. Empirically an
+  immediate reopen fails; a ~0.4s delay opens clean.
+- **Any `launch()` that supersedes the last process MUST spawn a watcher.**
+  `SeekTo` historically relaunched without `go p.watch(p.sess)`, so a seek-
+  relaunched process that exited was never reaped -> the server stayed frozen at
+  `"playing"` with an advancing wall-clock position but dead audio. Keep launch
+  funneled through `startLocked` (which spawns the watcher) or add the watch.
+- **UI seek slider:** commit on `pointerup` (not `onchange`) with a `npSeeking`
+  flag so the every-2s `npRefresh` poll doesn't yank the thumb mid-gesture; on
+  the first click over the range track some browsers don't fire `change` and the
+  poll steals the committed value.
+- **Bar pinning:** static assets are served with only `Last-Modified` by
+  default — add `Cache-Control: no-cache` + cache-busting `?v=` query strings
+  when changing the now-playing bar, and/or pin the bar via inline styles in
+  `npRefresh()` so a stale/overridden stylesheet can never drop it into page
+  flow.
+
 ## 💡 Future Ideas (not started)
 
 - **Format & Genre Sub-Filters**: additional pill filters for media format (Vinyl LP, CD, Digital) and master genres within the Collection/Wantlist views.
