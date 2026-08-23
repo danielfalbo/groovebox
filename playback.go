@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -43,6 +44,43 @@ type Player struct {
 }
 
 var player = &Player{index: -1, status: "idle", volume: 80}
+
+// volumeRe extracts the percentage from `amixer sget Master` output
+// (e.g. `Mono: Playback 68 [78%]`).
+var volumeRe = regexp.MustCompile(`\[(\d+)%\]`)
+
+// readAlsaVolume reads the real ALSA Master volume (0-100) from the hardware,
+// or -1 if it can't be read. We read from the hardware rather than trusting our
+// in-memory value so the now-playing bar never shows a stale/misleading level.
+func readAlsaVolume() int {
+	out, err := exec.Command("amixer", "-D", "hw:0", "sget", "Master").Output()
+	if err != nil {
+		return -1
+	}
+	m := volumeRe.FindSubmatch(out)
+	if m == nil {
+		return -1
+	}
+	v, err := strconv.Atoi(string(m[1]))
+	if err != nil {
+		return -1
+	}
+	if v < 0 {
+		v = 0
+	} else if v > 100 {
+		v = 100
+	}
+	return v
+}
+
+func init() {
+	// Seed the in-memory volume from the actual hardware so a freshly restarted
+	// server mirrors reality (e.g. a muted/zeroed ALSA Master) instead of always
+	// claiming 80%. Otherwise playback can be silent while the bar shows 80%.
+	if v := readAlsaVolume(); v >= 0 {
+		player.volume = v
+	}
+}
 
 // quoteShellArg wraps a string for use as one POSIX shell argument.
 func quoteShellArg(s string) string {
@@ -91,6 +129,7 @@ func (p *Player) startLocked() error {
 		p.status = "idle"
 		return nil
 	}
+	p.applyVolumeLocked() // (re)sync hardware to our volume so audio starts audible
 	if err := p.launch(p.queue[p.index]); err != nil {
 		p.status = "failed"
 		return err
@@ -300,7 +339,15 @@ func (p *Player) Enqueue(entries []QueueEntry) {
 	}
 }
 
-// SetVolume adjusts ALSA output (0-100). Best-effort.
+// applyVolumeLocked pushes p.volume to ALSA (mu held). Best-effort.
+func (p *Player) applyVolumeLocked() {
+	for _, ctrl := range []string{"Master", "PCM"} {
+		_ = exec.Command("amixer", "-D", "hw:0", "sset", ctrl, strconv.Itoa(p.volume)+"%").Run()
+	}
+}
+
+// SetVolume adjusts ALSA output (0-100) and records it as the new in-memory
+// level so the now-playing bar and the hardware always agree.
 func (p *Player) SetVolume(v int) {
 	if v < 0 {
 		v = 0
@@ -310,10 +357,8 @@ func (p *Player) SetVolume(v int) {
 	}
 	p.lock()
 	p.volume = v
+	p.applyVolumeLocked()
 	p.unlock()
-	for _, ctrl := range []string{"Master", "PCM"} {
-		_ = exec.Command("amixer", "-D", "hw:0", "sset", ctrl, strconv.Itoa(v)+"%").Run()
-	}
 }
 
 // Snapshot is a serializable view of playback state.
