@@ -126,14 +126,32 @@ func (p *Player) watch(sess uint64) {
 // stopProcessLocked kills the whole process group (ffmpeg + aplay). It does not
 // Wait() here: each launched pipeline has its own watch goroutine that reaps it.
 // We SIGTERM and let that goroutine finish the Wait, guarded by the sess epoch.
+// Before returning, it waits for the old group to actually terminate and release
+// ALSA hw:0 — so a relaunch (seek/skip) starting a new aplay right afterwards
+// won't fail with "Device or resource busy" from the previous pipeline still
+// holding the device.
 func (p *Player) stopProcessLocked() {
+	oldPgid := p.pgid
 	if p.cmd != nil && p.cmd.Process != nil {
-		_ = syscall.Kill(-p.pgid, syscall.SIGTERM)
+		_ = syscall.Kill(-oldPgid, syscall.SIGTERM)
 	}
 	p.cmd = nil
 	p.pgid = 0
 	p.startedAt = time.Time{}
 	p.pausedAt = time.Time{}
+
+	// Wait (briefly) for the old process group to fully disappear so hw:0 is
+	// free before any replacement pipeline is spawned.
+	if oldPgid > 0 {
+		deadline := time.Now().Add(time.Second)
+		for time.Now().Before(deadline) {
+			// kill(-pgid, 0) is only success while a live member remains.
+			if err := syscall.Kill(-oldPgid, 0); err == syscall.ESRCH {
+				return // group gone: device released
+			}
+			time.Sleep(15 * time.Millisecond)
+		}
+	}
 }
 
 // posLocked returns current virtual position in ms.
@@ -219,7 +237,13 @@ func (p *Player) SeekTo(ms int64) {
 			// resume first so launch doesn't complain
 			p.status = "playing"
 		}
-		_ = p.launch(entry)
+		if err := p.launch(entry); err == nil {
+			// Watch the relaunched pipeline too. Without this, when the seek-
+			// relaunched process exits naturally (end-of-track / error) no watcher
+			// is left to reap it, and the player would stay frozen at "playing"
+			// with an advancing wall-clock position but dead audio underneath.
+			go p.watch(p.sess)
+		}
 	}
 }
 
