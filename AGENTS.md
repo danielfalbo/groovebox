@@ -133,6 +133,12 @@ Groovebox **plays local audio** and syncs the local music library **one-way**
   relaunched process that exited was never reaped -> the server stayed frozen at
   `"playing"` with an advancing wall-clock position but dead audio. Keep launch
   funneled through `startLocked` (which spawns the watcher) or add the watch.
+- **Volume must be synced with real ALSA, not an in-memory default.**
+  `Player.volume` used to be a hardcoded 80 that launch/startLocked never
+  applied — if the hardware `Master` was muted/zeroed, playback ran dead-silent
+  while the bar showed 80% + advancing time. Fix: `init()` seeds `player.volume`
+  from `readAlsaVolume()` at startup, and `startLocked` calls `applyVolumeLocked()`
+  before each launch so output always matches the displayed level.
 - **UI seek slider:** commit on `pointerup` (not `onchange`) with a `npSeeking`
   flag so the every-2s `npRefresh` poll doesn't yank the thumb mid-gesture; on
   the first click over the range track some browsers don't fire `change` and the
