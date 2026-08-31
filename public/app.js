@@ -938,6 +938,7 @@ async function checkSyncStatus() {
     const dedupeTimeDiv = document.getElementById('dedupe-last-time');
     const dedupeBtn = document.getElementById('dedupe-albums-btn');
     const tidalBtn = document.getElementById('tidal-sync-btn');
+    const syncBtn = document.getElementById('discogs-sync-btn');
     const tidalTimeDiv = document.getElementById('tidal-sync-last-time');
 
     if (lastTimeDiv && data.last_synced_at) {

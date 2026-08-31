@@ -184,6 +184,23 @@ test('artist page album cards open new tab on ctrl-click', async ({ page, url })
   await tab.close();
 });
 
+test('no page/console errors while sync-status polling runs (regression: syncBtn ReferenceError)', async ({ page, url }) => {
+  // The settings/sync poll hits /api/sync/status every 2s. The bug (a missing
+  // syncBtn lookup) threw inside the function — caught by its try/catch, so it
+  // surfaced as a console.error, NOT an uncaught pageerror. Watch both.
+  const errors = [];
+  const onPageErr = e => errors.push(`pageerror: ${e.message} @ ${e.filename}:${e.lineno}`);
+  const onConsole = m => { if (m.type() === 'error') errors.push(`console: ${m.text()}`); };
+  page.on('pageerror', onPageErr);
+  page.on('console', onConsole);
+  await page.goto(`${url}/albums`, { waitUntil: 'networkidle' });
+  await page.waitForSelector('.grid-card', { timeout: 15000 });
+  await page.waitForTimeout(5000); // ~2+ poll cycles
+  page.off('pageerror', onPageErr);
+  page.off('console', onConsole);
+  assert(errors.length === 0, `JS errors during polling:\n${errors.join('\n')}`);
+});
+
 // ---------------------------------------------------------------------------
 async function main() {
   const isLive = process.argv.includes('--live');

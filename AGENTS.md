@@ -175,8 +175,8 @@ sh e2e/run.sh --live     # e2e against an already-running server (BASE_URL overr
 ## 🧪 Testing
 
 - **Unit (`main_test.go`)**: pure logic such as `NormalizeAlbumTitle` (dedupe-safe properties). `go test ./...`.
-- **E2E (`e2e/run.mjs` + global Playwright)**: boots an isolated `groovebox` on a random port against a python3 `sqlite3.backup()` snapshot of `music.db` (never touches the live service/DB), then drives Chromium through the UI regressions: Back-from-album hides the hero (`album-detail-container`)
-  `display:none` — guards against `clearNavActive` being shadowed by later scripts), cmd/ctrl + middle-click open album cards in new tabs, idle playback bar reserves no bottom padding (`body.np-active` toggles it), wantlist pill, artist-page album cards. No npm deps needed (uses the global `playwright` install; browsers via `~/.cache/ms-playwright`).
+- **E2E (`e2e/run.mjs` + global Playwright)**: boots an isolated `groovebox` on a random port against a python3 `sqlite3.backup()` snapshot of `music.db` (never touches the live service/DB), then drives Chromium through the UI regressions: Back-from-album hides the hero (`album-detail-container`
+  `display:none` — guards against `clearNavActive` being shadowed by later scripts), cmd/ctrl + middle-click open album cards in new tabs, idle playback bar reserves no bottom padding (`body.np-active` toggles it), wantlist pill, artist-page album cards, and a zero-console-error check while the `/api/sync/status` poll runs (caught the missing `syncBtn` lookup — it threw on every 2s tick as a caught console.error, so the harness watches `console` errors AND `pageerror`s). No npm deps needed (uses the global `playwright` install; browsers via `~/.cache/ms-playwright`).
 - Keep cache-buster query (`?v=N` in index.html) bumped whenever `public/*` JS/CSS change so browsers pick up the served files, and re-run `sh e2e/run.sh` before commit.
 
 ## 🌊 Tidal Two-Way Playlist Sync (`tidal.go`)
