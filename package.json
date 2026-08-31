@@ -1,0 +1,11 @@
+{
+  "name": "groovebox",
+  "private": true,
+  "description": "my-music-lib — Groovebox music archival & curation engine (Go + vanilla JS)",
+  "scripts": {
+    "test": "sh e2e/run.sh",
+    "test:unit": "go test ./...",
+    "test:e2e": "sh e2e/run.sh",
+    "build": "go build -o groovebox ."
+  }
+}

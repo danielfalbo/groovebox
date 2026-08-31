@@ -166,7 +166,18 @@ go run . -sync-discogs
 
 # Playwright Visual Regression Screenshot
 npx -y playwright screenshot http://localhost:8080 screenshot.png
+
+# TESTS — always run before shipping UI/UX changes:
+sh e2e/run.sh            # Go unit tests + isolated e2e (snapshot DB, never touches live :3000)
+sh e2e/run.sh --live     # e2e against an already-running server (BASE_URL override)
 ```
+
+## 🧪 Testing
+
+- **Unit (`main_test.go`)**: pure logic such as `NormalizeAlbumTitle` (dedupe-safe properties). `go test ./...`.
+- **E2E (`e2e/run.mjs` + global Playwright)**: boots an isolated `groovebox` on a random port against a python3 `sqlite3.backup()` snapshot of `music.db` (never touches the live service/DB), then drives Chromium through the UI regressions: Back-from-album hides the hero (`album-detail-container`)
+  `display:none` — guards against `clearNavActive` being shadowed by later scripts), cmd/ctrl + middle-click open album cards in new tabs, idle playback bar reserves no bottom padding (`body.np-active` toggles it), wantlist pill, artist-page album cards. No npm deps needed (uses the global `playwright` install; browsers via `~/.cache/ms-playwright`).
+- Keep cache-buster query (`?v=N` in index.html) bumped whenever `public/*` JS/CSS change so browsers pick up the served files, and re-run `sh e2e/run.sh` before commit.
 
 ## 🌊 Tidal Two-Way Playlist Sync (`tidal.go`)
 

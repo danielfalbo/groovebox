@@ -496,14 +496,6 @@ async function showAlbums(targetFilter) {
   setAlbumFilter(targetFilter || activeAlbumFilter);
 }
 
-function renderAlbumCards(albums) {
-  const grid = document.getElementById('grid-container');
-  grid.innerHTML = '';
-  if (!albums || albums.length === 0) {
-    grid.innerHTML = '<div class="bp5-text-muted">No albums found</div>';
-    return;
-  }
-
 function albumCardClick(e, albumId) {
   // cmd/ctrl-click opens the album in a new tab instead of SPA-navigating.
   if (e.metaKey || e.ctrlKey || e.shiftKey) {
@@ -521,6 +513,14 @@ function albumCardAuxClick(e, albumId) {
     window.open(`/albums/${encodeURIComponent(albumId)}`, '_blank');
   }
 }
+
+function renderAlbumCards(albums) {
+  const grid = document.getElementById('grid-container');
+  grid.innerHTML = '';
+  if (!albums || albums.length === 0) {
+    grid.innerHTML = '<div class="bp5-text-muted">No albums found</div>';
+    return;
+  }
 
   albums.forEach(alb => {
     const card = document.createElement('div');
