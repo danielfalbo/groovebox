@@ -1256,8 +1256,8 @@ html, body {
 .np-btn-stop { opacity: .6; }
 .np-btn-stop:hover { opacity: 1; color: #ff6b6b; }
 
-/* room for the fixed bar */
-.main-panel { padding-bottom: 84px; }
+/* room for the fixed bar (only while it's actually shown) */
+body.np-active .main-panel { padding-bottom: 84px; }
 
 /* keep the last row of any inner scroller clear of the fixed now-playing bar */
 .scrollable-flow, #grid-container, .grid-container,

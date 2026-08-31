@@ -18,10 +18,6 @@ function showLocalFlow() {
   return cont;
 }
 
-function clearNavActive() {
-  document.querySelectorAll('#sidebar-panel .nav-item-btn').forEach(n => n.classList.remove('bp5-active'));
-}
-
 async function showLocalAlbums() {
   clearNavActive();
   const navL = document.getElementById('nav-local'); if (navL) navL.classList.add('bp5-active');
@@ -146,9 +142,11 @@ async function npRefresh() {
   const bar = document.getElementById('now-playing-bar');
   if (!st || st.status === 'idle' || !st.current) {
     if (bar) bar.style.display = 'none';
+    document.body.classList.remove('np-active');
     return;
   }
   if (bar) bar.style.display = 'flex';
+  document.body.classList.add('np-active');
   // Belt-and-suspenders: pin the bar to the OS viewport via inline styles so a
   // stale/overridden stylesheet can never leave the bar sitting in normal flow
   // at the bottom of the page (position:fixed must stay in effect).

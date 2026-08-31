@@ -238,16 +238,6 @@ async function loadPlaylists() {
 let currentSectionView = ''; // 'songs', 'artists', 'albums', 'playlist'
 let rawSectionData = [];
 
-function clearNavActive() {
-  document.querySelectorAll('.playlist-item-btn, .nav-item-btn').forEach(el => el.classList.remove('bp5-active'));
-  document.getElementById('album-detail-container').style.display = 'none';
-  const artistContainer = document.getElementById('artist-detail-container');
-  if (artistContainer) artistContainer.style.display = 'none';
-  
-  const filterInput = document.getElementById('section-filter-input');
-  if (filterInput) filterInput.value = '';
-}
-
 let activeAlbumFilter = 'collection';
 
 function showSectionFilter(placeholder, showPills = false) {
@@ -514,10 +504,29 @@ function renderAlbumCards(albums) {
     return;
   }
 
+function albumCardClick(e, albumId) {
+  // cmd/ctrl-click opens the album in a new tab instead of SPA-navigating.
+  if (e.metaKey || e.ctrlKey || e.shiftKey) {
+    e.preventDefault();
+    window.open(`/albums/${encodeURIComponent(albumId)}`, '_blank');
+    return;
+  }
+  navOpenAlbumPage(albumId);
+}
+
+function albumCardAuxClick(e, albumId) {
+  // middle-click: open in a new tab (divs dispatch auxclick, not click).
+  if (e.button === 1) {
+    e.preventDefault();
+    window.open(`/albums/${encodeURIComponent(albumId)}`, '_blank');
+  }
+}
+
   albums.forEach(alb => {
     const card = document.createElement('div');
     card.className = 'grid-card';
-    card.onclick = () => navOpenAlbumPage(alb.id);
+    card.onclick = (e) => albumCardClick(e, alb.id);
+    card.onauxclick = (e) => albumCardAuxClick(e, alb.id);
 
     const coverUrl = alb.cover_image_url || fallbackCover;
 
@@ -597,7 +606,7 @@ async function openArtistPage(artistName) {
         }
 
         return `
-          <div class="grid-card" onclick="navOpenAlbumPage('${alb.id}')">
+          <div class="grid-card" onclick="albumCardClick(event, '${alb.id}')" onauxclick="albumCardAuxClick(event, '${alb.id}')">
             <div class="grid-card-art-wrap">
               <img class="grid-card-art" src="${coverUrl}" alt="cover" onerror="this.onerror=null;this.src='${fallbackCover}'">
               <button class="star-toggle-btn ${alb.starred ? 'starred' : ''}" title="${alb.starred ? 'Unstar' : 'Star as must-have'}" onclick="event.stopPropagation(); toggleAlbumStar('${alb.id}', ${!alb.starred})">${alb.starred ? '★' : '☆'}</button>
