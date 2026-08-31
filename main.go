@@ -72,6 +72,7 @@ type AlbumDetailResponse struct {
 	CoverImageURL   string           `json:"cover_image_url"`
 	HasVinyl        bool             `json:"has_vinyl"`
 	InWantlist      bool             `json:"in_wantlist"`
+	Starred         bool             `json:"starred"`
 	StreamingNotes  string           `json:"streaming_notes"`
 	Tracks          []TrackDetail    `json:"tracks"`
 	Versions        []ReleaseVersion `json:"versions"`
@@ -85,6 +86,7 @@ type AlbumSummary struct {
 	CoverImageURL  string `json:"cover_image_url"`
 	HasVinyl       bool   `json:"has_vinyl"`
 	InWantlist     bool   `json:"in_wantlist"`
+	Starred        bool   `json:"starred"`
 	StreamingNotes string `json:"streaming_notes"`
 	VersionCount   int    `json:"version_count"`
 	TrackCount     int    `json:"track_count"`
@@ -93,6 +95,7 @@ type AlbumSummary struct {
 func main() {
 	syncDiscogsFlag := flag.Bool("sync-discogs", false, "Sync Discogs collection & wantlist into database")
 	dedupeAlbumsFlag := flag.Bool("dedupe-albums", false, "Safely merge duplicate master albums based on title normalization & track overlap")
+	seedStarsFlag := flag.Bool("seed-stars", false, "Star a curated list of must-have collector albums that exist in the DB")
 	dbPath := flag.String("db", "music.db", "Path to SQLite database")
 	port := flag.Int("port", 8080, "Port to listen on")
 	flag.Parse()
@@ -121,6 +124,16 @@ func main() {
 			log.Fatalf("Album deduplication failed: %v", err)
 		}
 		log.Printf("Album deduplication completed! Merged %d duplicate album records.", mergedCount)
+		return
+	}
+
+	if *seedStarsFlag {
+		log.Println("Seeding starred must-have albums...")
+		n, err := SeedStars(db)
+		if err != nil {
+			log.Fatalf("Star seeding failed: %v", err)
+		}
+		log.Printf("Star seeding complete: %d albums starred.", n)
 		return
 	}
 
@@ -765,7 +778,7 @@ func main() {
 		// Query albums by artist
 		aRows, aErr := db.Query(`
 			SELECT a.id, a.title, a.artist, COALESCE(a.release_year, 0), COALESCE(a.cover_image_url, ''),
-			       COALESCE(a.has_vinyl, 0), COALESCE(a.in_wantlist, 0), COALESCE(a.streaming_notes, ''),
+			       COALESCE(a.has_vinyl, 0), COALESCE(a.in_wantlist, 0), COALESCE(a.starred, 0), COALESCE(a.streaming_notes, ''),
 			       (SELECT COUNT(*) FROM release_versions rv WHERE rv.album_id = a.id) as version_count,
 			       (SELECT COUNT(*) FROM tracks t WHERE t.album_id = a.id) as track_count
 			FROM albums a
@@ -774,10 +787,11 @@ func main() {
 		if aErr == nil {
 			for aRows.Next() {
 				var alb AlbumSummary
-				var hasVinylInt, inWantlistInt int
-				if aRows.Scan(&alb.ID, &alb.Title, &alb.Artist, &alb.ReleaseYear, &alb.CoverImageURL, &hasVinylInt, &inWantlistInt, &alb.StreamingNotes, &alb.VersionCount, &alb.TrackCount) == nil {
+				var hasVinylInt, inWantlistInt, starredInt int
+				if aRows.Scan(&alb.ID, &alb.Title, &alb.Artist, &alb.ReleaseYear, &alb.CoverImageURL, &hasVinylInt, &inWantlistInt, &starredInt, &alb.StreamingNotes, &alb.VersionCount, &alb.TrackCount) == nil {
 					alb.HasVinyl = hasVinylInt == 1
 					alb.InWantlist = inWantlistInt == 1
+					alb.Starred = starredInt == 1
 					detail.Albums = append(detail.Albums, alb)
 				}
 			}
@@ -814,6 +828,7 @@ func main() {
 		HasVinyl       bool   `json:"has_vinyl"`
 		InCollection   bool   `json:"in_collection"`
 		InWantlist     bool   `json:"in_wantlist"`
+		Starred        bool   `json:"starred"`
 		PrimaryFormat  string `json:"primary_format"`
 		StreamingNotes string `json:"streaming_notes"`
 		VersionCount   int    `json:"version_count"`
@@ -860,16 +875,18 @@ func main() {
 			whereStr = "WHERE " + strings.Join(whereClauses, " AND ")
 		}
 
-		// Collection view sorts by most-recently-added-to-Discogs-collection first;
-		// albums without a recorded date (e.g. added before this field existed) sort last.
+		// Starred wantlist picks float to the top of the Wantlist view;
+		// the Collection view keeps its "recently added to Discogs" ordering.
 		orderBy := "a.title ASC"
 		if filter == "collection" {
 			orderBy = "CASE WHEN a.collection_added_at IS NULL THEN 1 ELSE 0 END ASC, a.collection_added_at DESC, a.title ASC"
+		} else if filter == "wantlist" {
+			orderBy = "a.starred DESC, a.title ASC"
 		}
 
 		query := fmt.Sprintf(`
 			SELECT a.id, a.title, a.artist, COALESCE(a.release_year, 0), COALESCE(a.cover_image_url, ''),
-			       COALESCE(a.has_vinyl, 0), COALESCE(a.in_collection, 0), COALESCE(a.in_wantlist, 0), COALESCE(a.streaming_notes, ''),
+			       COALESCE(a.has_vinyl, 0), COALESCE(a.in_collection, 0), COALESCE(a.in_wantlist, 0), COALESCE(a.starred, 0), COALESCE(a.streaming_notes, ''),
 			       COALESCE((SELECT rv.format_description FROM release_versions rv WHERE rv.album_id = a.id AND rv.source = 'collection' AND rv.format_description IS NOT NULL AND rv.format_description != '' LIMIT 1), ''),
 			       (SELECT COUNT(*) FROM release_versions rv WHERE rv.album_id = a.id) as version_count,
 			       (SELECT COUNT(*) FROM tracks t WHERE t.album_id = a.id) as track_count
@@ -888,11 +905,12 @@ func main() {
 		var albums []AlbumSummary
 		for rows.Next() {
 			var alb AlbumSummary
-			var hasVinylInt, inCollectionInt, inWantlistInt int
-			if err := rows.Scan(&alb.ID, &alb.Title, &alb.Artist, &alb.ReleaseYear, &alb.CoverImageURL, &hasVinylInt, &inCollectionInt, &inWantlistInt, &alb.StreamingNotes, &alb.PrimaryFormat, &alb.VersionCount, &alb.TrackCount); err == nil {
+			var hasVinylInt, inCollectionInt, inWantlistInt, starredInt int
+			if err := rows.Scan(&alb.ID, &alb.Title, &alb.Artist, &alb.ReleaseYear, &alb.CoverImageURL, &hasVinylInt, &inCollectionInt, &inWantlistInt, &starredInt, &alb.StreamingNotes, &alb.PrimaryFormat, &alb.VersionCount, &alb.TrackCount); err == nil {
 				alb.HasVinyl = hasVinylInt == 1
 				alb.InCollection = inCollectionInt == 1
 				alb.InWantlist = inWantlistInt == 1
+				alb.Starred = starredInt == 1
 				albums = append(albums, alb)
 			}
 		}
@@ -901,7 +919,36 @@ func main() {
 
 	http.HandleFunc("/api/albums/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		albumID := r.URL.Path[len("/api/albums/"):]
+		albumID := strings.TrimSuffix(r.URL.Path[len("/api/albums/"):], "/")
+
+		// Star/unstar an album: PUT|POST /api/albums/:id/star {starred:true|false}
+		if strings.HasSuffix(albumID, "/star") {
+			id := strings.TrimSuffix(albumID, "/star")
+			if id == "" {
+				http.Error(w, "Album ID required", 400)
+				return
+			}
+			if r.Method != http.MethodPut && r.Method != http.MethodPost {
+				http.Error(w, "Method not allowed", 405)
+				return
+			}
+			var body struct {
+				Starred *bool `json:"starred"`
+			}
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			starred := 0
+			if body.Starred != nil && *body.Starred {
+				starred = 1
+			}
+			if _, err := db.Exec("UPDATE albums SET starred = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", starred, id); err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			w.WriteHeader(200)
+			fmt.Fprintf(w, `{"id":%q,"starred":%v}`, id, starred == 1)
+			return
+		}
+
 		if albumID == "" {
 			http.Error(w, "Album ID required", 400)
 			return
@@ -909,12 +956,12 @@ func main() {
 
 		var alb AlbumDetailResponse
 		var masterID int
-		var hasVinylInt, inWantlistInt int
+		var hasVinylInt, inWantlistInt, starredInt int
 		err := db.QueryRow(`
 			SELECT id, title, artist, COALESCE(release_year, 0), COALESCE(discogs_master_id, 0),
-			       COALESCE(cover_image_url, ''), COALESCE(has_vinyl, 0), COALESCE(in_wantlist, 0), COALESCE(streaming_notes, '')
+			       COALESCE(cover_image_url, ''), COALESCE(has_vinyl, 0), COALESCE(in_wantlist, 0), COALESCE(starred, 0), COALESCE(streaming_notes, '')
 			FROM albums WHERE id = ?`, albumID).Scan(
-			&alb.ID, &alb.Title, &alb.Artist, &alb.ReleaseYear, &masterID, &alb.CoverImageURL, &hasVinylInt, &inWantlistInt, &alb.StreamingNotes,
+			&alb.ID, &alb.Title, &alb.Artist, &alb.ReleaseYear, &masterID, &alb.CoverImageURL, &hasVinylInt, &inWantlistInt, &starredInt, &alb.StreamingNotes,
 		)
 		if err != nil {
 			http.Error(w, "Album not found", 404)
@@ -923,6 +970,7 @@ func main() {
 		alb.DiscogsMasterID = masterID
 		alb.HasVinyl = hasVinylInt == 1
 		alb.InWantlist = inWantlistInt == 1
+		alb.Starred = starredInt == 1
 
 		// Get tracks
 		tRows, tErr := db.Query(`
@@ -1173,6 +1221,101 @@ func main() {
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", *port), nil); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
+}
+
+// mustHaveCollector albums: records considered essential for a serious
+// collector — a blend of audiophile reference records, jazz/soul/funk canon,
+// and hip-hop/electronic classics that match the collection's taste.
+// Matched against existing albums by normalized artist+title, so only albums
+// already in the library/wantlist get starred — missing ones are skipped.
+func SeedStars(db *sql.DB) (int, error) {
+	mustHaves := []struct {
+		Artist string
+		Title  string
+	}{
+		{"Steely Dan", "Aja"},
+		{"Steely Dan", "Gaucho"},
+		{"John Coltrane", "A Love Supreme"},
+		{"Miles Davis", "Kind of Blue"},
+		{"Miles Davis", "Bitches Brew"},
+		{"Dave Brubeck Quartet", "Time Out"},
+		{"Herbie Hancock", "Head Hunters"},
+		{"Bill Evans", "Sunday at the Village Vanguard"},
+		{"Marvin Gaye", "What's Going On"},
+		{"Stevie Wonder", "Songs in the Key of Life"},
+		{"James Brown", "Live at the Apollo"},
+		{"Aretha Franklin", "Amazing Grace"},
+		{"The Beatles", "Abbey Road"},
+		{"The Beatles", "Revolver"},
+		{"Pink Floyd", "Dark Side of the Moon"},
+		{"Fleetwood Mac", "Rumours"},
+		{"Bob Marley", "Exodus"},
+		{"The Rolling Stones", "Exile on Main St."},
+		{"Michael Jackson", "Thriller"},
+		{"Daft Punk", "Random Access Memories"},
+		{"Air", "Moon Safari"},
+		{"Massive Attack", "Mezzanine"},
+		{"A Tribe Called Quest", "The Low End Theory"},
+		{"Nas", "Illmatic"},
+		{"Kendrick Lamar", "To Pimp a Butterfly"},
+		{"J Dilla", "Donuts"},
+		{"DJ Shadow", "Endtroducing.."},
+		{"Boards of Canada", "Music Has the Right to Children"},
+		{"Aphex Twin", "Selected Ambient Works 85-92"},
+		{"Brian Eno", "Ambient 1: Music for Airports"},
+		{"King Crimson", "In the Court of the Crimson King"},
+		{"Pink Floyd", "Wish You Were Here"},
+		{"Nirvana", "Nevermind"},
+		{"Metallica", "Master of Puppets"},
+		{"Amy Winehouse", "Back to Black"},
+		{"Fleetwood Mac", "Tusk"},
+	}
+	starred := 0
+	for _, sh := range mustHaves {
+		artist := strings.ToLower(sh.Artist)
+		title := normalishTitle(sh.Title)
+		rows, err := db.Query(
+			`SELECT id, artist, title FROM albums WHERE LOWER(artist) LIKE ?`,
+			"%"+artist+"%")
+		if err != nil {
+			return 0, err
+		}
+		matched := false
+		for rows.Next() {
+			var id, a, t string
+			if err := rows.Scan(&id, &a, &t); err != nil {
+				continue
+			}
+			if normalishTitle(t) == title || strings.HasPrefix(normalishTitle(t), title+" ") {
+				if _, err := db.Exec("UPDATE albums SET starred = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?", id); err != nil {
+					rows.Close()
+					return 0, err
+				}
+				starred++
+				matched = true
+			}
+		}
+		rows.Close()
+		if !matched {
+			log.Printf("seed-stars: not found, skipped: %s - %s", sh.Artist, sh.Title)
+		}
+	}
+	return starred, nil
+}
+
+// normalishTitle strips common punctuation/album-suffix noise for matching.
+func normalishTitle(t string) string {
+	s := strings.ToLower(strings.TrimSpace(t))
+	s = strings.TrimPrefix(s, "the ")
+	// keep numbers/letters/spaces/ampersand/apostrophe only
+	var b strings.Builder
+	for _, r := range s {
+		switch {
+		case r >= 'a' && r <= 'z', r >= '0' && r <= '9', r == ' ', r == '&', r == 39:
+			b.WriteRune(r)
+		}
+	}
+	return strings.Join(strings.Fields(b.String()), " ")
 }
 
 func NormalizeAlbumTitle(title string) string {

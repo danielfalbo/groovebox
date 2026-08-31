@@ -269,6 +269,30 @@ function hideSectionFilter() {
   if (wrap) wrap.style.display = 'none';
 }
 
+async function toggleAlbumStar(albumId, starred) {
+  try {
+    const res = await fetch(`/api/albums/${albumId}/star`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ starred })
+    });
+    if (!res.ok) throw new Error('Failed to update star');
+    // Refresh counts and re-render the albums view (star-first sort applies).
+    updateAlbumCounts();
+    if (currentSectionView === 'albums' && document.getElementById('grid-container').style.display !== 'none') {
+      showAlbums(activeAlbumFilter);
+    } else if (document.getElementById('album-detail-container').style.display !== 'none') {
+      // on the album detail page: re-fetch to update the header button/badge
+      openAlbumPage(albumId);
+    } else if (lastArtistName) {
+      // on an artist page: re-render to reflect the new star state
+      openArtistPage(lastArtistName);
+    }
+  } catch (err) {
+    console.error('Failed to toggle star:', err);
+  }
+}
+
 async function updateAlbumCounts() {
   try {
     const res = await fetch('/api/albums/counts');
@@ -496,6 +520,8 @@ function renderAlbumCards(albums) {
     card.onclick = () => navOpenAlbumPage(alb.id);
 
     const coverUrl = alb.cover_image_url || fallbackCover;
+
+    const starBtn = `<button class="star-toggle-btn ${alb.starred ? 'starred' : ''}" title="${alb.starred ? 'Unstar (remove must-have priority)' : 'Star as must-have'}" onclick="event.stopPropagation(); toggleAlbumStar('${alb.id}', ${!alb.starred})">${alb.starred ? '★' : '☆'}</button>`;
     
     let badgeHTML = '';
     const fmt = (alb.primary_format || '').toLowerCase();
@@ -526,6 +552,7 @@ function renderAlbumCards(albums) {
     card.innerHTML = `
       <div class="grid-card-art-wrap">
         <img class="grid-card-art" src="${coverUrl}" alt="cover" onerror="this.onerror=null;this.src='${fallbackCover}'">
+        ${starBtn}
         ${badgeHTML}
       </div>
       <div class="grid-card-title">${alb.title}</div>
@@ -536,7 +563,10 @@ function renderAlbumCards(albums) {
   });
 }
 
+let lastArtistName = '';
+
 async function openArtistPage(artistName) {
+  lastArtistName = artistName;
   clearNavActive();
   hideSectionFilter();
   document.getElementById('grid-container').style.display = 'none';
@@ -570,6 +600,7 @@ async function openArtistPage(artistName) {
           <div class="grid-card" onclick="navOpenAlbumPage('${alb.id}')">
             <div class="grid-card-art-wrap">
               <img class="grid-card-art" src="${coverUrl}" alt="cover" onerror="this.onerror=null;this.src='${fallbackCover}'">
+              <button class="star-toggle-btn ${alb.starred ? 'starred' : ''}" title="${alb.starred ? 'Unstar' : 'Star as must-have'}" onclick="event.stopPropagation(); toggleAlbumStar('${alb.id}', ${!alb.starred})">${alb.starred ? '★' : '☆'}</button>
               ${badgeHTML}
             </div>
             <div class="grid-card-title">${alb.title}</div>
@@ -683,12 +714,17 @@ async function openAlbumPage(albumId) {
 
     const coverUrl = album.cover_image_url || fallbackCover;
     let badgesHTML = '';
+    if (album.starred) {
+      badgesHTML += `<span class="bp5-tag bp5-intent-warning bp5-round album-detail-badge">⭐ Must-Have</span>`;
+    }
     if (album.has_vinyl) {
       badgesHTML += `<span class="bp5-tag bp5-intent-warning bp5-round album-detail-badge">📀 In Collection</span>`;
     }
     if (album.in_wantlist) {
       badgesHTML += `<span class="bp5-tag bp5-intent-primary bp5-round album-detail-badge">🎯 On Wantlist</span>`;
     }
+
+    const starBtn = `<button id="album-star-btn" class="bp5-button ${album.starred ? 'bp5-intent-warning' : 'bp5-outlined'}" onclick="toggleAlbumStar('${album.id}', ${!album.starred})">${album.starred ? '★ Starred' : '☆ Star as must-have'}</button>`;
 
     const discogsSvg = `<svg class="discogs-svg-icon" viewBox="0 0 24 24" fill="currentColor" style="display: inline-block; vertical-align: text-bottom; margin-right: 4px;"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 4.2a7.8 7.8 0 1 1 0 15.6 7.8 7.8 0 0 1 0-15.6zm0 4.2a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2zm0 2.1a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z"/></svg>`;
     const qobuzSvg = `<svg viewBox="0 0 24 24" fill="currentColor" style="width: 16px; height: 16px; display: inline-block; vertical-align: text-bottom; margin-right: 4px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm2.5-5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/></svg>`;
@@ -819,6 +855,7 @@ async function openAlbumPage(albumId) {
           <h1 class="bp5-heading album-header-title">${album.title}</h1>
           <h3 class="bp5-heading album-header-artist">${album.artist}</h3>
           <div class="album-header-meta">
+            ${starBtn}
             ${album.release_year ? `<span>Release Year: ${album.release_year}</span>` : ''}
             ${album.discogs_master_id ? `<span>Discogs Master ID: #${album.discogs_master_id}</span>` : ''}
           </div>

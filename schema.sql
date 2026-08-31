@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS albums (
     discogs_master_id INTEGER UNIQUE,
     cover_image_url TEXT,
     has_vinyl INTEGER DEFAULT 0,    -- 1 if owned as physical vinyl
+    starred INTEGER NOT NULL DEFAULT 0, -- 1 if user-starred (must-have / priority want)
     in_collection INTEGER DEFAULT 0, -- 1 if owned in Discogs collection
     in_wantlist INTEGER DEFAULT 0,   -- 1 if in wantlist
     collection_added_at DATETIME, -- Discogs collection date_added, for "recently added" sorting

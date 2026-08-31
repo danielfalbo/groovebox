@@ -3,10 +3,10 @@
 ## 🚀 Overview & Repository Structure
 `my-music-lib` is a self-hosted, local-first music archival and curation engine written in Go and SQLite with a vanilla HTML5/CSS3/JS Web UI.
 
-- `main.go`: Entry point, CLI flag handlers (`-port`, `-sync-discogs`, `-dedupe-albums`), REST API routes (`/api/albums`, `/api/artists`, `/api/sync/discogs`, `/api/sync/status`, `/api/albums/dedupe`, `/api/tidal/*`), and `DedupeAlbums`/`NormalizeAlbumTitle` merge logic.
+- `main.go`: Entry point, CLI flag handlers (`-port`, `-sync-discogs`, `-dedupe-albums`, `-seed-stars`), REST API routes (`/api/albums`, `/api/artists`, `/api/sync/discogs`, `/api/sync/status`, `/api/albums/dedupe`, `/api/tidal/*`), and `DedupeAlbums`/`NormalizeAlbumTitle` merge logic. `SeedStars` stars a curated must-have collector album list (matched against existing albums, skips missing).
 - `db.go`: SQLite connection, WAL mode initialization, schema migration execution (`ensureColumn` helper for safe ALTER TABLE).
 - `schema.sql`: DDL for 1-to-1 canonical `albums`, `release_versions` (Discogs collection/wantlist pressings), `tracks`, `playlists`, `playlist_tracks`, and `search_fts` (FTS5 table). `playlists` and `tracks` carry `spotify_id` / `apple_music_id` columns (historical import data; no code writes them anymore). `tracks.tidal_id` and `playlists.tidal_*` columns are live (Tidal sync).
-- `discogs.go`: Discogs collection (71 items) and wantlist (5,478 items) client with thread-safe live progress streaming (`GetSyncProgress`).
+- `discogs.go`: Discogs collection (93 items) and wantlist (2,073 items — audited 2026-08-31: deduped every-pressing bloat down from ~5.2k to max ~8 pressings/album, vinyl+SACD+audiophile-philosophy wins) client with thread-safe live progress streaming (`GetSyncProgress`).
 - `tidal.go`: Tidal two-way playlist sync — OAuth device flow, playlist CRUD, and a safe 3-way merge reconcile engine. Uses hardcoded tidalapi device-flow client credentials (public) with `.env` / `TIDAL_DEVICE_*` overrides. OAuth tokens persisted in `.tidal-session.json` (gitignored, never in music.db).
 - `public/`: Static Web UI (`index.html`, `style.css`, `app.js`) branded as **Groovebox**.
 
@@ -33,9 +33,10 @@
 
 4. **Albums API Filtering & Sorting:**
    - `GET /api/albums` supports `?filter=collection` (in_collection=1) and `?filter=wantlist` (in_wantlist=1).
+   - **Starred (must-have) feature:** `albums.starred` flag (migration in db.go). `PUT /api/albums/:id/star` with `{"starred":bool}` toggles it (also POST). Wantlist view sorts `starred DESC, title ASC` so must-haves float to top; collection view order unchanged. UI: ★/☆ button on album cards + detail-page "☆ Star as must-have" toggle. Seed via `./groovebox -seed-stars -db music.db` (idempotent, sets → never unsets).
    - `?filter=collection` sorts by `albums.collection_added_at` (Discogs' `date_added`, captured per collection item during sync) descending, newest first; albums without a recorded date sort last. Other filters keep alphabetical (`title ASC`) order.
    - `GET /api/albums/counts` returns `{all, collection, wantlist}` counts for pill badge display.
-   - Limit raised to 5000 records (wantlist is ~5,491 items).
+   - Limit raised to 5000 records (wantlist is ~2,073 items).
    - `has_vinyl` (on both `albums` and `release_versions`) means "owned as physical vinyl" — it must only be set when `source == "collection"`. Do not set it for wantlist-sourced vinyl formats; that previously caused wantlist-only albums to show a "Collection"/vinyl badge instead of "Wantlist" (fixed in `discogs.go`'s `processDiscogsItem`, with a self-healing recompute in `db.go`'s `initDB`).
 
 5. **Web UI & Aesthetics (Groovebox):**

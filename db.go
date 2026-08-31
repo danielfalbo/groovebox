@@ -72,6 +72,9 @@ func initDB(dbPath string) (*sql.DB, error) {
 	if err := ensureColumn(db, "albums", "collection_added_at", "DATETIME"); err != nil {
 		return nil, fmt.Errorf("failed to migrate albums collection_added_at: %w", err)
 	}
+	if err := ensureColumn(db, "albums", "starred", "INTEGER NOT NULL DEFAULT 0"); err != nil {
+		return nil, fmt.Errorf("failed to migrate albums starred: %w", err)
+	}
 	if _, err := db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_playlists_spotify_id ON playlists(spotify_id) WHERE spotify_id IS NOT NULL"); err != nil {
 		return nil, fmt.Errorf("failed to create Spotify playlist index: %w", err)
 	}
