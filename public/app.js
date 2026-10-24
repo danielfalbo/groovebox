@@ -260,12 +260,43 @@ async function updateAlbumCounts() {
 }
 
 let albumRequest = 0;
+// Inclusive API maxima are the IEEE-754 predecessors of the next lower bound.
+// JS Number, Go float64 and SQLite REAL share this precision: no decimal gaps.
+const tempoPresets = {
+  all: ['', ''], slow: ['20', '99.99999999999999'],
+  '100': ['100', '109.99999999999999'], '110': ['110', '119.99999999999999'],
+  '120': ['120', '129.99999999999997'], '130': ['130', '139.99999999999997'],
+  fast: ['140', '400']
+};
+let appliedTempo = ['', ''];
+let customTempoOpen = false;
+function syncTempoControls() {
+  const preset = Object.keys(tempoPresets).find(key => tempoPresets[key].every((v, i) =>
+    v === '' ? appliedTempo[i] === '' : appliedTempo[i] !== '' && +v === +appliedTempo[i])) || 'custom';
+  if (preset === 'custom') customTempoOpen = true;
+  document.querySelectorAll('[data-tempo]').forEach(button => {
+    const active = button.dataset.tempo === preset;
+    button.setAttribute('aria-pressed', String(active));
+    button.classList.toggle('bp5-active', active);
+  });
+  document.getElementById('tempo-custom').hidden = !customTempoOpen;
+  document.querySelector('[data-tempo="custom"]').setAttribute('aria-expanded', String(customTempoOpen));
+}
+function selectTempoPreset(key) {
+  appliedTempo = [...tempoPresets[key]];
+  ['bpm_min', 'bpm_max'].forEach((name, i) => document.getElementById(name).value = appliedTempo[i]);
+  document.getElementById('bpm_max').setCustomValidity('');
+  customTempoOpen = false;
+  setAlbumFilter('collection');
+}
+function revealCustomTempo() {
+  customTempoOpen = !customTempoOpen;
+  syncTempoControls();
+  if (customTempoOpen) document.getElementById('bpm_min').focus({preventScroll: true});
+}
 function tempoParams(params) {
   if (activeAlbumFilter !== 'collection') return;
-  for (const name of ['bpm_min', 'bpm_max']) {
-    const input = document.getElementById(name);
-    if (input.value) params.set(name, input.value);
-  }
+  ['bpm_min', 'bpm_max'].forEach((name, i) => { if (appliedTempo[i]) params.set(name, appliedTempo[i]); });
   if (document.getElementById('bpm-vinyl').checked) params.set('vinyl', '1');
 }
 function applyTempoFilter() {
@@ -273,9 +304,12 @@ function applyTempoFilter() {
   const max = document.getElementById('bpm_max');
   max.setCustomValidity(min.value && max.value && +min.value > +max.value ? 'Maximum must be at least minimum' : '');
   if (!min.reportValidity() || !max.reportValidity()) return;
+  appliedTempo = [min.value, max.value];
   setAlbumFilter('collection');
 }
 async function setAlbumFilter(filter) {
+  clearTimeout(albumSearchDebounceTimer);
+  syncTempoControls();
   activeAlbumFilter = ['all', 'collection', 'wantlist'].includes(filter) ? filter : 'collection';
   document.querySelectorAll('#album-filter-pills .bp5-button').forEach(btn => btn.classList.remove('bp5-active'));
   document.getElementById(`pill-${activeAlbumFilter}`).classList.add('bp5-active');
@@ -446,7 +480,10 @@ async function showAlbums(targetFilter) {
   updateAlbumCounts();
   const params = new URLSearchParams(location.search);
   setSectionFilterInputValue(params.get('q') || '');
-  for (const name of ['bpm_min', 'bpm_max']) document.getElementById(name).value = params.get(name) || '';
+  appliedTempo = ['bpm_min', 'bpm_max'].map(name => params.get(name) || '');
+  customTempoOpen = false;
+  ['bpm_min', 'bpm_max'].forEach((name, i) => document.getElementById(name).value = appliedTempo[i]);
+  document.getElementById('bpm_max').setCustomValidity('');
   document.getElementById('bpm-vinyl').checked = params.get('vinyl') === '1';
   setAlbumFilter(targetFilter || activeAlbumFilter);
 }

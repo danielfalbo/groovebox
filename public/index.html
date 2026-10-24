@@ -11,7 +11,7 @@
   <link href="/vendor/normalize-8.0.1.css" rel="stylesheet" />
   <link href="/vendor/blueprint-5.19.1.css" rel="stylesheet" />
   <link href="/vendor/blueprint-icons-5.23.0.css" rel="stylesheet" />
-  <link href="/style.css?v=9" rel="stylesheet" />
+  <link href="/style.css?v=10" rel="stylesheet" />
 </head>
 <body class="bp5-dark">
   <div class="app-layout">
@@ -140,12 +140,21 @@
         </div>
 
         <div id="tempo-filter" class="tempo-filter" hidden>
-          <form onsubmit="event.preventDefault();applyTempoFilter()">
-            <label for="bpm_min">BPM from <input id="bpm_min" name="bpm_min" type="number" oninput="document.getElementById('bpm_max').setCustomValidity('')" min="20" max="400" step="0.1" placeholder="Any" class="bp5-input"></label>
-            <label for="bpm_max">to <input id="bpm_max" name="bpm_max" type="number" oninput="document.getElementById('bpm_max').setCustomValidity('')" min="20" max="400" step="0.1" placeholder="Any" class="bp5-input"></label>
-            <label><input id="bpm-vinyl" type="checkbox"> Vinyl only</label>
-            <button class="bp5-button" type="submit">Find matching tracks</button>
-            <button class="bp5-button bp5-minimal" type="button" onclick="document.getElementById('bpm_min').value='';document.getElementById('bpm_max').value='';document.getElementById('bpm_max').setCustomValidity('');document.getElementById('bpm-vinyl').checked=false;applyTempoFilter()">Clear</button>
+          <div class="tempo-presets album-filter-pills" role="group" aria-label="Track BPM">
+            <button type="button" class="bp5-button" data-tempo="all" aria-pressed="true" onclick="selectTempoPreset('all')">All tempos</button>
+            <button type="button" class="bp5-button" data-tempo="slow" aria-pressed="false" onclick="selectTempoPreset('slow')">&lt;100</button>
+            <button type="button" class="bp5-button" data-tempo="100" aria-pressed="false" title="100 to under 110 BPM" onclick="selectTempoPreset('100')">100–109</button>
+            <button type="button" class="bp5-button" data-tempo="110" aria-pressed="false" title="110 to under 120 BPM" onclick="selectTempoPreset('110')">110–119</button>
+            <button type="button" class="bp5-button" data-tempo="120" aria-pressed="false" title="120 to under 130 BPM" onclick="selectTempoPreset('120')">120–129</button>
+            <button type="button" class="bp5-button" data-tempo="130" aria-pressed="false" title="130 to under 140 BPM" onclick="selectTempoPreset('130')">130–139</button>
+            <button type="button" class="bp5-button" data-tempo="fast" aria-pressed="false" onclick="selectTempoPreset('fast')">140+</button>
+            <button type="button" class="bp5-button" data-tempo="custom" aria-pressed="false" aria-expanded="false" aria-controls="tempo-custom" onclick="revealCustomTempo()">Custom</button>
+          </div>
+          <label class="tempo-vinyl"><input id="bpm-vinyl" type="checkbox" onchange="setAlbumFilter('collection')"> Vinyl only</label>
+          <form id="tempo-custom" hidden onsubmit="event.preventDefault();applyTempoFilter()">
+            <label for="bpm_min">BPM from <input id="bpm_min" name="bpm_min" type="number" oninput="document.getElementById('bpm_max').setCustomValidity('')" min="20" max="400" step="any" placeholder="Any" class="bp5-input"></label>
+            <label for="bpm_max">to <input id="bpm_max" name="bpm_max" type="number" oninput="document.getElementById('bpm_max').setCustomValidity('')" min="20" max="400" step="any" placeholder="Any" class="bp5-input"></label>
+            <button class="bp5-button" type="submit">Apply</button>
           </form>
           <div id="tempo-status" class="bp5-text-muted" role="status"></div>
         </div>
@@ -340,7 +349,7 @@
     </div>
   </div>
 
-  <script src="/app.js?v=9"></script>
-  <script src="/local.js?v=9"></script>
+  <script src="/app.js?v=10"></script>
+  <script src="/local.js?v=10"></script>
 </body>
 </html>

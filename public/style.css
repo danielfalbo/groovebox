@@ -1280,6 +1280,11 @@ body.np-active .main-panel { padding-bottom: 84px; }
 .tempo-filter[hidden] { display: none; }
 .tempo-filter form { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .tempo-filter input[type=number] { width: 85px; }
+.tempo-presets { flex-wrap: wrap; gap: 6px; }
+.tempo-presets .bp5-button { min-height: 44px; min-width: 44px; }
+.tempo-vinyl { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin: 0; }
+#tempo-custom { margin-top: 4px; }
+#tempo-custom[hidden] { display: none; }
 #tempo-status { margin-top: 8px; font-size: 12px; }
 .bpm-value { color: #9fd5c8; display: inline-block; font-size: 12px; margin: 3px 0; }
 .bpm-coverage { font-size: 12px; color: #a7b6c2; margin-top: 6px; }

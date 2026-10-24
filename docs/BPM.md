@@ -11,8 +11,20 @@ for the completed multi-provider research, 23-slot sample, 297 actual additions,
 and provider restrictions below record the initial run; the expansion document
 supersedes them where indicated.
 
-Collection → BPM from/to → Find matching tracks. Bounds are inclusive; Vinyl
-only requires the actual owned vinyl release. Cards list matching track names,
+Collection → tap a tempo chip: All tempos, <100, 100–109, 110–119,
+120–129, 130–139 or 140+. All tempos removes only BPM bounds, retaining
+search and Vinyl only. Custom reveals inclusive from/to bounds and Apply;
+bookmarked custom ranges reopen it. Presets and custom bounds restore on
+reload/back. Vinyl only applies immediately and independently.
+
+Preset bands include decimals up to (but excluding) the next band's lower bound.
+The unchanged inclusive API receives the exact float64 predecessor of 100, 110,
+120, 130 or 140 as the maximum, rather than rounding to .99: even higher-precision
+stored values leave no representable gaps or overlaps. <100 starts at 20; 140+
+ends at 400. Custom bounds retain exact inclusive API semantics, with arbitrary
+decimal precision. Unknown BPM is included under All tempos, excluded by a range.
+
+Vinyl only requires the actual owned vinyl release. Cards list matching track names,
 positions and pressing details. Unknown values do not match a range. There is
 no album-average BPM and no crate tagging. The collection count badge remains
 the full collection count; the tempo status reports matching records.
@@ -22,6 +34,14 @@ in their tooltip. A manual value, including an explicit unknown/NULL, is protect
 from enrichment. **Auto** removes that override and clears the value so the next
 bulk run can enrich it. Local, songs, artists and playlist track views show BPM.
 Browser navigation and shareable URLs preserve bounds, search and vinyl mode.
+
+Preset UI change (2026-10-24, static cache v10): Go tests, all 16 Python tests,
+and all 16 desktop/touch e2e journeys passed (Chromium/WebKit, 375/390px).
+Desktop and both phone widths were visually inspected, including Custom.
+Screenshots remain in `e2e/artifacts/` (`tempo-desktop-*.png`,
+`mobile-*-bpm.png`, `tempo-webkit-375-custom-settled.png`); the full log is
+`tempo-presets-tests.log` there. UI/static changes only; no enrichment,
+runtime DB changes or service restart.
 
 ## Data and recording identity
 

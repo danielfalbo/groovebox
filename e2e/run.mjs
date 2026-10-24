@@ -14,7 +14,7 @@
 import {runMobile} from './mobile.mjs';
 import { spawn, execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { createServer } from 'node:net';
 import { join, dirname } from 'node:path';
@@ -53,12 +53,19 @@ c=sqlite3.connect(sys.argv[1])
 cols={r[1] for r in c.execute('pragma table_info(tracks)')}
 for name,typ in [('bpm','REAL'),('bpm_source','TEXT'),('bpm_provenance','TEXT'),('bpm_updated_at','TEXT')]:
  if name not in cols:c.execute('ALTER TABLE tracks ADD COLUMN '+name+' '+typ)
-for id,title in [('bpm-match','__BPM_TEST__ Match'),('bpm-average','__BPM_TEST__ False average')]:
+for id,title in [('bpm-match','__BPM_TEST__ Match'),('bpm-average','__BPM_TEST__ False average'),('bpm-null','__BPM_TEST__ Unknown only'),('bpm-cd','__BPM_TEST__ CD'),('bpm-edge','__BPM_EDGE__ Boundaries')]:
  c.execute("INSERT INTO albums(id,title,artist,in_collection,has_vinyl) VALUES(?,?, 'Tempo fixtures',1,1)",(id,title))
  c.execute("INSERT INTO release_versions(id,album_id,title,artist,source,has_vinyl,format_description) VALUES(?,?,?,'Tempo fixtures','collection',1,'Vinyl')",(id+'-release',id,title))
 for id,album,title,bpm in [('bpm-hit','bpm-match','Matching club mix',121.4),('bpm-unknown','bpm-match','Unknown mix',None),('bpm-slow','bpm-average','Slow',90),('bpm-fast','bpm-average','Fast',150)]:
  c.execute("INSERT INTO tracks(id,album_id,release_id,title,artist,track_number,duration_ms,bpm,bpm_source) VALUES(?,?,?,?,'Tempo fixtures','A1',300000,?,?)",(id,album,album+'-release',title,bpm,'external:acousticbrainz' if bpm else None))
 c.execute("INSERT INTO tracks(id,album_id,title,artist,duration_ms,bpm) VALUES('bpm-catalog','bpm-average','Unowned radio edit','Tempo fixtures',180000,122)")
+c.execute("UPDATE release_versions SET has_vinyl=0,format_description='CD' WHERE id='bpm-cd-release'")
+c.execute("UPDATE albums SET has_vinyl=0 WHERE id='bpm-cd'")
+for id,album,bpm in [('bpm-null-track','bpm-null',None),('bpm-cd-track','bpm-cd',121.4)]:
+ c.execute("INSERT INTO tracks(id,album_id,release_id,title,artist,bpm) VALUES(?,?,?,?,'Tempo fixtures',?)",(id,album,album+'-release',id,bpm))
+# IEEE-754 predecessors exercise values above .99 and the exact band edges.
+for i,bpm in enumerate([20,99.99999999999999,100,109.99999999999999,110,119.99999999999999,120,129.99999999999997,130,139.99999999999997,140,400,None]):
+ c.execute("INSERT INTO tracks(id,album_id,release_id,title,artist,bpm) VALUES(?,'bpm-edge','bpm-edge-release',?,'Tempo fixtures',?)",('edge-'+str(i),'Edge '+str(i),bpm))
 c.execute("INSERT INTO search_fts(target_type,target_id,title,artist) SELECT 'track',id,title,artist FROM tracks WHERE id='bpm-hit'")
 c.execute("UPDATE release_versions SET discogs_release_id='1',label='Fixture pressing label',catalog_number='MOBILE-TEST' WHERE id='bpm-match-release'")
 c.commit()
@@ -227,32 +234,117 @@ test('no page/console errors while sync-status polling runs (regression: syncBtn
 });
 
 
-test('tempo range matches owned tracks, preserves URL, excludes album averages and unknowns', async ({page, url}) => {
+test('one-click tempo presets preserve search/vinyl and restore on reload/back', async ({page, url}) => {
   if (process.argv.includes('--live')) return;
+  mkdirSync(join(__dirname, 'artifacts'), {recursive:true});
   await page.goto(`${url}/albums?filter=collection&q=__BPM_TEST__`, {waitUntil: 'networkidle'});
-  await page.waitForSelector('.grid-card');
-  assert(await page.locator('.grid-card').count() === 2, 'fixture albums missing');
-  await page.locator('#bpm_min').fill('120');
-  await page.locator('#bpm_max').fill('125');
+  assert(await page.locator('.grid-card').count() === 4, 'All tempos omitted unknown/CD fixtures');
+  assert(!await page.locator('#tempo-custom').isVisible(), 'custom form visible by default');
   await page.locator('#bpm-vinyl').check();
-  await page.getByRole('button', {name:'Find matching tracks'}).click();
+  await page.locator('[data-tempo="120"]').click();
   await page.waitForFunction(() => document.querySelectorAll('.grid-card').length === 1);
   assert((await page.locator('.bpm-match').innerText()).includes('Matching club mix'), 'actual matching title missing');
   assert((await page.locator('.bpm-match').innerText()).includes('121.4 BPM'), 'matching BPM missing');
-  assert(!(await page.locator('#grid-container').innerText()).includes('False average'), 'filtered using average/catalog mix');
-  assert(new URL(page.url()).searchParams.get('bpm_min') === '120', 'filter missing in URL');
+  assert(!(await page.locator('#grid-container').innerText()).includes('Unknown mix'), 'unknown matched range');
+  assert(new URL(page.url()).searchParams.get('q') === '__BPM_TEST__', 'preset lost search');
+  assert(await page.locator('[data-tempo="120"]').getAttribute('aria-pressed') === 'true', 'preset not selected');
+  await page.screenshot({path:join(__dirname,'artifacts','tempo-desktop-presets.png')});
   await page.reload({waitUntil: 'networkidle'});
-  assert(await page.locator('#bpm_min').inputValue() === '120', 'reload lost bound');
+  assert(await page.locator('[data-tempo="120"]').getAttribute('aria-pressed') === 'true', 'reload lost preset');
+  assert(!await page.locator('#tempo-custom').isVisible(), 'preset reload opened custom');
   assert(await page.locator('#bpm-vinyl').isChecked(), 'reload lost vinyl');
-  assert(await page.locator('.grid-card').count() === 1, 'reload lost filtering');
-  const bad = await fetch(`${url}/api/albums?filter=collection&bpm_min=130&bpm_max=120`);
-  assert(bad.status === 400, 'inverted API range accepted');
   await page.locator('.grid-card').click();
   assert(!await page.locator('#tempo-filter').isVisible(), 'tempo controls visible on detail');
+  await page.goBack();
+  await page.waitForSelector('.bpm-match');
+  assert(await page.locator('[data-tempo="120"]').getAttribute('aria-pressed') === 'true', 'Back lost preset');
+  await page.locator('#pill-wantlist').click();
+  assert(!await page.locator('#tempo-filter').isVisible(), 'tempo visible in wantlist');
+  await page.locator('#pill-collection').click();
+  await page.waitForSelector('.bpm-match');
+  assert(await page.locator('[data-tempo="120"]').getAttribute('aria-pressed') === 'true', 'filter switch lost preset');
+  await page.locator('[data-tempo="all"]').click();
+  await page.waitForFunction(() => document.querySelectorAll('.grid-card').length === 3);
+  const params = new URL(page.url()).searchParams;
+  assert(!params.has('bpm_min') && !params.has('bpm_max'), 'All tempos retained bounds');
+  assert(params.get('vinyl') === '1' && params.get('q') === '__BPM_TEST__', 'All tempos reset unrelated filters');
+  assert((await page.locator('#grid-container').innerText()).includes('Unknown only'), 'All tempos omitted unknown-only record');
+});
+
+test('custom tempo reveal, validation, exact inclusive bounds and bookmarks', async ({page, url}) => {
+  if (process.argv.includes('--live')) return;
+  await page.goto(`${url}/albums?filter=collection&q=__BPM_TEST__&vinyl=1`, {waitUntil:'networkidle'});
+  const originalURL = page.url();
+  await page.locator('[data-tempo="custom"]').click();
+  assert(page.url() === originalURL, 'revealing Custom changed applied range');
+  assert(await page.locator('[data-tempo="custom"]').getAttribute('aria-expanded') === 'true', 'Custom expansion missing');
+  await page.locator('#bpm_min').fill('130');
+  await page.locator('#bpm_max').fill('120');
+  await page.locator('#tempo-custom button').click();
+  assert(await page.locator('#bpm_max').evaluate(e => !e.validity.valid), 'inverted range accepted');
+  assert(page.url() === originalURL, 'invalid custom range changed URL');
+  await page.locator('#bpm_min').fill('19');
+  await page.locator('#tempo-custom button').click();
+  assert(await page.locator('#bpm_min').evaluate(e => !e.validity.valid), 'out of bounds accepted');
+  await page.locator('#bpm_min').fill('121.4');
+  await page.locator('#bpm_max').fill('121.4');
+  await page.locator('#tempo-custom button').click();
+  await page.waitForSelector('.bpm-match');
+  assert(await page.locator('[data-tempo="custom"]').getAttribute('aria-pressed') === 'true', 'custom range not selected');
+  assert(await page.locator('.grid-card').count() === 1, 'inclusive equal bounds failed');
+  await page.screenshot({path:join(__dirname,'artifacts','tempo-desktop-custom.png')});
+  await page.reload({waitUntil:'networkidle'});
+  assert(await page.locator('#tempo-custom').isVisible(), 'bookmarked custom range hidden');
+  assert(await page.locator('#bpm_max').inputValue() === '121.4', 'bookmark changed custom precision');
+  await page.locator('.grid-card').click();
   await page.locator('.back-btn').first().click();
   await page.waitForSelector('.bpm-match');
-  assert(await page.locator('#bpm_min').inputValue() === '120', 'Back lost tempo range');
-  assert(await page.locator('.grid-card').count() === 1, 'Back lost matching record selection');
+  assert(await page.locator('[data-tempo="custom"]').getAttribute('aria-pressed') === 'true', 'Back lost Custom');
+  // Draft inputs must not leak into the independent vinyl control or search.
+  await page.locator('#bpm_min').fill('130');
+  await page.locator('#bpm-vinyl').uncheck();
+  await page.waitForFunction(() => document.querySelectorAll('.grid-card').length === 2);
+  assert(new URL(page.url()).searchParams.get('bpm_min') === '121.4', 'vinyl applied unsubmitted draft');
+  await page.locator('[data-tempo="all"]').click();
+  assert(!await page.locator('#tempo-custom').isVisible(), 'preset did not close Custom');
+  const bad = await fetch(`${url}/api/albums?filter=collection&bpm_min=130&bpm_max=120`);
+  assert(bad.status === 400, 'inverted API range accepted');
+});
+
+test('tempo bands include exact float boundaries once and ignore stale requests', async ({page, url}) => {
+  if (process.argv.includes('--live')) return;
+  await page.goto(`${url}/albums?filter=collection&q=__BPM_EDGE__`, {waitUntil:'networkidle'});
+  for (const [key, indices] of [['slow',[0,1]],['100',[2,3]],['110',[4,5]],['120',[6,7]],['130',[8,9]],['fast',[10,11]]]) {
+    await page.locator(`[data-tempo="${key}"]`).click();
+    await page.waitForFunction(expected => [...document.querySelectorAll('.bpm-match strong')].map(e => e.textContent.trim()).join('|') === expected, indices.map(i => 'Edge '+i).join('|'));
+    assert(await page.locator('.bpm-match').count() === 2, 'overlap/unknown included in '+key);
+  }
+  // Existing API max=109.99 remains inclusive and is not silently widened.
+  await page.goto(`${url}/albums?filter=collection&q=__BPM_EDGE__&bpm_min=100&bpm_max=109.99`, {waitUntil:'networkidle'});
+  assert(await page.locator('[data-tempo="custom"]').getAttribute('aria-pressed') === 'true', 'non-preset bookmark mislabeled');
+  assert(await page.locator('.bpm-match').count() === 1, 'custom max was widened');
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  const delayed = '**/api/albums?*';
+  let entered;
+  const started = new Promise(resolve => { entered = resolve; });
+  await page.route(delayed, async route => {
+    if (new URL(route.request().url()).searchParams.get('bpm_min') !== '100') return route.continue();
+    const response = await route.fetch();
+    entered();
+    await gate;
+    await route.fulfill({response});
+  });
+  await page.locator('[data-tempo="100"]').click();
+  await started;
+  await page.locator('[data-tempo="120"]').click();
+  await page.waitForFunction(() => document.querySelector('.bpm-match strong')?.textContent.trim() === 'Edge 6');
+  const stale = page.waitForResponse(r => new URL(r.url()).searchParams.get('bpm_min') === '100');
+  release();
+  await stale;
+  await page.waitForTimeout(100);
+  assert((await page.locator('.bpm-match strong').first().innerText()).trim() === 'Edge 6', 'stale response replaced latest range');
+  await page.unroute(delayed);
 });
 
 test('manual BPM correction persists, unknown locks and Auto resets', async ({page, url}) => {
