@@ -242,7 +242,7 @@ Two-way playlist sync between Groovebox and Tidal, using a safe 3-way merge per 
 
 ## BPM provider expansion (2026-10-24)
 
-- Current: 432 BPM rows (48 local, 114 AcousticBrainz, 227 reviewed GetSongBPM,
+- Previous expansion: 432 BPM rows (48 local, 114 AcousticBrainz, 227 reviewed GetSongBPM,
   43 evidenced recording transfers); 296/936 distinct owned vinyl slots known.
   Read `docs/BPM-PROVIDERS.md` for the 23-slot comparison, sources, matching
   changes, 132 duration backfills and partial-coverage limitations.
@@ -256,3 +256,19 @@ Two-way playlist sync between Groovebox and Tidal, using a safe 3-way merge per 
   protected. SongBPM/Tunebat/Musicstax collection restrictions and direct 403s
   must not be bypassed; GetSongBPM public indexed CC BY metadata was reviewed
   separately from its registered/keyed API.
+
+## Dance BPM follow-up (2026-10-24)
+
+- Current: **458 BPM rows; 322/936 owned vinyl slots**. Added 21 reviewed
+  decks.de mix/pressing estimates and five GetSongBPM Cosmo values after fixing
+  the reviewed two-disc order. All 432 prior BPM/provenance tuples preserved.
+- Read `docs/BPM-DANCE-EXPANSION.md` and its evidence/results JSON before further
+  enrichment. Seven of 14 known dance estimates disagree with decks.de by >2 BPM;
+  no source is beat-grid ground truth. Retain disagreements, never auto-correct.
+- `scripts/apply_dance_bpm.py` is finite/offline, binds full expected identities
+  to owned pressings, uses short locked transactions and only writes NULLs.
+  Source `external:decks` is live. No audio, credentials or service restart.
+- Beatport's current terms prohibit metadata text/data mining; Traxsource,
+  BPMDatabase, Mixgraph and 12NOTEZ also restrict collection/copying. Juno Download
+  is closed. Do not bypass these through indexed snippets or alternate endpoints.
+  The decks.de review was finite personal reference metadata, not a scraper license.

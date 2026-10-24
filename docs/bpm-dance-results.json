@@ -1,0 +1,371 @@
+{
+  "date": "2026-10-24",
+  "before": {
+    "bpm_rows": 432,
+    "sources": {
+      "external:acousticbrainz": 114,
+      "external:getsongbpm": 227,
+      "external:recording-copy": 43,
+      "local:librosa": 48
+    },
+    "owned_slots": {
+      "known": 362,
+      "slots": 1039
+    },
+    "owned_vinyl_slots": {
+      "known": 296,
+      "slots": 936
+    },
+    "owned_missing_durations": 287,
+    "collection_albums_with_bpm": 38
+  },
+  "after": {
+    "bpm_rows": 458,
+    "sources": {
+      "external:acousticbrainz": 114,
+      "external:decks": 21,
+      "external:getsongbpm": 232,
+      "external:recording-copy": 43,
+      "local:librosa": 48
+    },
+    "owned_slots": {
+      "known": 388,
+      "slots": 1039
+    },
+    "owned_vinyl_slots": {
+      "known": 322,
+      "slots": 936
+    },
+    "owned_missing_durations": 282,
+    "collection_albums_with_bpm": 46
+  },
+  "fixed_23_dance_sample": {
+    "before": {
+      "known": 6,
+      "slots": 23
+    },
+    "after": {
+      "known": 13,
+      "slots": 23
+    }
+  },
+  "reviewed_21_house_slots": {
+    "before": {
+      "known": 0,
+      "slots": 21
+    },
+    "after": {
+      "known": 21,
+      "slots": 21
+    }
+  },
+  "cosmotronic_15_slots": {
+    "before": {
+      "known": 10,
+      "slots": 15
+    },
+    "after": {
+      "known": 15,
+      "slots": 15
+    }
+  },
+  "added_bpm_rows": 26,
+  "duration_backfills": [
+    {
+      "id": "e5e1112e-4876-5f27-a304-17bf37ca7ce5",
+      "before": 0,
+      "after": 241000
+    },
+    {
+      "id": "e306ee52-0cbf-5162-86f1-ca1ba5f7f15c",
+      "before": 0,
+      "after": 224000
+    },
+    {
+      "id": "6f2ccf02-01c1-5e87-b577-4ac9664dd718",
+      "before": 0,
+      "after": 242000
+    },
+    {
+      "id": "f7f70dcd-66c1-528e-b160-2ffef23847e8",
+      "before": 0,
+      "after": 277000
+    },
+    {
+      "id": "41d9f792-62cd-5c41-8b91-6b8378534fe7",
+      "before": 0,
+      "after": 272000
+    }
+  ],
+  "preserved_existing_estimates": 432,
+  "preserved_local_rows": 48,
+  "preserved_manual_rows": 0,
+  "table_counts": {
+    "albums": {
+      "before": 12679,
+      "after": 12679
+    },
+    "release_versions": {
+      "before": 2751,
+      "after": 2751
+    },
+    "tracks": {
+      "before": 19429,
+      "after": 19429
+    },
+    "audio_files": {
+      "before": 97,
+      "after": 97
+    },
+    "playlists": {
+      "before": 144,
+      "after": 144
+    },
+    "playlist_tracks": {
+      "before": 25294,
+      "after": 25294
+    }
+  },
+  "integrity_check": [
+    [
+      "ok"
+    ]
+  ],
+  "foreign_key_check_violations": 0,
+  "additions": [
+    {
+      "id": "43b68317-3850-563c-9743-f9e4a916ba81",
+      "artist": "Camelphat, Elderbrook",
+      "title": "Cola",
+      "track_number": "A1",
+      "bpm": 122.0,
+      "bpm_source": "external:decks",
+      "duration_ms": 415000
+    },
+    {
+      "id": "72d12a49-03a7-5a96-96e8-7cdd67b47789",
+      "artist": "Camelphat, Elderbrook",
+      "title": "Cola (Dario D'Attis Remix)",
+      "track_number": "A2",
+      "bpm": 122.0,
+      "bpm_source": "external:decks",
+      "duration_ms": 418000
+    },
+    {
+      "id": "50d76eb2-9f9f-5c74-8570-06762e7af2bb",
+      "artist": "Camelphat, Elderbrook",
+      "title": "Cola (Franky Rizardo Remix)",
+      "track_number": "B1",
+      "bpm": 121.0,
+      "bpm_source": "external:decks",
+      "duration_ms": 504000
+    },
+    {
+      "id": "39efa6d7-7f06-5fa5-ad36-9f1cfe50b138",
+      "artist": "Camelphat, Elderbrook",
+      "title": "Cola (Mousse T.'s Glitterbox Mix)",
+      "track_number": "B2",
+      "bpm": 122.0,
+      "bpm_source": "external:decks",
+      "duration_ms": 396000
+    },
+    {
+      "id": "460a0579-ff09-51e2-bec5-8e8942cb9d42",
+      "artist": "Robin S.",
+      "title": "Show Me Love (Stonebridge Club Mix)",
+      "track_number": "A1",
+      "bpm": 123.0,
+      "bpm_source": "external:decks",
+      "duration_ms": 0
+    },
+    {
+      "id": "cee88b92-6a6f-5592-8d20-9e3847a1280d",
+      "artist": "Robin S.",
+      "title": "Show Me Love (Todd Edwards Remix)",
+      "track_number": "A2",
+      "bpm": 125.0,
+      "bpm_source": "external:decks",
+      "duration_ms": 0
+    },
+    {
+      "id": "08e9f861-d01d-505e-8b62-350705941dd4",
+      "artist": "Robin S.",
+      "title": "Show Me Love (Diesel Remix)",
+      "track_number": "AA1",
+      "bpm": 126.0,
+      "bpm_source": "external:decks",
+      "duration_ms": 0
+    },
+    {
+      "id": "c3838241-7014-521b-a882-6c01a2b1c55a",
+      "artist": "Robin S.",
+      "title": "Show Me Love (Kerri Chandler Mix)",
+      "track_number": "AA2",
+      "bpm": 123.0,
+      "bpm_source": "external:decks",
+      "duration_ms": 0
+    },
+    {
+      "id": "653b7f13-e408-5595-a396-67e5ae6c78a9",
+      "artist": "Shakedown",
+      "title": "At Night (Peggy Gou's Acid Journey Remix)",
+      "track_number": "A1",
+      "bpm": 124.0,
+      "bpm_source": "external:decks",
+      "duration_ms": 0
+    },
+    {
+      "id": "db3241fe-be2b-576d-911e-d7688b6792f9",
+      "artist": "Shakedown",
+      "title": "At Night (Tiger & Woods Remix)",
+      "track_number": "A2",
+      "bpm": 127.0,
+      "bpm_source": "external:decks",
+      "duration_ms": 0
+    },
+    {
+      "id": "f00c9e90-eca0-5c6b-9c21-b82ba54712d9",
+      "artist": "Shakedown",
+      "title": "At Night (Purple Disco Machine Extended Remix)",
+      "track_number": "B1",
+      "bpm": 122.0,
+      "bpm_source": "external:decks",
+      "duration_ms": 0
+    },
+    {
+      "id": "5717e030-f913-5d39-812d-84caeb246799",
+      "artist": "Shakedown",
+      "title": "At Night (Shakedown's Galactic Boogie)",
+      "track_number": "B2",
+      "bpm": 127.0,
+      "bpm_source": "external:decks",
+      "duration_ms": 0
+    },
+    {
+      "id": "0e84512a-ad37-5afc-aa99-db1f9cbe62ab",
+      "artist": "Stardust",
+      "title": "Music Sounds Better With You",
+      "track_number": "A",
+      "bpm": 124.0,
+      "bpm_source": "external:decks",
+      "duration_ms": 415000
+    },
+    {
+      "id": "99d5cd67-dc8f-50d4-831d-d4fa8428eeed",
+      "artist": "&Me",
+      "title": "The Rapture Pt.II",
+      "track_number": "1",
+      "bpm": 120.0,
+      "bpm_source": "external:decks",
+      "duration_ms": 512000
+    },
+    {
+      "id": "80d39423-11f8-545e-b147-7f0735d45fe7",
+      "artist": "&Me",
+      "title": "Solaris",
+      "track_number": "2",
+      "bpm": 160.0,
+      "bpm_source": "external:decks",
+      "duration_ms": 450000
+    },
+    {
+      "id": "be8f3d13-fef9-522f-bc11-ac92600f8fc5",
+      "artist": "&Me, Blackcoffee",
+      "title": "The Rapture Pt.III",
+      "track_number": "A",
+      "bpm": 120.0,
+      "bpm_source": "external:decks",
+      "duration_ms": 0
+    },
+    {
+      "id": "3e2bc698-4af8-5826-8f29-2b6bd931379e",
+      "artist": "&Me",
+      "title": "L.I.F.E",
+      "track_number": "B",
+      "bpm": 119.0,
+      "bpm_source": "external:decks",
+      "duration_ms": 0
+    },
+    {
+      "id": "e5e1112e-4876-5f27-a304-17bf37ca7ce5",
+      "artist": "Cosmo",
+      "title": "Turbo",
+      "track_number": "A2",
+      "bpm": 121.0,
+      "bpm_source": "external:getsongbpm",
+      "duration_ms": 241000
+    },
+    {
+      "id": "e306ee52-0cbf-5162-86f1-ca1ba5f7f15c",
+      "artist": "Cosmo",
+      "title": "Sei La Mia Città",
+      "track_number": "A3",
+      "bpm": 115.0,
+      "bpm_source": "external:getsongbpm",
+      "duration_ms": 224000
+    },
+    {
+      "id": "6f2ccf02-01c1-5e87-b577-4ac9664dd718",
+      "artist": "Cosmo",
+      "title": "Quando Ho Incontrato Te",
+      "track_number": "B3",
+      "bpm": 119.0,
+      "bpm_source": "external:getsongbpm",
+      "duration_ms": 242000
+    },
+    {
+      "id": "f7f70dcd-66c1-528e-b160-2ffef23847e8",
+      "artist": "Cosmo",
+      "title": "Attraverso Lo Specchio",
+      "track_number": "C2",
+      "bpm": 121.0,
+      "bpm_source": "external:getsongbpm",
+      "duration_ms": 277000
+    },
+    {
+      "id": "41d9f792-62cd-5c41-8b91-6b8378534fe7",
+      "artist": "Cosmo",
+      "title": "La Notte Farà Il Resto",
+      "track_number": "D1",
+      "bpm": 120.0,
+      "bpm_source": "external:getsongbpm",
+      "duration_ms": 272000
+    },
+    {
+      "id": "4985b20d-dbf9-5a7d-b62f-b84d5e9e30d7",
+      "artist": "Paul Hill",
+      "title": "Need Me Some U",
+      "track_number": "A",
+      "bpm": 108.0,
+      "bpm_source": "external:decks",
+      "duration_ms": 310000
+    },
+    {
+      "id": "6139a68d-3dd1-55e2-b6db-049f02645e40",
+      "artist": "Nikki-O",
+      "title": "Music",
+      "track_number": "B",
+      "bpm": 120.0,
+      "bpm_source": "external:decks",
+      "duration_ms": 282000
+    },
+    {
+      "id": "5509049b-c99d-5177-a4d1-df5e12817dfa",
+      "artist": "Recondite",
+      "title": "Phalanx",
+      "track_number": "A",
+      "bpm": 121.0,
+      "bpm_source": "external:decks",
+      "duration_ms": 0
+    },
+    {
+      "id": "2b541f1f-1b5e-598c-9cc5-994e490354e0",
+      "artist": "Recondite",
+      "title": "Warg",
+      "track_number": "B",
+      "bpm": 122.0,
+      "bpm_source": "external:decks",
+      "duration_ms": 0
+    }
+  ]
+}

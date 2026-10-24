@@ -1,6 +1,10 @@
 # Track tempo and owned-record browsing
 
-Current provider expansion: **432 BPM rows; 296/936 owned vinyl slots**, up from
+Current dance follow-up: **458 BPM rows; 322/936 owned vinyl slots**. See
+[dance evidence, exact mixes and source disagreements](BPM-DANCE-EXPANSION.md)
+for 26 additional attributed estimates and their validation/limitations.
+
+Previous provider expansion: **432 BPM rows; 296/936 owned vinyl slots**, up from
 135 rows and 60/936. See [provider results and matching rules](BPM-PROVIDERS.md)
 for the completed multi-provider research, 23-slot sample, 297 actual additions,
 132 duration backfills, safeguards and remaining unknowns. The rollout numbers
@@ -25,7 +29,7 @@ Browser navigation and shareable URLs preserve bounds, search and vinyl mode.
 and `bpm_updated_at` record evidence. `ensureColumn` adds each field safely on old
 databases; the schema includes the same columns for new databases. Unknown stays
 NULL. Sources are `manual`, `local:librosa`, `external:acousticbrainz`,
-`external:getsongbpm`, and `external:recording-copy`.
+`external:getsongbpm`, `external:decks`, and `external:recording-copy`.
 Updates atomically check the source so a manual correction made during analysis
 wins. External results cannot replace local analysis.
 

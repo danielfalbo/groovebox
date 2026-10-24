@@ -1,5 +1,9 @@
 # BPM provider expansion — 2026-10-24
 
+Later [dance-focused follow-up](BPM-DANCE-EXPANSION.md): **458 BPM rows,
+322/936 owned vinyl slots** (+26). The measurements below describe the earlier
+expansion; the follow-up records current source restrictions and disagreements.
+
 Actual metadata enrichment completed in a bounded session, without audio downloads,
 new accounts, credentials, purchases, playback actions or service restarts.
 [Machine-readable counts](bpm-provider-results.json), [23-slot comparison](bpm-provider-sample.json),

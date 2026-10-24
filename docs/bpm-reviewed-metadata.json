@@ -704,18 +704,8 @@
           "bpm": 120.0
         },
         {
-          "title": "Ivrea Bangkok",
-          "duration_ms": 378000,
-          "bpm": 120.0
-        },
-        {
           "title": "Turbo",
           "duration_ms": 241000,
-          "bpm": 121.0
-        },
-        {
-          "title": "Attraverso lo specchio",
-          "duration_ms": 277000,
           "bpm": 121.0
         },
         {
@@ -724,19 +714,9 @@
           "bpm": 115.0
         },
         {
-          "title": "Barbara",
-          "duration_ms": 285000,
-          "bpm": 120.0
-        },
-        {
           "title": "Tutto bene",
           "duration_ms": 272000,
           "bpm": 119.0
-        },
-        {
-          "title": "La notte farà il resto",
-          "duration_ms": 272000,
-          "bpm": 120.0
         },
         {
           "title": "Tristan Zarra",
@@ -744,18 +724,8 @@
           "bpm": 122.0
         },
         {
-          "title": "5 antimeridiane",
-          "duration_ms": 297000,
-          "bpm": 120.0
-        },
-        {
           "title": "L'amore",
           "duration_ms": 304000,
-          "bpm": 125.0
-        },
-        {
-          "title": "Tu non sei tu",
-          "duration_ms": 413000,
           "bpm": 125.0
         },
         {
@@ -772,8 +742,42 @@
           "title": "Ho vinto",
           "duration_ms": 287000,
           "bpm": 120.0
+        },
+        {
+          "title": "Ivrea Bangkok",
+          "duration_ms": 378000,
+          "bpm": 120.0
+        },
+        {
+          "title": "Attraverso lo specchio",
+          "duration_ms": 277000,
+          "bpm": 121.0
+        },
+        {
+          "title": "Barbara",
+          "duration_ms": 285000,
+          "bpm": 120.0
+        },
+        {
+          "title": "La notte farà il resto",
+          "duration_ms": 272000,
+          "bpm": 120.0
+        },
+        {
+          "title": "5 antimeridiane",
+          "duration_ms": 297000,
+          "bpm": 120.0
+        },
+        {
+          "title": "Tu non sei tu",
+          "duration_ms": 413000,
+          "bpm": 125.0
         }
-      ]
+      ],
+      "ordering_evidence": {
+        "url": "https://music.amazon.ca/tracks/B078Y8M722",
+        "note": "Original two-disc order 9+6, independently corroborated by label-delivered album metadata. Provider page interleaves same-numbered tracks from two discs. Only order corrected; provider full titles, durations and BPM unchanged."
+      }
     },
     {
       "artist": "Electric Light Orchestra",

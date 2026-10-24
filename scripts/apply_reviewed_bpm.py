@@ -42,6 +42,7 @@ def reviewed_matches(owned, evidence, album):
             'retrieved_at':evidence['retrieved_at'], 'artist':evidence['artist'],
             'album':evidence['album'], 'recording_title':s['title'],
             'artist_alias_evidence':evidence.get('artist_alias_evidence'),
+            'tracklist_order_evidence':evidence.get('ordering_evidence'),
             'recording_duration_ms':s['duration_ms'],
             'match':'exact artist+album+full title; '+('duration corroborated' if t['duration_ms'] else 'complete ordered core tracklist'),
             'confidence':'recording metadata verified; provider tempo estimate, not a verified beat grid'}))
