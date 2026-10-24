@@ -66,6 +66,7 @@
 8. **Album Deduplication (`DedupeAlbums`):**
    - Candidate pairs (same artist) qualify via matching `discogs_master_id` OR equal `NormalizeAlbumTitle` output — normalized title equality alone is sufficient merge evidence (do not additionally require track overlap; duplicate albums can have complementary, non-overlapping tracklists, e.g. a collection entry with only side-A tracks vs. a digital entry with only side-B tracks).
    - Merges reassign the secondary album's `release_versions` and `tracks` onto the canonical album; never insert a placeholder `release_versions` row for the deleted secondary album — the Discogs Pressings table (`public/app.js`) renders every `release_versions` row as a real pressing, so synthetic rows show up as fake "Discogs Pressing" noise.
+   - Preserve **every track ID** when merging albums. Same title is insufficient recording/pressing evidence; never delete same-title tracks or rewrite their BPM/audio/playlist references during an album merge.
 
 9. **Client-Side URL Routing:**
    - `public/app.js` implements a small router (`pushURL`/`replaceURL`/`renderFromLocation`) over the History API — every view (`/albums`, `/albums/:id`, `/artists`, `/artists/:name`, `/songs`, `/playlists/:id`, `/search`) maps to a shareable URL, and the browser back/forward buttons work via a `popstate` listener.
@@ -272,3 +273,31 @@ Two-way playlist sync between Groovebox and Tidal, using a safe 3-way merge per 
   BPMDatabase, Mixgraph and 12NOTEZ also restrict collection/copying. Juno Download
   is closed. Do not bypass these through indexed snippets or alternate endpoints.
   The decks.de review was finite personal reference metadata, not a scraper license.
+
+## Complete owned tracklists (2026-10-24)
+
+- Read `docs/COLLECTION-TRACKLISTS.md` and its per-release JSON report. Fresh
+  inventory: **136 copies, 132 distinct releases, 128 canonical albums**.
+  All 132 official trees matched: **1,098 leaves + 13 headings/indexes**.
+  Added 59 tracks; corrected 216 artist credits. All prior IDs, 458 BPM tuples,
+  playlists and audio links survived. **311 durations remain unknown**.
+  Current known vinyl BPM denominator is **322/995**, not the older 322/936.
+- `scripts/tracklists.py` + `tracklists.sql` own reconciliation and full original
+  Discogs JSON/tree storage. Normal Discogs sync invokes this after summary
+  commit through `tracklists.go`; `./groovebox -refresh-tracklists` verifies
+  current membership and refreshes every pressing. Python stdlib is required.
+  A nonzero exit/report conflict means incomplete. Never use album/canonical
+  track counts or a cached importer success as collection completeness evidence.
+- Collection wins when a release is also wanted. Current private inventory reads
+  reuse the existing token/identity; full release metadata is anonymous and
+  cached, at 24 requests/minute. No credentials in arguments/reports.
+- Keep headings, nested medley context, complete title/mix words, per-track
+  artist/ANV/join credits, disc/side positions and official order. Conservative
+  slot conflicts stay explicit; never delete curated extras or transfer BPM to
+  another mix. Unknown official durations must not erase measured values.
+- Album detail API exposes `owned_tracklists`; UI separates owned pressings from
+  expandable other catalog/local recordings and invalidates stale coverage.
+  Track IDs still own BPM/actions. Static cache version is 11.
+- Tests: `timeout 60s go test ./...`, `timeout 30s python3 -m unittest discover
+  -s scripts -p 'test_*.py'`, `timeout 360s sh e2e/run.sh` (isolated snapshot,
+  touch Chromium/WebKit at 375/390px). Inspect actual screenshots after UI edits.

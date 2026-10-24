@@ -1408,3 +1408,23 @@ body.np-active .main-panel { padding-bottom: 84px; }
 
   .bp5-input { min-height: 44px; }
 }
+/* Owned tracklists keep the release tree and source order on every viewport. */
+.owned-tracklist, .other-recordings { margin: 16px 0; min-width: 0; }
+.owned-tracklist > summary, .other-recordings > summary {
+  padding: 12px 4px; cursor: pointer; overflow-wrap: anywhere; line-height: 1.5;
+}
+.owned-tracklist > summary { font-weight: 600; }
+.tracklist-coverage { color: #9fb7a8; margin: 8px 0; overflow-wrap: anywhere; }
+.tracklist-warning { color: #edc477; }
+.tracklist-source { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: 8px; }
+.tracklist-group td { background: #26313d !important; padding: 14px 10px !important; }
+.tracklist-group-title { overflow-wrap: anywhere; }
+.track-duration-inline { display: none; }
+@media (max-width: 700px) {
+  .track-duration-inline { display: inline; }
+  .track-table .tracklist-group { display: block; }
+  .track-table .tracklist-group td { display: block; width: 100% !important; box-sizing: border-box; grid-column: 1 / -1; }
+  .owned-tracklists .track-table tbody tr:not(.tracklist-group) { grid-template-columns: 54px minmax(0, 1fr); }
+  .owned-tracklists .track-table tbody td:first-child:not([colspan]) { white-space: nowrap; padding-left: 4px; padding-right: 4px; }
+  .owned-tracklist > summary, .other-recordings > summary { min-height: 44px; }
+}

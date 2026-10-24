@@ -72,6 +72,24 @@ c.commit()
 `, join(work, 'music.db')], {stdio: 'inherit', timeout: 20000});
 }
 
+function addTracklistFixtures(work) {
+  execFileSync('python3', ['-c', `
+import sqlite3,sys
+from datetime import datetime,timezone
+sys.path.insert(0,'scripts')
+from tracklists import install_schema,reconcile
+c=sqlite3.connect(sys.argv[1]);c.row_factory=sqlite3.Row;install_schema(c)
+c.execute("INSERT INTO albums(id,title,artist,in_collection) VALUES('owned-list','__TRACKLIST__ Full Record','Fixture Artist',1)")
+c.execute("INSERT INTO tracks(id,album_id,title,artist,bpm) VALUES('owned-catalog','owned-list','Opening (Radio Edit)','Fixture Artist',200)")
+for id,rid,fmt in [('owned-vinyl',9876001,'Vinyl'),('owned-cd',9876002,'CD')]:
+ c.execute("INSERT INTO release_versions(id,album_id,discogs_release_id,title,artist,source,has_vinyl,format_description,catalog_number) VALUES(?,'owned-list',?,'Full Record','Fixture Artist','collection',?,?,?)",(id,rid,int(fmt=='Vinyl'),fmt,fmt+'-001'))
+ c.commit()
+ tracks=[dict(type_='track',position='A1',title='Opening (Club Mix)',duration='3:00'),dict(type_='heading',position='',title='Side A — original mixes'),dict(type_='index',position='',title='Complete Suite (Extended)',sub_tracks=[dict(type_='track',position='A2.1',title='Part 1',duration='2:00'),dict(type_='track',position='A2.2',title='Part 2',duration='2:10')]),dict(type_='track',position='A10',title='Finale',duration='4:00')] if fmt=='Vinyl' else [dict(type_='track',position='1-01',title='Opening (Radio Edit)',duration='2:00')]
+ reconcile(c,dict(id=id,album_id='owned-list',discogs_release_id=rid,artist='Fixture Artist'),dict(id=rid,artists=[dict(name='Fixture Artist')],tracklist=tracks),datetime.now(timezone.utc).isoformat(timespec='seconds'))
+c.commit();c.close()
+`, join(work,'music.db')], {cwd:ROOT,stdio:'inherit',timeout:20000});
+}
+
 function freePort() {
   return new Promise((res) => {
     const s = createServer();
@@ -95,6 +113,7 @@ async function startServer() {
   execFileSync('go', ['build', '-o', BIN, '.'], {cwd: ROOT, stdio: 'inherit', timeout: 90000});
   snapshotDB(work);
   addTempoFixtures(work);
+  addTracklistFixtures(work);
   const port = await freePort();
   const url = `http://127.0.0.1:${port}`;
   const child = spawn(BIN, ['-port', String(port), '-db', join(work, 'music.db')],

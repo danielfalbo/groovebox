@@ -123,7 +123,13 @@ class HTTP:
         # Coordinate independent/resumed batches so aggregate request rates stay low.
         host = urllib.parse.urlsplit(url).netloc
         with (self.cache / ("rate-" + host)).open("a+") as lock:
-            fcntl.flock(lock, fcntl.LOCK_EX)
+            while True:
+                try:
+                    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    break
+                except BlockingIOError:
+                    self.budget.check(20)
+                    time.sleep(.2)
             for attempt in range(3):
                 try:
                     return self._get(url, lock)
@@ -256,39 +262,15 @@ def write_bpm(db, track_id, result, source, only_unknown=False):
 
 
 def tracklist_rows(data):
-    def walk(rows):
-        for t in rows:
-            if t.get("sub_tracks"):
-                yield from walk(t["sub_tracks"])
-            elif t.get("type_", "track") == "track" and t.get("title") and t.get("position"):
-                yield t
-    return list(walk(data.get("tracklist", [])))
+    from tracklists import flatten
+    entries, _ = flatten(data)
+    return [json.loads(e['raw_json']) for e in entries if e['is_track']]
 
 
 def import_tracklist(db, release, data):
-    inserted = 0
-    with db:
-        for t in tracklist_rows(data):
-            artist = ", ".join(artist_name(a["name"]) for a in t.get("artists", data.get("artists", []))) or release["artist"]
-            dur = t.get("duration", "")
-            duration = 0
-            if re.fullmatch(r"\d+:\d{2}", dur):
-                mins, secs = map(int, dur.split(":")); duration = (mins * 60 + secs) * 1000
-            tid = str(uuid.uuid5(uuid.NAMESPACE_URL,
-                f"discogs:{release['discogs_release_id']}:{t['position']}:{t['title']}"))
-            # Don't alter any pre-existing recording identity or overwrite manual data.
-            existing = db.execute("SELECT id FROM tracks WHERE release_id=? AND track_number=? AND title=?",
-                                  (release["id"], t["position"], t["title"])).fetchone()
-            if existing:
-                continue
-            cur = db.execute("""INSERT OR IGNORE INTO tracks
-                (id,album_id,release_id,title,artist,track_number,duration_ms)
-                VALUES (?,?,?,?,?,?,?)""", (tid, release["album_id"], release["id"], t["title"], artist, t["position"], duration))
-            if cur.rowcount:
-                db.execute("INSERT INTO search_fts (target_type,target_id,title,artist) VALUES ('track',?,?,?)",
-                           (tid, t["title"], artist))
-                inserted += 1
-    return inserted
+    from tracklists import install_schema, reconcile
+    install_schema(db)
+    return reconcile(db, release, data)['inserted']
 
 
 def run(args):
@@ -325,6 +307,9 @@ def run(args):
         rows = [r for r in rows if r["album_id"] in album_ids]
     if args.mode == "acousticbrainz" and not args.probe:
         rows = [r for r in rows if not r["bpm_source"] or (args.refresh and r["bpm_source"] == "external:acousticbrainz")]
+    if args.mode == "acousticbrainz":
+        from tracklists import contextual_recording
+        rows = [contextual_recording(db, r) for r in rows]
     if args.mode == "acousticbrainz" and not args.refresh:
         # Apply all completed outcomes before an unavailable provider can stop
         # the batch. Otherwise a cached success later in album order can starve.
@@ -357,9 +342,10 @@ def run(args):
                     if data.get("id") != row["discogs_release_id"]:
                         result = {"status": "release-unavailable"}
                     else:
-                        n = import_tracklist(db, row, data)
-                        stats["tracks-inserted"] += n
-                        result = {"status": "ok", "tracks_inserted": n, "tracklist_size": len(tracklist_rows(data))}
+                        from tracklists import install_schema, reconcile
+                        install_schema(db)
+                        result = reconcile(db, row, data)
+                        stats["tracks-inserted"] += result['inserted']
                 else:
                     if args.mode == "local":
                         path = (Path(args.music_root) / row["relpath"]).resolve()

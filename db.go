@@ -12,6 +12,9 @@ import (
 //go:embed schema.sql
 var schemaSQL string
 
+//go:embed tracklists.sql
+var tracklistsSQL string
+
 func initDB(dbPath string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
@@ -33,6 +36,9 @@ func initDB(dbPath string) (*sql.DB, error) {
 	// Execute schema migrations
 	if _, err := db.Exec(schemaSQL); err != nil {
 		return nil, fmt.Errorf("failed to apply schema: %w", err)
+	}
+	if _, err := db.Exec(tracklistsSQL); err != nil {
+		return nil, fmt.Errorf("failed to apply tracklist schema: %w", err)
 	}
 
 	if err := ensureColumn(db, "playlists", "spotify_id", "TEXT"); err != nil {

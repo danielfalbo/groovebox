@@ -147,17 +147,19 @@ class BPMTests(unittest.TestCase):
 
     def test_tracklist_idempotent_preserves_versions(self):
         db = sqlite3.connect(':memory:')
-        db.executescript('CREATE TABLE tracks(id TEXT PRIMARY KEY,album_id TEXT,release_id TEXT,title TEXT,artist TEXT,track_number TEXT,duration_ms INTEGER);'
-                         'CREATE TABLE search_fts(target_type TEXT,target_id TEXT,title TEXT,artist TEXT);')
+        db.executescript((Path(__file__).parents[1] / 'schema.sql').read_text())
+        db.execute("INSERT INTO albums(id,title,artist) VALUES('album','Album','Artist')")
+        db.execute("INSERT INTO release_versions(id,album_id,title,artist,discogs_release_id,source) VALUES('pressing','album','Album','Artist',123,'collection')")
+        db.commit()
         release = dict(id='pressing', album_id='album', artist='Artist', discogs_release_id=123)
-        data = dict(artists=[{'name': 'Artist (2)'}], tracklist=[
+        data = dict(id=123, artists=[{'name': 'Artist (2)'}], tracklist=[
             dict(type_='heading', title='Side A'),
             dict(type_='track', title='Song (Club Mix)', position='A1', duration='6:00'),
             dict(type_='track', title='Song (Radio Edit)', position='B1', duration='3:00')])
         self.assertEqual(import_tracklist(db, release, data), 2)
         self.assertEqual(import_tracklist(db, release, data), 0)
         rows = db.execute('SELECT artist,duration_ms FROM tracks ORDER BY track_number').fetchall()
-        self.assertEqual(rows, [('Artist', 360000), ('Artist', 180000)])
+        self.assertEqual(rows, [('Artist (2)', 360000), ('Artist (2)', 180000)])
 
     def test_resume_passes_cached_misses_without_spending_item_budget(self):
         with tempfile.TemporaryDirectory() as work:

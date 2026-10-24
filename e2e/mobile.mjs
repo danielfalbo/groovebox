@@ -297,6 +297,32 @@ async function player(page, prefix) {
   await closeDialog(page, 'add-track-modal');
 }
 
+async function ownedPressings(page,url,prefix) {
+  await page.goto(url+'/albums/owned-list');
+  const list=page.locator('[data-owned-release="owned-vinyl"]');
+  await list.locator('summary').first().waitFor();
+  assert(await list.getAttribute('open') !== null,'first owned pressing is not expanded');
+  assert((await list.locator('.tracklist-coverage').textContent()).includes('4/4'),'missing per-pressing completeness');
+  assert(await list.locator('.track-title-text').allTextContents().then(t=>t.join('|')) === 'Opening (Club Mix)|Part 1|Part 2|Finale','official nested/multi-digit order lost');
+  assert((await list.locator('.tracklist-group-title').allTextContents()).includes('Complete Suite (Extended)'),'medley heading lost');
+  assert(await list.locator('.track-duration-inline').first().isVisible(),'duration hidden on phone');
+  assert((await list.locator('.track-duration-inline').first().textContent()).includes('3:00'),'official duration missing');
+  await bounds(page,list.locator('summary').first(),{target:true});
+  await layout(page);
+  await shot(page,prefix+'-owned-pressing');
+  await bounds(page,list.getByText('Complete Suite (Extended)',{exact:true}));
+  await shot(page,prefix+'-owned-medley');
+  await bounds(page,list.locator('.youtube-icon-btn').first(),{target:true});
+  const other=page.locator('.owned-tracklists > .other-recordings');
+  assert(await other.getAttribute('open') === null,'catalog duplicates expanded into owned tracklist');
+  const cd=page.locator('[data-owned-release="owned-cd"]');
+  await bounds(page,cd.locator('summary').first(),{target:true});
+  await cd.locator('summary').first().tap();
+  assert(await cd.locator('.track-title-text').textContent() === 'Opening (Radio Edit)','second pressing mixed with first');
+  await layout(page);
+  await shot(page,prefix+'-owned-second-pressing');
+}
+
 export async function runMobile(url) {
   mkdirSync(artifacts, {recursive:true});
   const results=[];
@@ -323,6 +349,11 @@ export async function runMobile(url) {
           if (!['GET','HEAD'].includes(req.method()) && /^\/api\/(playback|local\/play|sync|tidal)/.test(path)) {
             unsafe.push(req.method()+' '+path);return r.abort();
           }
+          // Pin read-only player state during reload/navigation journeys.
+          // A real poll cancelled by navigation can emit a WebKit network
+          // diagnostic despite the application's fetch catch. The player
+          // layout check below overrides this with its paused preview.
+          if (path==='/api/playback/state') return r.fulfill({json:{status:'idle',current:null,queue:null,position_ms:0,volume:69}});
           // No external network, including unpkg. Invalid image bytes exercise
           // actual image error events and fallback rendering without HTTP errors.
           if (!req.url().startsWith(url) && !req.url().startsWith('data:')) return r.fulfill({status:200,contentType:'text/plain',body:'external network unavailable'});
@@ -331,6 +362,7 @@ export async function runMobile(url) {
         console.log(`[mobile] ${prefix}: touch navigation, dialogs, tables; external network unavailable`);
         try {
           await collection(page,url,prefix);
+          await ownedPressings(page,url,prefix);
           await views(page,url,prefix);
           await dialogsAndPlaylist(page,url,prefix);
           await player(page,prefix);

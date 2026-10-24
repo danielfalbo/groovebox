@@ -72,18 +72,19 @@ type ReleaseVersion struct {
 }
 
 type AlbumDetailResponse struct {
-	ID              string           `json:"id"`
-	Title           string           `json:"title"`
-	Artist          string           `json:"artist"`
-	ReleaseYear     int              `json:"release_year"`
-	DiscogsMasterID int              `json:"discogs_master_id"`
-	CoverImageURL   string           `json:"cover_image_url"`
-	HasVinyl        bool             `json:"has_vinyl"`
-	InWantlist      bool             `json:"in_wantlist"`
-	Starred         bool             `json:"starred"`
-	StreamingNotes  string           `json:"streaming_notes"`
-	Tracks          []TrackDetail    `json:"tracks"`
-	Versions        []ReleaseVersion `json:"versions"`
+	OwnedTracklists []DiscogsTracklist `json:"owned_tracklists"`
+	ID              string             `json:"id"`
+	Title           string             `json:"title"`
+	Artist          string             `json:"artist"`
+	ReleaseYear     int                `json:"release_year"`
+	DiscogsMasterID int                `json:"discogs_master_id"`
+	CoverImageURL   string             `json:"cover_image_url"`
+	HasVinyl        bool               `json:"has_vinyl"`
+	InWantlist      bool               `json:"in_wantlist"`
+	Starred         bool               `json:"starred"`
+	StreamingNotes  string             `json:"streaming_notes"`
+	Tracks          []TrackDetail      `json:"tracks"`
+	Versions        []ReleaseVersion   `json:"versions"`
 }
 
 type AlbumSummary struct {
@@ -102,6 +103,7 @@ type AlbumSummary struct {
 
 func main() {
 	migrateOnly := flag.Bool("migrate-only", false, "Apply safe schema migrations and exit")
+	refreshTracklists := flag.Bool("refresh-tracklists", false, "Verify current collection and reconcile every owned release tracklist")
 	syncDiscogsFlag := flag.Bool("sync-discogs", false, "Sync Discogs collection & wantlist into database")
 	dedupeAlbumsFlag := flag.Bool("dedupe-albums", false, "Safely merge duplicate master albums based on title normalization & track overlap")
 	seedStarsFlag := flag.Bool("seed-stars", false, "Star a curated list of must-have collector albums that exist in the DB")
@@ -115,6 +117,12 @@ func main() {
 	}
 	defer db.Close()
 	if *migrateOnly {
+		return
+	}
+	if *refreshTracklists {
+		if err := refreshOwnedTracklists(db, nil); err != nil {
+			log.Fatal(err)
+		}
 		return
 	}
 
@@ -1048,6 +1056,12 @@ func main() {
 			vRows.Close()
 		}
 
+		owned, err := albumOwnedTracklists(db, albumID)
+		if err != nil {
+			http.Error(w, "Cannot read owned tracklist coverage", 500)
+			return
+		}
+		alb.OwnedTracklists = owned
 		json.NewEncoder(w).Encode(alb)
 	})
 
@@ -1521,41 +1535,16 @@ func DedupeAlbums(db *sql.DB) (int, error) {
 			inWantlistVal = 1
 		}
 
-		_, _ = tx.Exec("UPDATE albums SET has_vinyl = ?, in_wantlist = ? WHERE id = ?", hasVinylVal, inWantlistVal, canonical.id)
+		_, _ = tx.Exec("UPDATE albums SET has_vinyl = ?, in_wantlist = ?, in_collection=EXISTS(SELECT 1 FROM release_versions WHERE album_id=? AND source='collection') WHERE id = ?", hasVinylVal, inWantlistVal, canonical.id, canonical.id)
 		if canonical.discogsMasterID == 0 && secondary.discogsMasterID > 0 {
 			_, _ = tx.Exec("UPDATE albums SET discogs_master_id = ? WHERE id = ?", secondary.discogsMasterID, canonical.id)
 		}
 
-		// 3. Move tracks to canonical album, skipping duplicate track titles
-		tRows, tErr := tx.Query("SELECT id, title FROM tracks WHERE album_id = ?", secondary.id)
-		if tErr == nil {
-			var secondaryTracks []struct{ id, title string }
-			for tRows.Next() {
-				var tid, ttitle string
-				if tRows.Scan(&tid, &ttitle) == nil {
-					secondaryTracks = append(secondaryTracks, struct{ id, title string }{tid, ttitle})
-				}
-			}
-			tRows.Close()
-
-			for _, st := range secondaryTracks {
-				var count int
-				_ = tx.QueryRow("SELECT COUNT(*) FROM tracks WHERE album_id = ? AND LOWER(title) = LOWER(?)", canonical.id, st.title).Scan(&count)
-				if count > 0 {
-					// Duplicate track exists on canonical album -> update playlist_tracks references to canonical track
-					var canonicalTrackID string
-					_ = tx.QueryRow("SELECT id FROM tracks WHERE album_id = ? AND LOWER(title) = LOWER(?) LIMIT 1", canonical.id, st.title).Scan(&canonicalTrackID)
-					if canonicalTrackID != "" {
-						_, _ = tx.Exec("UPDATE OR IGNORE playlist_tracks SET track_id = ? WHERE track_id = ?", canonicalTrackID, st.id)
-						_, _ = tx.Exec("DELETE FROM playlist_tracks WHERE track_id = ?", st.id)
-						_, _ = tx.Exec("DELETE FROM search_fts WHERE target_type = 'track' AND target_id = ?", st.id)
-						_, _ = tx.Exec("DELETE FROM tracks WHERE id = ?", st.id)
-					}
-				} else {
-					// Reassign track to canonical album
-					_, _ = tx.Exec("UPDATE tracks SET album_id = ? WHERE id = ?", canonical.id, st.id)
-				}
-			}
+		// 3. Album identity does not establish recording/pressing identity.
+		// Preserve every track ID, BPM lock, audio link and playlist membership.
+		if _, err := tx.Exec("UPDATE tracks SET album_id = ? WHERE album_id = ?", canonical.id, secondary.id); err != nil {
+			tx.Rollback()
+			continue
 		}
 
 		// 4. Delete redundant secondary album

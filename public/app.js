@@ -825,15 +825,21 @@ async function openAlbumPage(albumId) {
       `;
     }
 
-    // Tracks Table
-    let tracksHTML = '';
-    if (album.tracks && album.tracks.length > 0) {
-      const tRows = album.tracks.map((t, idx) => `
+    // The official tree defines an owned pressing; canonical catalog rows do
+    // not establish completeness. Keep their original IDs/actions accessible.
+    const trackByID = new Map((album.tracks || []).map(t => [t.id, t]));
+    const ownedIDs = new Set((album.versions || []).filter(v => v.source === 'collection').map(v => v.id));
+    const renderTrackTable = items => `
+      <table class="bp5-html-table bp5-html-table-striped bp5-compact full-width-table track-table">
+        <thead><tr><th>Position</th><th>Title</th><th>Duration</th><th>Stream</th></tr></thead>
+        <tbody>${items.map(t => t.group ? `
+          <tr class="tracklist-group"><td colspan="4"><strong class="tracklist-group-title">${bpmEscape(t.title)}</strong></td></tr>
+        ` : `
         <tr>
-          <td style="width: 50px;">${idx + 1}</td>
+          <td style="width: 50px;">${bpmEscape(t.track_number) || '—'}</td>
           <td>
-            <div class="track-title-text">${t.title}</div>${bpmMarkup(t, true)}<div class="track-artist-text">${bpmEscape(t.track_number)} · ${bpmEscape(t.tempo_version)}</div>
-            <div class="track-artist-text">${t.artist || album.artist}</div>
+            <div class="track-title-text">${bpmEscape(t.title)}</div>${t.id ? bpmMarkup(t, true) : ''}
+            <div class="track-artist-text">${bpmEscape(t.artist || album.artist)}<span class="track-duration-inline"> · ${formatDuration(t.duration_ms)}</span></div>
           </td>
           <td style="width: 100px;">${formatDuration(t.duration_ms)}</td>
           <td style="width: 100px; text-align: right; white-space: nowrap;">
@@ -841,25 +847,37 @@ async function openAlbumPage(albumId) {
             ${t.spotify_id ? `<a href="https://open.spotify.com/track/${t.spotify_id}" target="_blank" class="bp5-button bp5-minimal bp5-small spotify-icon-btn" title="Open in Spotify"><svg class="spotify-svg-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.48-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141 4.38-1.38 9.841-.72 13.44 1.5.42.301.6.841.301 1.32zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.539.301.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg></a>` : ''}
           </td>
         </tr>
-      `).join('');
-
-      tracksHTML = `
-        <div class="album-section">
-          <h4 class="bp5-heading section-heading"><span class="bp5-icon-standard bp5-icon-music"></span> Tracklist (${album.tracks.length})</h4>
-          <table class="bp5-html-table bp5-html-table-striped bp5-compact full-width-table track-table">
-            <thead>
-              <tr>
-                <th style="width: 50px;">#</th>
-                <th>Title</th>
-                <th style="width: 100px;">Duration</th>
-                <th style="width: 100px; text-align: right;">Stream</th>
-              </tr>
-            </thead>
-            <tbody>${tRows}</tbody>
-          </table>
-        </div>
-      `;
-    }
+        `).join('')}</tbody>
+      </table>`;
+    const ownedLists = (album.owned_tracklists || (album.versions || []).filter(v => v.source === 'collection').map(v => ({release_id:v.id, status:'unverified', entries:[], mapped_tracks:0, expected_tracks:0}))).map((list, i) => {
+      const version = (album.versions || []).find(v => v.id === list.release_id) || {};
+      const mapped = new Set(list.entries.map(e => e.track_id).filter(Boolean));
+      const remaining = (album.tracks || []).filter(t => t.release_id === list.release_id && !mapped.has(t.id));
+      const rows = list.entries.map(e => e.is_track ? {
+        ...(trackByID.get(e.track_id) || {}), id: e.track_id,
+        title: e.title, artist: e.artist, track_number: e.position,
+        duration_ms: e.duration_ms ?? trackByID.get(e.track_id)?.duration_ms
+      } : {group:true, title:e.title});
+      const label = [version.format_description, version.catalog_number, version.discogs_release_id ? `Discogs ${version.discogs_release_id}` : 'Release ID unavailable'].filter(Boolean).join(' · ');
+      const status = list.status === 'complete'
+        ? `Complete against Discogs · ${list.mapped_tracks}/${list.expected_tracks} tracks`
+        : `Verification ${list.status} · ${list.mapped_tracks}/${list.expected_tracks} official tracks matched`;
+      return `<details class="owned-tracklist" data-owned-release="${bpmEscape(list.release_id)}" ${i === 0 ? 'open' : ''}>
+        <summary>${bpmEscape(label)}</summary>
+        <p class="tracklist-coverage ${list.status === 'complete' ? '' : 'tracklist-warning'}">${bpmEscape(status)}${list.fetched_at ? ` · source ${bpmEscape(list.fetched_at.slice(0,10))}` : ''}${list.warning ? `<br>${bpmEscape(list.warning)}` : ''}</p>
+        ${version.discogs_release_id ? `<a class="tracklist-source" target="_blank" rel="noopener" href="https://www.discogs.com/release/${version.discogs_release_id}">Official release tracklist ↗</a>` : ''}
+        ${rows.length ? renderTrackTable(rows) : '<p class="bp5-text-muted">Full official tracklist has not been verified.</p>'}
+        ${remaining.length ? `<details class="other-recordings" ${!rows.length ? 'open' : ''}><summary>Unverified existing recordings (${remaining.length})</summary>${renderTrackTable(remaining)}</details>` : ''}
+      </details>`;
+    }).join('');
+    const catalog = (album.tracks || []).filter(t => !ownedIDs.has(t.release_id));
+    const catalogHTML = catalog.length ? `<details class="other-recordings" ${ownedIDs.size ? '' : 'open'}>
+      <summary>Other catalog and local recordings (${catalog.length})</summary>
+      <p class="bp5-text-muted">These recordings are kept separately from the verified owned pressings.</p>
+      ${renderTrackTable(catalog)}</details>` : '';
+    const tracksHTML = ownedLists || catalogHTML ? `<div class="album-section owned-tracklists">
+      <h4 class="bp5-heading section-heading">${ownedIDs.size ? 'Tracklists by owned pressing' : 'Tracklist'}</h4>
+      ${ownedLists}${catalogHTML}</div>` : '';
 
     container.innerHTML = `
       <button class="bp5-button bp5-minimal bp5-icon-arrow-left back-btn" onclick="navShowAlbums()">Back to Albums</button>

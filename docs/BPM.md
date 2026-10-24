@@ -1,5 +1,10 @@
 # Track tempo and owned-record browsing
 
+Current tracklist audit: **458 BPM rows; 322/995 owned vinyl entries** after
+recovering 59 missing tracks. [Full collection audit](COLLECTION-TRACKLISTS.md):
+132/132 current releases complete against Discogs; 311 durations remain unknown.
+The historical rollout figures below predate this inventory correction.
+
 Current dance follow-up: **458 BPM rows; 322/936 owned vinyl slots**. See
 [dance evidence, exact mixes and source disagreements](BPM-DANCE-EXPANSION.md)
 for 26 additional attributed estimates and their validation/limitations.

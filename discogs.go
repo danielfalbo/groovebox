@@ -30,13 +30,13 @@ type SyncProgress struct {
 	// Tidal mirror fields (populated by tidal.go; run either in the same
 	// background window or a separate one depending on what triggered).
 	TidalAuthenticated bool   `json:"tidal_authenticated"`
-	IsTidalSyncing      bool   `json:"is_tidal_syncing"`
-	TidalStage          string `json:"tidal_stage"`
-	TidalMessage        string `json:"tidal_message,omitempty"`
-	TidalLastError      string `json:"tidal_last_error,omitempty"`
-	TidalLastSyncedAt   string `json:"tidal_last_synced_at,omitempty"`
-	TidalConnected      int    `json:"tidal_connected"`
-	TidalSynced         int    `json:"tidal_synced"`
+	IsTidalSyncing     bool   `json:"is_tidal_syncing"`
+	TidalStage         string `json:"tidal_stage"`
+	TidalMessage       string `json:"tidal_message,omitempty"`
+	TidalLastError     string `json:"tidal_last_error,omitempty"`
+	TidalLastSyncedAt  string `json:"tidal_last_synced_at,omitempty"`
+	TidalConnected     int    `json:"tidal_connected"`
+	TidalSynced        int    `json:"tidal_synced"`
 
 	// Per-playlist fidelity: which playlist is being reconciled and where we
 	// are within the set, plus add/remove tallies for the current pass (mirrors
@@ -48,11 +48,13 @@ type SyncProgress struct {
 	TidalAddedRemote   int    `json:"tidal_added_remote"`   // remote (Tidal) tracks added this pass
 }
 
-
 var (
-	syncMutex    sync.Mutex
+	syncMutex       sync.Mutex
 	currentProgress SyncProgress
 )
+
+// Injectable in sync regression tests; production always runs the reconciler.
+var refreshDiscogsTracklists = refreshOwnedTracklists
 
 func GetSyncProgress() SyncProgress {
 	syncMutex.Lock()
@@ -255,7 +257,7 @@ func SyncDiscogs(db *sql.DB) error {
 		}
 		totalPages = resp.Pagination.Pages
 		collectionReleases = append(collectionReleases, resp.Releases...)
-		
+
 		colPage := page
 		colTotalPages := totalPages
 		colFetched := len(collectionReleases)
@@ -467,6 +469,12 @@ func SyncDiscogs(db *sql.DB) error {
 	_, _ = tx.Exec("UPDATE albums SET in_wantlist = 0")
 
 	for _, info := range wantlistReleases {
+		// A release may be both owned and wanted. Collection wins at pressing
+		// level; preserve the independent canonical wantlist membership flag.
+		if seenReleaseIDs[info.ID] {
+			_, _ = tx.Exec("UPDATE albums SET in_wantlist=1 WHERE id IN (SELECT album_id FROM release_versions WHERE discogs_release_id=?)", info.ID)
+			continue
+		}
 		processDiscogsItem(info, "wantlist", false, "")
 	}
 
@@ -543,6 +551,17 @@ func SyncDiscogs(db *sql.DB) error {
 		return errFmt
 	}
 
+	updateSyncProgress(func(p *SyncProgress) {
+		p.Stage = "tracklists"
+		p.Message = "Verifying full tracklists for every owned pressing..."
+	})
+	if err := refreshDiscogsTracklists(db, collectionReleases); err != nil {
+		updateSyncProgress(func(p *SyncProgress) {
+			p.LastError = err.Error()
+			p.Message = "Release summaries synced; tracklist verification incomplete: " + err.Error()
+		})
+		return err
+	}
 	nowStr := time.Now().Format("2006-01-02 15:04:05")
 	updateSyncProgress(func(p *SyncProgress) {
 		p.Stage = "idle"
