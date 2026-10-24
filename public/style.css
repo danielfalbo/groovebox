@@ -1285,3 +1285,121 @@ body.np-active .main-panel { padding-bottom: 84px; }
 .bpm-coverage { font-size: 12px; color: #a7b6c2; margin-top: 6px; }
 .bpm-match { border-top: 1px solid #39434d; padding-top: 8px; margin-top: 8px; font-size: 12px; }
 .bpm-match strong { display: block; white-space: normal; }
+
+/* Keep flex children inside their viewport; tables own their horizontal scroll. */
+.navbar-custom, .sidebar-panel, .section-filter-wrap, .tempo-filter { flex-shrink: 0; }
+.app-body, .main-panel, .grid-container, .album-detail-view, .artist-detail-view { min-height: 0; min-width: 0; }
+.album-header-info, .track-meta > div, .playlist-title-row { min-width: 0; }
+.album-header-info { overflow-wrap: anywhere; }
+.album-header-badges, .pressings-actions, .version-item-title { flex-wrap: wrap; }
+.cover-art-small { flex-shrink: 0; }
+.track-title-text, .track-artist-text, .bpm-match, .grid-card-subtitle { overflow-wrap: anywhere; }
+.table-scroll { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table-scroll-hint { display: none; }
+.local-container { min-width: 0; }
+.settings-dropdown-menu { max-height: calc(100dvh - 140px); overflow-y: auto; }
+.modal-backdrop { z-index: 1300; padding: 12px; }
+.custom-dialog {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 24px);
+  margin: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+}
+.custom-dialog .bp5-dialog-header, .custom-dialog .bp5-dialog-footer { flex-shrink: 0; }
+.custom-dialog .bp5-dialog-body { min-height: 0; overflow-y: auto; }
+.now-playing-bar { z-index: 100; }
+
+@media (max-width: 767px) {
+  .navbar-custom .bp5-navbar-group { height: auto; }
+  .search-container > button { flex-shrink: 0; white-space: nowrap; }
+  .search-container .bp5-input-group input, .full-width-filter input, input[type=number] { font-size: 16px !important; }
+  button, .bp5-button, .sidebar-header-actions select, .settings-dropdown-menu .bp5-menu-item {
+    min-height: 44px !important;
+  }
+  .sidebar-toggle-btn, .settings-gear-btn, .custom-dialog .bp5-icon-cross,
+  .star-toggle-btn, .playlist-act-btn, .spotify-icon-btn, .youtube-icon-btn, .discogs-icon-btn {
+    min-width: 44px !important;
+    height: 44px !important;
+  }
+  .library-menu .bp5-menu-item, .playlist-menu .bp5-menu-item { height: 48px !important; min-height: 48px !important; }
+  .sidebar-header { padding-left: 12px; padding-right: 8px; }
+  .sidebar-header-actions { gap: 0; }
+  .sidebar-header-actions select { max-width: 105px; }
+  .tempo-filter label { display: flex; align-items: center; gap: 6px; min-height: 44px; }
+  #bpm-vinyl { width: 24px; height: 24px; }
+  .tempo-filter { margin-bottom: 0; }
+  .tempo-filter input[type=number] { min-height: 44px; }
+  .grid-container { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid-card { min-width: 0; }
+  .album-badge { top: auto; bottom: 18px; right: 4px; }
+  .album-header-info { width: 100%; }
+  .album-header-title { font-size: 22px !important; }
+  .album-header-artist { font-size: 18px !important; }
+  .pressings-actions { width: 100%; }
+  .pressings-actions .bp5-button { flex: 1 1 130px; }
+  .pressings-table { min-width: 540px; }
+  .table-scroll-hint { display: block; font-size: 12px; color: #a7b6c6; }
+  .album-detail-view .pressings-table th:nth-child(3),
+  .album-detail-view .pressings-table td:nth-child(3) { display: table-cell !important; }
+
+  /* A full-width title plus a separate action row beats squeezing five columns. */
+  .track-table, .track-table tbody { display: block; width: 100%; }
+  .track-table thead { display: none; }
+  .track-table tbody tr { display: grid; grid-template-columns: 26px minmax(0, 1fr); padding: 8px 0; }
+  .track-table tbody td { display: block; width: auto !important; padding: 4px 8px; overflow-wrap: anywhere; }
+  .track-table tbody td:first-child { grid-column: 1; grid-row: 1 / span 2; }
+  .track-table tbody td:nth-child(2) { grid-column: 2; }
+  .track-table tbody td:nth-child(3), #table-container .track-table td:nth-child(4) { display: none; }
+  .track-table tbody td:last-child:not([colspan]) {
+    grid-column: 2; display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 2px;
+  }
+  .track-table tbody td[colspan] { grid-column: 1 / -1; }
+  #table-container { padding: 8px; flex-shrink: 0; }
+  .track-meta { gap: 10px; }
+  .track-meta > div { flex: 1; }
+  .bpm-value { max-width: 100%; white-space: normal; }
+  .local-container { padding: 0; }
+  .album-detail-hero { flex-direction: column; align-items: center; text-align: center; }
+  .card-play-btn { position: static; margin-top: 10px; width: 100%; }
+  .local-container .table-scroll table { min-width: 480px; }
+  .custom-dialog .bp5-dialog-body { margin: 0; }
+  .custom-dialog .bp5-dialog-header .bp5-heading { overflow-wrap: anywhere; }
+  .playlist-select-item { min-height: 44px; gap: 12px; }
+  .playlist-select-item > div { min-width: 0; overflow-wrap: anywhere; }
+
+  .now-playing-bar { display: grid; gap: 4px 8px; padding: 8px 12px; }
+  .now-playing-bar[style*="display: flex"] { display: grid !important; }
+  .np-now { grid-column: 1; grid-row: 1; }
+  .np-cover { width: 32px; height: 32px; }
+  .np-now { gap: 6px; }
+  .np-center { grid-row: 2; grid-column: 1 / 3; }
+  .np-side { display: contents; }
+  .np-controls { grid-row: 1; grid-column: 2; }
+  .np-btn { width: 44px; height: 44px; }
+  .np-vol { grid-row: 3; grid-column: 1 / 3; min-height: 44px; }
+  .now-playing-bar #np-volume.vol { flex: 1; width: 0; }
+  .now-playing-bar #np-seek { width: 0; min-width: 0; min-height: 24px; }
+  .now-playing-bar input[type=range]::-webkit-slider-thumb { opacity: 1; }
+  body.np-active .main-panel { padding-bottom: calc(var(--np-height, 150px) + 14px); }
+
+  .search-container { flex-wrap: wrap; }
+  .search-container .bp5-input-group { flex-basis: 0; }
+  .sync-banner-wrap { flex: 1 1 100%; order: 4; min-width: 0; margin: 0; }
+  .sync-status-text { overflow-wrap: anywhere; }
+
+  .bp5-button { min-width: 44px !important; }
+
+  /* Large slider hit areas with a thin visible track. */
+  .now-playing-bar input[type=range] { height: 44px; min-height: 44px; background: transparent; }
+  .now-playing-bar input[type=range]::-webkit-slider-runnable-track {
+    height: 4px; border-radius: 2px;
+    background: linear-gradient(to right, #3ba4ff 0 var(--p, 0%), rgba(255,255,255,.14) var(--p, 0%) 100%);
+  }
+  .now-playing-bar input[type=range]::-moz-range-track {
+    background: linear-gradient(to right, #3ba4ff 0 var(--p, 0%), rgba(255,255,255,.14) var(--p, 0%) 100%);
+  }
+
+  .bp5-input { min-height: 44px; }
+}

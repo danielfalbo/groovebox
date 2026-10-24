@@ -226,3 +226,16 @@ Two-way playlist sync between Groovebox and Tidal, using a safe 3-way merge per 
   track slots have BPM. All local tracks were evaluated; external work remains
   incomplete (315 pending/failing outcomes after timeouts/503s). Never describe
   the collection as fully enriched. Current counts/limitations are in docs/BPM.md.
+
+## Mobile UI regression audit (2026-10-24)
+
+- Read `docs/MOBILE-AUDIT.md` for reproduced failures, screenshot paths and
+  headless-testing limits. `timeout 360s sh e2e/run.sh` now includes touch
+  Chromium/WebKit journeys at 390×844 and 375×844 plus a 500px-height dialog.
+  Mobile tests mutate only the isolated snapshot and block playback/sync calls.
+- Blueprint/Normalize styles and icon fonts are pinned under `public/vendor/`;
+  keep the UI usable without external networking. Mobile tests deliberately
+  corrupt remote images to exercise fallback handlers.
+- The central app router owns `/local/:id` too. Shared navigation cleanup must
+  hide local content and invalidate stale view responses. Keep tables inside
+  their own horizontal scroll regions and mobile controls at least 44px.

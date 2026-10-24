@@ -1,5 +1,5 @@
 let currentPlaylistSort = localStorage.getItem('playlist-sort') || 'date_desc';
-const fallbackCover = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Crect width='180' height='180' fill='%23252a31' rx='6'/%3E%3Cpath fill='%23738091' d='M70 120v-40l40-10v42.5a10 10 0 1 1-10-9.5V85l-20 5v32.5A10 10 0 1 1 70 120z'/%3E%3C/svg%3E`;
+const fallbackCover = window.fallbackCover = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Crect width='180' height='180' fill='%23252a31' rx='6'/%3E%3Cpath fill='%23738091' d='M70 120v-40l40-10v42.5a10 10 0 1 1-10-9.5V85l-20 5v32.5A10 10 0 1 1 70 120z'/%3E%3C/svg%3E`;
 
 document.addEventListener('DOMContentLoaded', async () => {
   initSidebarState();
@@ -83,6 +83,10 @@ function renderFromLocation() {
     return;
   }
 
+  if (parts[0] === 'local') {
+    if (parts[1]) openLocalAlbum(decodeURIComponent(parts[1])); else showLocalAlbums();
+    return;
+  }
   if (parts[0] === 'albums' && parts[1]) {
     openAlbumPage(decodeURIComponent(parts[1]));
     return;
@@ -90,7 +94,6 @@ function renderFromLocation() {
   if (parts[0] === 'albums') {
     showAlbums(params.get('filter') || undefined);
     setSectionFilterInputValue(q);
-    if (q) handleSectionFilter(q);
     return;
   }
   if (parts[0] === 'artists' && parts[1]) {
@@ -100,13 +103,11 @@ function renderFromLocation() {
   if (parts[0] === 'artists') {
     showArtists();
     setSectionFilterInputValue(q);
-    if (q) handleSectionFilter(q);
     return;
   }
   if (parts[0] === 'songs') {
     showAllSongs();
     setSectionFilterInputValue(q);
-    if (q) handleSectionFilter(q);
     return;
   }
   if (parts[0] === 'playlists' && parts[1]) {
@@ -143,6 +144,7 @@ function syncSidebarOverlay() {
   const backdrop = document.getElementById('sidebar-backdrop');
   if (!sidebar || !backdrop) return;
   const collapsed = sidebar.classList.contains('collapsed');
+  document.getElementById('sidebar-toggle-btn').setAttribute('aria-expanded', String(!collapsed));
   backdrop.classList.toggle('hidden', collapsed);
   // Lock background scroll only when the mobile drawer is open.
   document.body.classList.toggle('sidebar-locked', !collapsed && isMobile());
@@ -191,50 +193,7 @@ function handleSortChange(sortValue) {
   loadPlaylists();
 }
 
-async function loadPlaylists() {
-  try {
-    const res = await fetch(`/api/playlists?sort=${currentPlaylistSort}`);
-    const playlists = await res.json();
-    const container = document.getElementById('sidebar-playlists');
-    container.innerHTML = '';
-
-    playlists.forEach(p => {
-      const a = document.createElement('a');
-      a.className = 'bp5-menu-item bp5-popover-dismiss playlist-item-btn';
-      a.dataset.playlistId = p.id;
-      a.onclick = () => navSelectPlaylist(p.id, p.name, p.description, a);
-      const formattedDate = formatDate(p.created_at);
-
-      const urls = p.cover_art_urls || [];
-      let coverHTML = '';
-      if (urls.length > 0) {
-        const gridImgs = [];
-        for (let i = 0; i < 4; i++) {
-          const imgUrl = urls[i % urls.length] || fallbackCover;
-          gridImgs.push(`<img class="playlist-cover-img" src="${imgUrl}" alt="art" onerror="this.onerror=null;this.src='${fallbackCover}'">`);
-        }
-        coverHTML = `<div class="playlist-cover-grid">${gridImgs.join('')}</div>`;
-      } else {
-        coverHTML = `<div class="playlist-cover-fallback"><span class="bp5-icon-standard bp5-icon-music"></span></div>`;
-      }
-
-      a.innerHTML = `
-        <div class="playlist-item-left">
-          ${coverHTML}
-          <div class="playlist-info">
-            <span class="bp5-text-overflow-ellipsis playlist-name-text">${p.name}</span>
-            ${formattedDate ? `<span class="playlist-date-text">${formattedDate}</span>` : ''}
-          </div>
-        </div>
-        <span class="bp5-tag bp5-minimal bp5-round">${p.track_count}</span>
-      `;
-      container.appendChild(a);
-    });
-  } catch (err) {
-    console.error('Failed to load playlists:', err);
-  }
-}
-
+let viewRequest = 0;
 let currentSectionView = ''; // 'songs', 'artists', 'albums', 'playlist'
 let rawSectionData = [];
 
@@ -382,6 +341,7 @@ function handleSectionFilter(query) {
 
 async function showAllSongs() {
   clearNavActive();
+  const request = viewRequest;
   currentSectionView = 'songs';
   showSectionFilter('Filter songs by title, artist, album...');
   document.getElementById('nav-all-songs').classList.add('bp5-active');
@@ -403,8 +363,10 @@ async function showAllSongs() {
 
   try {
     const res = await fetch('/api/tracks');
-    rawSectionData = await res.json();
-    renderTracks(rawSectionData);
+    const data = await res.json();
+    if (request !== viewRequest) return;
+    rawSectionData = data || [];
+    handleSectionFilter(new URLSearchParams(location.search).get('q') || '');
   } catch (err) {
     console.error('Failed to load tracks:', err);
   }
@@ -412,6 +374,7 @@ async function showAllSongs() {
 
 async function showArtists() {
   clearNavActive();
+  const request = viewRequest;
   currentSectionView = 'artists';
   showSectionFilter('Filter artists by name...');
   document.getElementById('nav-artists').classList.add('bp5-active');
@@ -430,8 +393,10 @@ async function showArtists() {
 
   try {
     const res = await fetch('/api/artists');
-    rawSectionData = await res.json();
-    renderArtistCards(rawSectionData);
+    const data = await res.json();
+    if (request !== viewRequest) return;
+    rawSectionData = data || [];
+    handleSectionFilter(new URLSearchParams(location.search).get('q') || '');
   } catch (err) {
     console.error('Failed to load artists:', err);
   }
@@ -456,7 +421,7 @@ function renderArtistCards(artists) {
 
     let avatarHTML = '';
     if (a.image_url) {
-      avatarHTML = `<img class="grid-card-artist-avatar" src="${a.image_url}" alt="${a.name}" onerror="this.outerHTML='<div class=\\'grid-card-icon\\'><span class=\\'bp5-icon-standard bp5-icon-user\\'></span></div>'">`;
+      avatarHTML = `<img class="grid-card-artist-avatar" src="${a.image_url}" alt="${a.name}" onerror="this.onerror=null;this.src=fallbackCover">`;
     } else {
       avatarHTML = `<div class="grid-card-icon"><span class="bp5-icon-standard bp5-icon-user"></span></div>`;
     }
@@ -550,7 +515,7 @@ function renderAlbumCards(albums) {
 
     card.innerHTML = `
       <div class="grid-card-art-wrap">
-        <img class="grid-card-art" src="${coverUrl}" alt="cover" onerror="this.onerror=null;this.src='${fallbackCover}'">
+        <img class="grid-card-art" src="${coverUrl}" alt="cover" onerror="this.onerror=null;this.src=fallbackCover">
         ${starBtn}
         ${badgeHTML}
       </div>
@@ -570,6 +535,8 @@ let lastArtistName = '';
 async function openArtistPage(artistName) {
   lastArtistName = artistName;
   clearNavActive();
+  const request = viewRequest;
+  currentSectionView = 'artist';
   hideSectionFilter();
   document.getElementById('grid-container').style.display = 'none';
   document.getElementById('table-container').style.display = 'none';
@@ -582,6 +549,7 @@ async function openArtistPage(artistName) {
     const res = await fetch(`/api/artists/${encodeURIComponent(artistName)}`);
     if (!res.ok) throw new Error('Artist not found');
     const artistData = await res.json();
+    if (request !== viewRequest) return;
 
     let albumsGridHTML = '';
     if (artistData.albums && artistData.albums.length > 0) {
@@ -601,7 +569,7 @@ async function openArtistPage(artistName) {
         return `
           <div class="grid-card" onclick="albumCardClick(event, '${alb.id}')" onauxclick="albumCardAuxClick(event, '${alb.id}')">
             <div class="grid-card-art-wrap">
-              <img class="grid-card-art" src="${coverUrl}" alt="cover" onerror="this.onerror=null;this.src='${fallbackCover}'">
+              <img class="grid-card-art" src="${coverUrl}" alt="cover" onerror="this.onerror=null;this.src=fallbackCover">
               <button class="star-toggle-btn ${alb.starred ? 'starred' : ''}" title="${alb.starred ? 'Unstar' : 'Star as must-have'}" onclick="event.stopPropagation(); toggleAlbumStar('${alb.id}', ${!alb.starred})">${alb.starred ? '★' : '☆'}</button>
               ${badgeHTML}
             </div>
@@ -646,7 +614,7 @@ async function openArtistPage(artistName) {
       tracksHTML = `
         <div class="album-section">
           <h4 class="bp5-heading section-heading"><span class="bp5-icon-standard bp5-icon-music"></span> Individual Tracks (${artistData.tracks.length})</h4>
-          <table class="bp5-html-table bp5-html-table-striped bp5-compact full-width-table">
+          <table class="bp5-html-table bp5-html-table-striped bp5-compact full-width-table track-table">
             <thead>
               <tr>
                 <th style="width: 50px;">#</th>
@@ -664,7 +632,7 @@ async function openArtistPage(artistName) {
     let artistHeaderAvatar = '';
     const firstAlbumCover = (artistData.albums && artistData.albums.length > 0) ? artistData.albums[0].cover_image_url : '';
     if (firstAlbumCover) {
-      artistHeaderAvatar = `<img class="artist-header-avatar" src="${firstAlbumCover}" alt="${artistData.name}" onerror="this.outerHTML='<div class=\\'grid-card-icon\\' style=\\'width: 96px; height: 96px; font-size: 36px; margin: 0;\\'><span class=\\'bp5-icon-standard bp5-icon-user\\'></span></div>'">`;
+      artistHeaderAvatar = `<img class="artist-header-avatar" src="${firstAlbumCover}" alt="${artistData.name}" onerror="this.onerror=null;this.src=fallbackCover">`;
     } else {
       artistHeaderAvatar = `<div class="grid-card-icon" style="width: 96px; height: 96px; font-size: 36px; margin: 0;"><span class="bp5-icon-standard bp5-icon-user"></span></div>`;
     }
@@ -694,6 +662,8 @@ let bpmAlbumID = null;
 async function openAlbumPage(albumId) {
   bpmAlbumID = albumId;
   clearNavActive();
+  const request = viewRequest;
+  currentSectionView = 'album';
   hideSectionFilter();
   const titleCard = document.getElementById('view-title-card');
   if (titleCard) titleCard.style.display = 'none';
@@ -715,6 +685,7 @@ async function openAlbumPage(albumId) {
     const res = await fetch(`/api/albums/${albumId}`);
     if (!res.ok) throw new Error('Album not found');
     const album = await res.json();
+    if (request !== viewRequest) return;
 
     const coverUrl = album.cover_image_url || fallbackCover;
     let badgesHTML = '';
@@ -745,7 +716,7 @@ async function openAlbumPage(albumId) {
     const discogsSearchBtn = `<a href="${discogsSearchUrl}" target="_blank" class="bp5-button bp5-outlined bp5-small">${discogsSvg} Search Discogs ↗</a>`;
     const qobuzSearchBtn = `<a href="${qobuzSearchUrl}" target="_blank" class="bp5-button bp5-outlined bp5-small">${qobuzSvg} Search Qobuz Store ↗</a>`;
 
-    const pressingsActionBtns = `<div style="display: flex; align-items: center; gap: 8px;">${discogsMasterBtn}${discogsSearchBtn}${qobuzSearchBtn}</div>`;
+    const pressingsActionBtns = `<div class="pressings-actions" style="display: flex; align-items: center; gap: 8px;">${discogsMasterBtn}${discogsSearchBtn}${qobuzSearchBtn}</div>`;
 
     // Versions Table (Pressings & Wants)
     let versionsHTML = '';
@@ -765,7 +736,7 @@ async function openAlbumPage(albumId) {
         return `
           <tr>
             <td style="width: 44px;">
-              <img src="${pressingArt}" alt="pressing art" class="version-pressing-art" onerror="this.onerror=null;this.src='${fallbackCover}'">
+              <img src="${pressingArt}" alt="pressing art" class="version-pressing-art" onerror="this.onerror=null;this.src=fallbackCover">
             </td>
             <td>
               <div class="version-item-title">
@@ -788,7 +759,9 @@ async function openAlbumPage(albumId) {
             <h4 class="bp5-heading section-heading" style="margin: 0;"><span class="bp5-icon-standard bp5-icon-layers"></span> Discogs Collection & Wantlist Pressings (${album.versions.length})</h4>
             ${pressingsActionBtns}
           </div>
-          <table class="bp5-html-table bp5-html-table-striped bp5-compact full-width-table">
+          <p class="table-scroll-hint">Swipe the table to see every pressing detail and link.</p>
+          <div class="table-scroll" role="region" aria-label="Discogs pressings" tabindex="0">
+          <table class="bp5-html-table bp5-html-table-striped bp5-compact full-width-table pressings-table">
             <thead>
               <tr>
                 <th style="width: 44px;"></th>
@@ -800,6 +773,7 @@ async function openAlbumPage(albumId) {
             </thead>
             <tbody>${vRows}</tbody>
           </table>
+          </div>
         </div>
       `;
     } else {
@@ -835,7 +809,7 @@ async function openAlbumPage(albumId) {
       tracksHTML = `
         <div class="album-section">
           <h4 class="bp5-heading section-heading"><span class="bp5-icon-standard bp5-icon-music"></span> Tracklist (${album.tracks.length})</h4>
-          <table class="bp5-html-table bp5-html-table-striped bp5-compact full-width-table">
+          <table class="bp5-html-table bp5-html-table-striped bp5-compact full-width-table track-table">
             <thead>
               <tr>
                 <th style="width: 50px;">#</th>
@@ -853,7 +827,7 @@ async function openAlbumPage(albumId) {
     container.innerHTML = `
       <button class="bp5-button bp5-minimal bp5-icon-arrow-left back-btn" onclick="navShowAlbums()">Back to Albums</button>
       <div class="album-header-card bp5-card bp5-elevation-1">
-        <img class="album-header-art" src="${coverUrl}" alt="Album Art" onerror="this.onerror=null;this.src='${fallbackCover}'">
+        <img class="album-header-art" src="${coverUrl}" alt="Album Art" onerror="this.onerror=null;this.src=fallbackCover">
         <div class="album-header-info">
           <div class="album-header-badges">${badgesHTML}</div>
           <h1 class="bp5-heading album-header-title">${album.title}</h1>
@@ -1112,6 +1086,7 @@ async function loadPlaylists() {
       if (activePlaylistID === p.id && currentSectionView === 'playlist') {
         a.classList.add('bp5-active');
       }
+      a.dataset.playlistId = p.id;
       a.onclick = () => navSelectPlaylist(p.id, p.name, p.description, a);
       const formattedDate = formatDate(p.created_at);
 
@@ -1121,7 +1096,7 @@ async function loadPlaylists() {
         const gridImgs = [];
         for (let i = 0; i < 4; i++) {
           const imgUrl = urls[i % urls.length] || fallbackCover;
-          gridImgs.push(`<img class="playlist-cover-img" src="${imgUrl}" alt="art" onerror="this.onerror=null;this.src='${fallbackCover}'">`);
+          gridImgs.push(`<img class="playlist-cover-img" src="${imgUrl}" alt="art" onerror="this.onerror=null;this.src=fallbackCover">`);
         }
         coverHTML = `<div class="playlist-cover-grid">${gridImgs.join('')}</div>`;
       } else {
@@ -1147,6 +1122,7 @@ async function loadPlaylists() {
 
 // Modal logic for Create / Edit Playlist
 function openCreatePlaylistModal() {
+  closeSidebarIfMobile();
   editingPlaylistID = null;
   document.getElementById('playlist-modal-title').innerText = 'Create New Playlist';
   document.getElementById('playlist-name-input').value = '';
@@ -1157,6 +1133,7 @@ function openCreatePlaylistModal() {
 }
 
 function openEditPlaylistModal(id, name, desc) {
+  closeSidebarIfMobile();
   editingPlaylistID = id;
   document.getElementById('playlist-modal-title').innerText = 'Edit Playlist Details';
   document.getElementById('playlist-name-input').value = name || '';
@@ -1169,6 +1146,7 @@ function openEditPlaylistModal(id, name, desc) {
 let autoDebounceTimer = null;
 
 function openAddTrackModal() {
+  closeSidebarIfMobile();
   document.getElementById('track-title-input').value = '';
   document.getElementById('track-artist-input').value = '';
   document.getElementById('track-album-input').value = '';
@@ -1396,6 +1374,7 @@ async function deletePlaylistConfirm(id, name) {
 
 // Add Track to Playlist Modal
 function openAddToPlaylistModal(track) {
+  closeSidebarIfMobile();
   selectedTrackForPlaylist = track;
   document.getElementById('add-to-playlist-track-info').innerText = `Add "${track.title}" by ${track.artist || 'Unknown Artist'}`;
   
@@ -1462,6 +1441,7 @@ let addedDraftSet = new Set();
 let playlistSongSearchTimer = null;
 
 function openAddSongsToPlaylistModal() {
+  closeSidebarIfMobile();
   if (!activePlaylistID) return;
   document.getElementById('add-songs-modal-title').innerText = `Add Songs to "${activePlaylistName}"`;
   activePlaylistTrackIds = new Set((rawSectionData || []).map(t => String(t.id)));
@@ -1526,7 +1506,7 @@ function renderAddSongsResults(tracks) {
     const btnClass = (alreadyIn || justAdded) ? 'bp5-intent-success' : 'bp5-intent-primary';
     row.innerHTML = `
       <div class="add-song-meta" onclick="event.stopPropagation()">
-        <img class="playlist-cover-fallback" src="${coverUrl}" alt="art" onerror="this.onerror=null;this.src='${fallbackCover}'">
+        <img class="playlist-cover-fallback" src="${coverUrl}" alt="art" onerror="this.onerror=null;this.src=fallbackCover">
         <div class="playlist-info">
           <span class="bp5-text-overflow-ellipsis playlist-name-text">${t.title}</span>
           <span class="playlist-date-text">${t.artist || ''}${t.album_title ? ' · ' + t.album_title : ''}</span>
@@ -1563,6 +1543,7 @@ async function addSongToCurrentPlaylist(trackId, btn) {
 
 async function selectPlaylist(id, name, description, elem) {
   clearNavActive();
+  const request = viewRequest;
   currentSectionView = 'playlist';
   activePlaylistID = id;
   activePlaylistName = name;
@@ -1594,6 +1575,7 @@ async function selectPlaylist(id, name, description, elem) {
   try {
     const res = await fetch(`/api/playlists/${id}`);
     const tracks = await res.json();
+    if (request !== viewRequest) return;
     rawSectionData = tracks || [];
     renderPlaylistView(id, name, activePlaylistDesc, rawSectionData);
   } catch (err) {
@@ -1737,6 +1719,8 @@ function pollTidalAuth() {
 }
 
 function handleSearch(query) {
+  clearTimeout(searchDebounceTimer);
+  ++viewRequest;
   const trimmed = (query || '').trim();
   if (!trimmed) {
     replaceURL('/songs');
@@ -1752,6 +1736,8 @@ function handleSearch(query) {
 
 async function renderSearchResults(query) {
   clearNavActive();
+  const request = viewRequest;
+  currentSectionView = 'search';
   hideSectionFilter();
   const headerDiv = document.getElementById('playlist-view-header');
   if (headerDiv) headerDiv.style.display = 'none';
@@ -1774,6 +1760,7 @@ async function renderSearchResults(query) {
   try {
     const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
     const tracks = await res.json();
+    if (request !== viewRequest) return;
     renderTracks(tracks);
   } catch (err) {
     console.error('Search failed:', err);
@@ -1782,6 +1769,11 @@ async function renderSearchResults(query) {
 }
 
 function clearNavActive() {
+  if (location.pathname !== '/search') document.getElementById('search-input').value = '';
+  ++viewRequest;
+  clearTimeout(searchDebounceTimer);
+  document.getElementById('local-container').style.display = 'none';
+  document.querySelector('.main-panel').scrollTop = 0;
   ++albumRequest;
   clearTimeout(albumSearchDebounceTimer);
   document.getElementById('tempo-filter').hidden = true;
@@ -1840,7 +1832,7 @@ function renderTracks(tracks) {
       <td>${i + 1}</td>
       <td>
         <div class="track-meta">
-          <img class="cover-art-small" src="${coverUrl}" alt="art" onerror="this.onerror=null;this.src='${fallbackCover}'">
+          <img class="cover-art-small" src="${coverUrl}" alt="art" onerror="this.onerror=null;this.src=fallbackCover">
           <div>
             <div class="track-title-text">${t.title}</div>${bpmMarkup(t)}
             <div class="track-artist-text">${t.artist}</div>

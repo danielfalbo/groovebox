@@ -20,11 +20,14 @@ function showLocalFlow() {
 
 async function showLocalAlbums() {
   clearNavActive();
+  const request = viewRequest;
+  currentSectionView = 'local';
   const navL = document.getElementById('nav-local'); if (navL) navL.classList.add('bp5-active');
   const cont = showLocalFlow();
   cont.innerHTML = '<div class="bp5-spinner bp5-intent-primary"><div class="bp5-spinner-head"></div></div>';
   let albums = [];
   try { albums = await (await fetch('/api/local/albums')).json(); } catch(e){}
+  if (request !== viewRequest) return;
   if (!albums || !albums.length) {
     cont.innerHTML = '<div class="bp5-text-muted" style="padding:24px;">No local albums yet. Drop files into <code>~/syncthing/archive/music</code> then click “Sync Local Library”.</div><button class="bp5-button bp5-intent-primary" onclick="triggerLocalSync()">Sync Now</button>';
     return;
@@ -32,9 +35,9 @@ async function showLocalAlbums() {
   const cards = albums.map(alb => {
     const cover = alb.cover_image_url || fallbackCover;
     const raws = alb.raw_count ? ` • <span style="color:#ffb366">${alb.raw_count} raw</span>` : '';
-    return `<div class="grid-card" onclick="openLocalAlbum('${alb.id}')">
+    return `<div class="grid-card" onclick="navOpenLocalAlbum('${alb.id}')">
       <div class="grid-card-art-wrap">
-        <img class="grid-card-art" src="${esc(cover)}" onerror="this.onerror=null;this.src='${fallbackCover}'">
+        <img class="grid-card-art" src="${esc(cover)}" onerror="this.onerror=null;this.src=fallbackCover">
         <span class="bp5-tag bp5-intent-success bp5-round album-badge">📁 Local</span>
       </div>
       <div class="grid-card-title">${esc(alb.title)}</div>
@@ -49,10 +52,13 @@ async function showLocalAlbums() {
 
 async function openLocalAlbum(albumId) {
   clearNavActive();
+  const request = viewRequest;
+  currentSectionView = 'local';
   const cont = showLocalFlow();
   cont.innerHTML = '<div class="bp5-spinner bp5-intent-primary"><div class="bp5-spinner-head"></div></div>';
   let files = [];
   try { files = await (await fetch('/api/local/albums/'+albumId)).json(); } catch(e){}
+  if (request !== viewRequest) return;
   if (!Array.isArray(files) || !files.length) { cont.innerHTML = '<div class="bp5-text-muted">No files</div>'; return; }
   const first = files[0];
   const rows = files.map((f,i) => `
@@ -66,8 +72,9 @@ async function openLocalAlbum(albumId) {
   const nTracks = files.filter(f=>f.kind==='track').length;
   const nRaw = files.length - nTracks;
   cont.innerHTML = `
+    <button class="bp5-button bp5-minimal back-btn" onclick="navShowLocal()">Back to Local Library</button>
     <div class="album-detail-hero">
-      <img class="album-detail-art" src="${esc(first.cover_image_url||fallbackCover)}" onerror="this.onerror=null;this.src='${fallbackCover}'">
+      <img class="album-detail-art" src="${esc(first.cover_image_url||fallbackCover)}" onerror="this.onerror=null;this.src=fallbackCover">
       <div>
         <div class="bp5-text-muted">LOCAL GROUP</div>
         <h2 style="margin:6px 0">${esc(first.artist)} — ${esc(first.album)}</h2>
@@ -75,10 +82,10 @@ async function openLocalAlbum(albumId) {
         <button class="bp5-button bp5-intent-primary" onclick="playAlbumNow('${first.album_id}')">▶ Play album</button>
       </div>
     </div>
-    <table class="bp5-html-table bp5-html-table-striped bp5-interactive bp5-compact full-width-table">
+    <div class="table-scroll" role="region" aria-label="Local audio files" tabindex="0"><table class="bp5-html-table bp5-html-table-striped bp5-interactive bp5-compact full-width-table">
       <thead><tr><th>#</th><th>File</th><th>Format</th><th>Duration</th><th style="text-align:right">Play</th></tr></thead>
       <tbody>${rows}</tbody>
-    </table>`;
+    </table></div>`;
   document.title = first.album + ' — Groovebox';
 }
 
@@ -152,7 +159,8 @@ async function npRefresh() {
   // at the bottom of the page (position:fixed must stay in effect).
   bar.style.position = 'fixed';
   bar.style.left = '0'; bar.style.right = '0'; bar.style.bottom = '0'; bar.style.top = 'auto';
-  bar.style.zIndex = '1000';
+  bar.style.zIndex = '100';
+  document.documentElement.style.setProperty('--np-height', bar.getBoundingClientRect().height + 'px');
   const cur = st.current;
   document.getElementById('np-cover').src = cur.cover_url || fallbackCover;
   document.getElementById('np-title').textContent = cur.title || '—';
@@ -177,25 +185,9 @@ async function npRefresh() {
   toggle.textContent = st.status === 'paused' ? '▶' : '⏸';
 }
 
-function initNavLocalRouter() {
-  const orig = window.renderFromLocation || function(){};
-  window.renderFromLocation = function() {
-    const parts = location.pathname.split('/').filter(Boolean);
-    if (parts[0] === 'local') {
-      const id = parts[1] ? decodeURIComponent(parts[1]) : null;
-      if (id) openLocalAlbum(id); else showLocalAlbums();
-      return;
-    }
-    return orig.apply(this, arguments);
-  };
-}
-function navShowLocal() { history.pushState({},'', '/local'); window.renderFromLocation(); }
+function navShowLocal() { pushURL('/local'); showLocalAlbums(); }
+function navOpenLocalAlbum(id) { pushURL('/local/' + encodeURIComponent(id)); openLocalAlbum(id); }
 
-// poll every 2s (server owns state; tab just reflects it)
+// The main router initializes once, after playlists load at DOMContentLoaded.
 setInterval(npRefresh, 2000);
-
-initNavLocalRouter();
-// Re-evaluate once in case the page deep-loaded straight to /local before we
-// replaced the router (the original app.js render already ran).
-window.renderFromLocation();
 npRefresh();

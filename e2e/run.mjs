@@ -11,6 +11,7 @@
 //
 // Needs the global `playwright` install (see e2e/README.md).
 
+import {runMobile} from './mobile.mjs';
 import { spawn, execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -40,7 +41,7 @@ src, dst = sys.argv[1], sys.argv[2]
 out = sqlite3.connect(dst)
 sqlite3.connect(src).backup(out)
 out.close()
-`, DB, join(dstDir, 'music.db')], { stdio: 'inherit' });
+`, DB, join(dstDir, 'music.db')], { stdio: 'inherit', timeout: 20000 });
 }
 
 function addTempoFixtures(work) {
@@ -58,6 +59,8 @@ for id,title in [('bpm-match','__BPM_TEST__ Match'),('bpm-average','__BPM_TEST__
 for id,album,title,bpm in [('bpm-hit','bpm-match','Matching club mix',121.4),('bpm-unknown','bpm-match','Unknown mix',None),('bpm-slow','bpm-average','Slow',90),('bpm-fast','bpm-average','Fast',150)]:
  c.execute("INSERT INTO tracks(id,album_id,release_id,title,artist,track_number,duration_ms,bpm,bpm_source) VALUES(?,?,?,?,'Tempo fixtures','A1',300000,?,?)",(id,album,album+'-release',title,bpm,'external:acousticbrainz' if bpm else None))
 c.execute("INSERT INTO tracks(id,album_id,title,artist,duration_ms,bpm) VALUES('bpm-catalog','bpm-average','Unowned radio edit','Tempo fixtures',180000,122)")
+c.execute("INSERT INTO search_fts(target_type,target_id,title,artist) SELECT 'track',id,title,artist FROM tracks WHERE id='bpm-hit'")
+c.execute("UPDATE release_versions SET discogs_release_id='1',label='Fixture pressing label',catalog_number='MOBILE-TEST' WHERE id='bpm-match-release'")
 c.commit()
 `, join(work, 'music.db')], {stdio: 'inherit', timeout: 20000});
 }
@@ -73,7 +76,7 @@ async function waitReady(url, portProc, deadlineMs = 30000) {
   const deadline = Date.now() + deadlineMs;
   while (Date.now() < deadline) {
     if (portProc.exitCode != null) throw new Error('server exited early');
-    try { const r = await fetch(`${url}/api/albums/counts`); if (r.ok) return; } catch {}
+    try { const r = await fetch(`${url}/api/albums/counts`, {signal:AbortSignal.timeout(3000)}); if (r.ok) return; } catch {}
     await new Promise(r => setTimeout(r, 400));
   }
   throw new Error(`server at ${url} never became ready`);
@@ -193,10 +196,11 @@ test('artist page album cards open new tab on ctrl-click', async ({ page, url })
   await page.goto(`${url}/artists`, { waitUntil: 'networkidle' });
   await page.waitForSelector('.grid-card', { timeout: 15000 });
   if (await page.locator('.grid-card').count() === 0) { log('no artists — skipping'); return; }
-  await page.locator('.grid-card').first().click();
+  await page.locator('.grid-card').filter({hasText:/[0-9]+ albums?/}).first().click();
   await page.waitForFunction(() => location.pathname.startsWith('/artists/'), null, { timeout: 15000 });
+  await page.locator('#artist-detail-container .grid-card').first().waitFor();
   const hasAlbums = await page.locator('#artist-detail-container .grid-card').count();
-  if (hasAlbums === 0) { log('artist has no album cards — skipping'); return; }
+  assert(hasAlbums > 0, 'artist album cards missing');
   const [tab] = await Promise.all([
     page.waitForEvent('popup', { timeout: 10000 }),
     page.locator('#artist-detail-container .grid-card').first().click({ modifiers: ['Control'] }),
@@ -287,6 +291,13 @@ async function main() {
       url = server.url;
     }
     const page = await browser.newPage();
+    // Render image failure fallbacks deterministically; no remote album-art
+    // availability should decide whether local UI regression tests pass.
+    await page.route('**/*', r => {
+      if (r.request().resourceType() === 'image' && !r.request().url().startsWith(url) && !r.request().url().startsWith('data:'))
+        return r.fulfill({contentType:'text/plain', body:'image unavailable'});
+      return r.continue();
+    });
     page.setDefaultTimeout(LARGE);
     for (const t of results) {
       try {
@@ -299,6 +310,15 @@ async function main() {
         process.exitCode = 1;
       }
     }
+    await page.close();
+    if (!isLive) {
+      // The desktop manual-override test deliberately clears this tempo.
+      execFileSync('python3', ['-c', "import sqlite3,sys; c=sqlite3.connect(sys.argv[1]); c.execute(\"UPDATE tracks SET bpm=121.4,bpm_source='external:acousticbrainz' WHERE id='bpm-hit'\"); c.commit()", join(server.work,'music.db')], {timeout:20000});
+      for (const result of await runMobile(url)) {
+        results.push(result);
+        console.log(`  ${result.passed ? '✔' : '✘'} ${result.name}${result.error ? '\n    '+result.error : ''}`);
+      }
+    } else log('mobile mutation journeys require the isolated snapshot; skipped in --live mode');
   } finally {
     await browser.close();
     if (server) {

@@ -7,8 +7,8 @@ set -e
 cd "$(dirname "$0")/.."
 
 echo "== go unit tests =="
-go test ./...
+timeout 60s go test ./...
 
 echo "== e2e (Playwright) =="
-export NODE_PATH="$(npm root -g)"
-node e2e/run.mjs "$@"
+export NODE_PATH="$(timeout 15s npm root -g)"
+timeout 300s node e2e/run.mjs "$@"

@@ -33,3 +33,6 @@ music.db
 .venv-bpm/
 .bpm-cache/
 __pycache__/
+
+# Local browser audit evidence (paths documented in docs/MOBILE-AUDIT.md)
+e2e/artifacts/
