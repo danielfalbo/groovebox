@@ -1,0 +1,315 @@
+{
+  "mode": "acousticbrainz",
+  "probe": true,
+  "sample_dance": true,
+  "date": "2026-10-24T14:05:36.504725+00:00",
+  "eligible": 57,
+  "stats": {
+    "processed": 57,
+    "cached": 54,
+    "ambiguous-recording": 6,
+    "no-archived-bpm": 3,
+    "no-exact-recording": 9,
+    "attempted": 3,
+    "errors": 2,
+    "ambiguous-search": 3,
+    "missing-duration": 33,
+    "archive-version-mismatch": 1
+  },
+  "requests": {
+    "musicbrainz.org": 3
+  },
+  "records": [
+    {
+      "id": "8ef8666b-6a59-56a1-97d5-650e21e3c338",
+      "title": "Follow Me (Club Mix)",
+      "status": "ambiguous-recording"
+    },
+    {
+      "id": "cfa47483-6c97-55bc-a7b5-6e1ec419d999",
+      "title": "Follow Me (Dub Mix)",
+      "status": "ambiguous-recording"
+    },
+    {
+      "id": "75b7d85c-d40c-5f39-92a6-f97636481654",
+      "title": "Follow Me (Instrumental Mix)",
+      "status": "no-archived-bpm",
+      "mbid": "14c65434-a2b3-4804-a79f-09a133c6283c"
+    },
+    {
+      "id": "43b68317-3850-563c-9743-f9e4a916ba81",
+      "title": "Cola",
+      "status": "no-exact-recording"
+    },
+    {
+      "id": "72d12a49-03a7-5a96-96e8-7cdd67b47789",
+      "title": "Cola (Dario D'Attis Remix)",
+      "status": "no-exact-recording"
+    },
+    {
+      "id": "50d76eb2-9f9f-5c74-8570-06762e7af2bb",
+      "title": "Cola (Franky Rizardo Remix)",
+      "status": "no-exact-recording"
+    },
+    {
+      "id": "39efa6d7-7f06-5fa5-ad36-9f1cfe50b138",
+      "title": "Cola (Mousse T.'s Glitterbox Mix)",
+      "status": "no-exact-recording"
+    },
+    {
+      "id": "dc0a42c4-82cc-5fff-b242-178ae9d2dfaa",
+      "status": "error",
+      "error": "OSError",
+      "detail": "musicbrainz.org HTTP 503"
+    },
+    {
+      "id": "f080ced3-63fd-5c6d-a03f-efa79d66918d",
+      "title": "São Paulo",
+      "status": "no-exact-recording"
+    },
+    {
+      "id": "f7c1a073-ba40-5f35-a377-7dab9640a1d0",
+      "title": "You Can Get By",
+      "status": "no-exact-recording"
+    },
+    {
+      "id": "992bbdbb-e00e-5fde-89e9-e663cb32cc2b",
+      "title": "Everybody Dance",
+      "status": "ambiguous-search"
+    },
+    {
+      "id": "8d7b09b9-fe3b-57e4-b37d-9b73fd43fc58",
+      "title": "Est-Ce Que C'est Chic",
+      "status": "no-exact-recording"
+    },
+    {
+      "id": "bc9e0966-3bf6-5218-8d81-edd6e2654be9",
+      "status": "error",
+      "error": "OSError",
+      "detail": "musicbrainz.org HTTP 503"
+    },
+    {
+      "id": "e2794206-c371-55db-9f9a-7a7214470e49",
+      "title": "Strike Up The Band",
+      "status": "no-exact-recording"
+    },
+    {
+      "id": "86de8b9e-21e4-51bd-96de-37cf5d33c0c0",
+      "title": "One More Time",
+      "status": "missing-duration"
+    },
+    {
+      "id": "7d9972ae-e4a7-58bd-87a8-2e4f4c7543a6",
+      "title": "Aerodynamic",
+      "status": "missing-duration"
+    },
+    {
+      "id": "53aeb344-af4b-5419-b0a9-37fab4a4fb78",
+      "title": "Digital Love",
+      "status": "missing-duration"
+    },
+    {
+      "id": "c53a76ca-23d9-5131-beac-32cf0d4b0032",
+      "title": "Harder, Better, Faster, Stronger",
+      "status": "missing-duration"
+    },
+    {
+      "id": "85ad0588-1c51-53f3-9028-353728a25b6b",
+      "title": "Crescendolls",
+      "status": "missing-duration"
+    },
+    {
+      "id": "0ebb8403-dc17-581b-b2e3-47490c5949a2",
+      "title": "Nightvision",
+      "status": "missing-duration"
+    },
+    {
+      "id": "623306d5-74bf-544b-bf50-954af1b7ec05",
+      "title": "Superheroes",
+      "status": "missing-duration"
+    },
+    {
+      "id": "83aa4f0d-6ca5-5d49-9fd4-ad88b0933008",
+      "title": "High Life",
+      "status": "missing-duration"
+    },
+    {
+      "id": "1aa6d244-295c-58c2-9426-a06b77405eac",
+      "title": "Something About Us",
+      "status": "missing-duration"
+    },
+    {
+      "id": "030dfd1d-ef95-5177-a428-77df68678b47",
+      "title": "Voyager",
+      "status": "missing-duration"
+    },
+    {
+      "id": "13b406ab-6280-54af-90ae-478ed17130a2",
+      "title": "Veridis Quo",
+      "status": "missing-duration"
+    },
+    {
+      "id": "b8cc1344-9e13-5ab3-a35e-d620f8313664",
+      "title": "Short Circuit",
+      "status": "missing-duration"
+    },
+    {
+      "id": "f6d5f6cf-751d-565a-872a-f0fea31968e9",
+      "title": "Face To Face",
+      "status": "missing-duration"
+    },
+    {
+      "id": "0cf4084e-0104-5845-9782-b0851e3b34ee",
+      "title": "Too Long",
+      "status": "missing-duration"
+    },
+    {
+      "id": "e28b1cf2-7005-5329-9600-310b49018f3b",
+      "title": "Do You Want My Love",
+      "status": "missing-duration"
+    },
+    {
+      "id": "dbee85e3-38a5-5e18-834b-8487c1e53244",
+      "title": "Get Up",
+      "status": "missing-duration"
+    },
+    {
+      "id": "590c9aaa-adef-5324-bdbc-2e6e723884ac",
+      "title": "Don't Cry",
+      "status": "missing-duration"
+    },
+    {
+      "id": "51d7beb1-7fcc-53f7-a771-2cb27cddfe3f",
+      "title": "Loose Legs",
+      "status": "missing-duration"
+    },
+    {
+      "id": "d55fd162-a85f-5c38-9f41-5fbb9888ef61",
+      "title": "Good Life (Magic Juan's Mix)",
+      "status": "ambiguous-recording"
+    },
+    {
+      "id": "f7202863-81b2-5ce8-aeba-b751361d3b19",
+      "title": "Good Life (Mayday Club Mix)",
+      "status": "ambiguous-recording"
+    },
+    {
+      "id": "4e427334-8e77-562e-ad42-fc5e086fd5ab",
+      "title": "Big Fun (L.A. Big Big Fun Remix)",
+      "status": "archive-version-mismatch",
+      "mbid": "f9a45b92-d2fe-4af1-a548-2db5bff73d82"
+    },
+    {
+      "id": "fbeda54c-19cb-5c34-8999-a76d61d17136",
+      "title": "Demons",
+      "status": "missing-duration"
+    },
+    {
+      "id": "9c51dfc0-0d22-5c3d-8255-6be4ca915e32",
+      "title": "Sealed In Amber",
+      "status": "missing-duration"
+    },
+    {
+      "id": "1ca85c4d-3d52-57ab-bb34-1428ba8368db",
+      "title": "Starry Night",
+      "status": "missing-duration"
+    },
+    {
+      "id": "e915110b-6535-513e-9785-d9d018014bc7",
+      "title": "Han Pan",
+      "status": "missing-duration"
+    },
+    {
+      "id": "460a0579-ff09-51e2-bec5-8e8942cb9d42",
+      "title": "Show Me Love (Stonebridge Club Mix)",
+      "status": "missing-duration"
+    },
+    {
+      "id": "cee88b92-6a6f-5592-8d20-9e3847a1280d",
+      "title": "Show Me Love (Todd Edwards Remix)",
+      "status": "missing-duration"
+    },
+    {
+      "id": "08e9f861-d01d-505e-8b62-350705941dd4",
+      "title": "Show Me Love (Diesel Remix)",
+      "status": "missing-duration"
+    },
+    {
+      "id": "c3838241-7014-521b-a882-6c01a2b1c55a",
+      "title": "Show Me Love (Kerri Chandler Mix)",
+      "status": "missing-duration"
+    },
+    {
+      "id": "4312e180-4684-5729-aff0-7e9e8f5bc043",
+      "title": "Show Me Love (Stonebridge Club Mix)",
+      "status": "ambiguous-search"
+    },
+    {
+      "id": "a5b0c9db-9711-5381-8b2c-57de67f56d3e",
+      "title": "Show Me Love (Diesel Remix)",
+      "status": "no-archived-bpm",
+      "mbid": "b84daf1b-6edf-4c5e-83e2-a979ba5a31d0"
+    },
+    {
+      "id": "1ebd6d7f-d64d-55e1-8758-d370bd813ae8",
+      "title": "Show Me Love (Kerri Chandler Mix)",
+      "status": "no-exact-recording"
+    },
+    {
+      "id": "2b32e036-98d0-542a-bb5b-3baa2085c7d4",
+      "title": "Show Me Love (Todd Edwards Remix)",
+      "status": "ambiguous-recording"
+    },
+    {
+      "id": "af7764d1-805d-5896-96b0-d2f8467a6661",
+      "title": "Show Me Love (Lisa Marie Sequential Dub)",
+      "status": "no-archived-bpm",
+      "mbid": "8769bd0b-fb8d-4df0-8d43-5f27a350690f"
+    },
+    {
+      "id": "6a1b8977-7021-51d1-89a9-f0aa19094be3",
+      "title": "Show Me Love (Tonka's 2002 Club Mix)",
+      "status": "ambiguous-recording"
+    },
+    {
+      "id": "653b7f13-e408-5595-a396-67e5ae6c78a9",
+      "title": "At Night (Peggy Gou's Acid Journey Remix)",
+      "status": "missing-duration"
+    },
+    {
+      "id": "db3241fe-be2b-576d-911e-d7688b6792f9",
+      "title": "At Night (Tiger & Woods Remix)",
+      "status": "missing-duration"
+    },
+    {
+      "id": "f00c9e90-eca0-5c6b-9c21-b82ba54712d9",
+      "title": "At Night (Purple Disco Machine Extended Remix)",
+      "status": "missing-duration"
+    },
+    {
+      "id": "5717e030-f913-5d39-812d-84caeb246799",
+      "title": "At Night (Shakedown's Galactic Boogie)",
+      "status": "missing-duration"
+    },
+    {
+      "id": "0e84512a-ad37-5afc-aa99-db1f9cbe62ab",
+      "title": "Music Sounds Better With You",
+      "status": "ambiguous-search"
+    },
+    {
+      "id": "b4acc5bb-b6a4-588d-b7bc-86069fd2f5ce",
+      "title": "Talk About It",
+      "status": "missing-duration"
+    },
+    {
+      "id": "2683b436-05fe-52ab-b9f4-dfa5cf217dec",
+      "title": "Talk About It Again",
+      "status": "missing-duration"
+    },
+    {
+      "id": "587fd644-8d98-5192-8980-dab59b9bc227",
+      "title": "Lift Music Part 2",
+      "status": "missing-duration"
+    }
+  ]
+}

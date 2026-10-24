@@ -1,0 +1,103 @@
+{
+  "date": "2026-10-24",
+  "source": "Deezer anonymous public metadata; official reference redirects to login",
+  "sample_records": 12,
+  "records": [
+    {
+      "artist": "Peggy GOU",
+      "title": "Starry Night",
+      "duration_ms": 0,
+      "search_results": 3,
+      "exact_candidates": [],
+      "status": "zero-or-no-exact-bpm"
+    },
+    {
+      "artist": "Demuja",
+      "title": "Do You Want My Love",
+      "duration_ms": 0,
+      "search_results": 1,
+      "exact_candidates": [],
+      "status": "zero-or-no-exact-bpm"
+    },
+    {
+      "artist": "Inner City",
+      "title": "Good Life (Magic Juan's Mix)",
+      "duration_ms": 508000,
+      "search_results": 0,
+      "exact_candidates": [],
+      "status": "zero-or-no-exact-bpm"
+    },
+    {
+      "artist": "Stardust",
+      "title": "Music Sounds Better With You",
+      "duration_ms": 415000,
+      "search_results": 17,
+      "exact_candidates": [],
+      "status": "zero-or-no-exact-bpm"
+    },
+    {
+      "artist": "Robin S.",
+      "title": "Show Me Love (Stonebridge Club Mix)",
+      "duration_ms": 460000,
+      "search_results": 2,
+      "exact_candidates": [],
+      "status": "zero-or-no-exact-bpm"
+    },
+    {
+      "artist": "Shakedown",
+      "title": "At Night (Peggy Gou's Acid Journey Remix)",
+      "duration_ms": 0,
+      "search_results": 5,
+      "exact_candidates": [],
+      "status": "zero-or-no-exact-bpm"
+    },
+    {
+      "artist": "Aly-Us",
+      "title": "Follow Me (Instrumental Mix)",
+      "duration_ms": 380000,
+      "search_results": 1,
+      "exact_candidates": [],
+      "status": "zero-or-no-exact-bpm"
+    },
+    {
+      "artist": "Camelphat, Elderbrook",
+      "title": "Cola (Franky Rizardo Remix)",
+      "duration_ms": 504000,
+      "search_results": 3,
+      "exact_candidates": [],
+      "status": "zero-or-no-exact-bpm"
+    },
+    {
+      "artist": "Daft Punk",
+      "title": "One More Time",
+      "duration_ms": 0,
+      "search_results": 40,
+      "exact_candidates": [],
+      "status": "zero-or-no-exact-bpm"
+    },
+    {
+      "artist": "Chic",
+      "title": "Dance, Dance, Dance (Yowsah, Yowsah, Yowsah)",
+      "duration_ms": 510000,
+      "search_results": 4,
+      "exact_candidates": [],
+      "status": "zero-or-no-exact-bpm"
+    },
+    {
+      "artist": "The Rhythm Slaves",
+      "title": "Talk About It",
+      "duration_ms": 0,
+      "search_results": 0,
+      "exact_candidates": [],
+      "status": "zero-or-no-exact-bpm"
+    },
+    {
+      "artist": "Paul Woolford",
+      "title": "Demons",
+      "duration_ms": 0,
+      "search_results": 2,
+      "exact_candidates": [],
+      "status": "zero-or-no-exact-bpm"
+    }
+  ]
+}

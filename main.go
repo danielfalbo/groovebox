@@ -38,6 +38,14 @@ type PlaylistSummary struct {
 }
 
 type TrackDetail struct {
+	BPM           *float64 `json:"bpm"`
+	BPMSource     string   `json:"bpm_source"`
+	BPMProvenance string   `json:"bpm_provenance"`
+	BPMUpdatedAt  string   `json:"bpm_updated_at"`
+	TrackNumber   string   `json:"track_number"`
+	ReleaseID     string   `json:"release_id"`
+	TempoVersion  string   `json:"tempo_version"`
+
 	ID            string `json:"id"`
 	Title         string `json:"title"`
 	Artist        string `json:"artist"`
@@ -93,6 +101,7 @@ type AlbumSummary struct {
 }
 
 func main() {
+	migrateOnly := flag.Bool("migrate-only", false, "Apply safe schema migrations and exit")
 	syncDiscogsFlag := flag.Bool("sync-discogs", false, "Sync Discogs collection & wantlist into database")
 	dedupeAlbumsFlag := flag.Bool("dedupe-albums", false, "Safely merge duplicate master albums based on title normalization & track overlap")
 	seedStarsFlag := flag.Bool("seed-stars", false, "Star a curated list of must-have collector albums that exist in the DB")
@@ -105,6 +114,9 @@ func main() {
 		log.Fatalf("Database initialization failed: %v", err)
 	}
 	defer db.Close()
+	if *migrateOnly {
+		return
+	}
 
 	if *syncDiscogsFlag {
 		log.Println("Starting Discogs collection & wantlist sync...")
@@ -138,6 +150,7 @@ func main() {
 	}
 
 	// API Routes
+	http.HandleFunc("/api/tracks/", trackBPMHandler(db))
 	http.HandleFunc("/api/sync/discogs", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -604,8 +617,8 @@ func main() {
 		}
 
 		rows, err := db.Query(`
-			SELECT t.id, t.title, t.artist, t.duration_ms, COALESCE(t.spotify_id, ''),
-			       COALESCE(t.album_id, ''), COALESCE(a.title, ''), COALESCE(a.cover_image_url, ''), pt.position
+			SELECT t.id, t.title, COALESCE(t.artist, ''), COALESCE(t.duration_ms, 0), COALESCE(t.spotify_id, ''),
+			       COALESCE(t.album_id, ''), COALESCE(a.title, ''), COALESCE(a.cover_image_url, ''), pt.position, t.bpm, COALESCE(t.bpm_source,''), COALESCE(t.bpm_provenance,''), COALESCE(t.bpm_updated_at,''), COALESCE(t.track_number,''), COALESCE(t.release_id,''), COALESCE((SELECT format_description || ' · ' || COALESCE(catalog_number,'') FROM release_versions WHERE id=t.release_id),'Catalog recording')
 			FROM playlist_tracks pt
 			JOIN tracks t ON pt.track_id = t.id
 			LEFT JOIN albums a ON t.album_id = a.id
@@ -620,7 +633,7 @@ func main() {
 		var tracks []TrackDetail
 		for rows.Next() {
 			var t TrackDetail
-			if err := rows.Scan(&t.ID, &t.Title, &t.Artist, &t.DurationMs, &t.SpotifyID, &t.AlbumID, &t.AlbumTitle, &t.CoverImageURL, &t.Position); err == nil {
+			if err := rows.Scan(&t.ID, &t.Title, &t.Artist, &t.DurationMs, &t.SpotifyID, &t.AlbumID, &t.AlbumTitle, &t.CoverImageURL, &t.Position, &t.BPM, &t.BPMSource, &t.BPMProvenance, &t.BPMUpdatedAt, &t.TrackNumber, &t.ReleaseID, &t.TempoVersion); err == nil {
 				tracks = append(tracks, t)
 			}
 		}
@@ -696,8 +709,8 @@ func main() {
 		}
 
 		rows, err := db.Query(`
-			SELECT t.id, t.title, t.artist, t.duration_ms, COALESCE(t.spotify_id, ''),
-			       COALESCE(t.album_id, ''), COALESCE(a.title, ''), COALESCE(a.cover_image_url, ''), 0
+			SELECT t.id, t.title, COALESCE(t.artist, ''), COALESCE(t.duration_ms, 0), COALESCE(t.spotify_id, ''),
+			       COALESCE(t.album_id, ''), COALESCE(a.title, ''), COALESCE(a.cover_image_url, ''), 0, t.bpm, COALESCE(t.bpm_source,''), COALESCE(t.bpm_provenance,''), COALESCE(t.bpm_updated_at,''), COALESCE(t.track_number,''), COALESCE(t.release_id,''), COALESCE((SELECT format_description || ' · ' || COALESCE(catalog_number,'') FROM release_versions WHERE id=t.release_id),'Catalog recording')
 			FROM tracks t
 			LEFT JOIN albums a ON t.album_id = a.id
 			ORDER BY t.created_at DESC, t.title ASC
@@ -711,7 +724,7 @@ func main() {
 		var tracks []TrackDetail
 		for rows.Next() {
 			var t TrackDetail
-			if err := rows.Scan(&t.ID, &t.Title, &t.Artist, &t.DurationMs, &t.SpotifyID, &t.AlbumID, &t.AlbumTitle, &t.CoverImageURL, &t.Position); err == nil {
+			if err := rows.Scan(&t.ID, &t.Title, &t.Artist, &t.DurationMs, &t.SpotifyID, &t.AlbumID, &t.AlbumTitle, &t.CoverImageURL, &t.Position, &t.BPM, &t.BPMSource, &t.BPMProvenance, &t.BPMUpdatedAt, &t.TrackNumber, &t.ReleaseID, &t.TempoVersion); err == nil {
 				tracks = append(tracks, t)
 			}
 		}
@@ -800,8 +813,8 @@ func main() {
 
 		// Query tracks by artist
 		tRows, tErr := db.Query(`
-			SELECT t.id, t.title, t.artist, t.duration_ms, COALESCE(t.spotify_id, ''),
-			       COALESCE(t.album_id, ''), COALESCE(a.title, ''), COALESCE(a.cover_image_url, ''), 0
+			SELECT t.id, t.title, COALESCE(t.artist, ''), COALESCE(t.duration_ms, 0), COALESCE(t.spotify_id, ''),
+			       COALESCE(t.album_id, ''), COALESCE(a.title, ''), COALESCE(a.cover_image_url, ''), 0, t.bpm, COALESCE(t.bpm_source,''), COALESCE(t.bpm_provenance,''), COALESCE(t.bpm_updated_at,''), COALESCE(t.track_number,''), COALESCE(t.release_id,''), COALESCE((SELECT format_description || ' · ' || COALESCE(catalog_number,'') FROM release_versions WHERE id=t.release_id),'Catalog recording')
 			FROM tracks t
 			LEFT JOIN albums a ON t.album_id = a.id
 			WHERE LOWER(t.artist) = LOWER(?)
@@ -809,7 +822,7 @@ func main() {
 		if tErr == nil {
 			for tRows.Next() {
 				var t TrackDetail
-				if tRows.Scan(&t.ID, &t.Title, &t.Artist, &t.DurationMs, &t.SpotifyID, &t.AlbumID, &t.AlbumTitle, &t.CoverImageURL, &t.Position) == nil {
+				if tRows.Scan(&t.ID, &t.Title, &t.Artist, &t.DurationMs, &t.SpotifyID, &t.AlbumID, &t.AlbumTitle, &t.CoverImageURL, &t.Position, &t.BPM, &t.BPMSource, &t.BPMProvenance, &t.BPMUpdatedAt, &t.TrackNumber, &t.ReleaseID, &t.TempoVersion) == nil {
 					detail.Tracks = append(detail.Tracks, t)
 				}
 			}
@@ -820,6 +833,7 @@ func main() {
 	})
 
 	type AlbumSummary struct {
+		TempoSummary
 		ID             string `json:"id"`
 		Title          string `json:"title"`
 		Artist         string `json:"artist"`
@@ -854,6 +868,20 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		filter := r.URL.Query().Get("filter")
 		q := strings.TrimSpace(r.URL.Query().Get("q"))
+
+		tempoRange, err := parseTempoRange(r.URL.Query())
+		if err != nil || ((tempoRange.active() || tempoRange.Vinyl) && filter != "collection") {
+			http.Error(w, "Use collection filter and BPM bounds between 20 and 400 (min <= max)", 400)
+			return
+		}
+		var tempos map[string]TempoSummary
+		if filter == "collection" {
+			tempos, err = collectionTempos(db, tempoRange)
+			if err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+		}
 
 		var whereClauses []string
 		var args []interface{}
@@ -911,6 +939,16 @@ func main() {
 				alb.InCollection = inCollectionInt == 1
 				alb.InWantlist = inWantlistInt == 1
 				alb.Starred = starredInt == 1
+				if filter == "collection" {
+					alb.TempoSummary = tempos[alb.ID]
+					if tempoRange.Vinyl && !alb.HasVinyl {
+						continue
+					}
+					if tempoRange.active() && len(alb.MatchingTracks) == 0 {
+						continue
+					}
+				}
+
 				albums = append(albums, alb)
 			}
 		}
@@ -974,16 +1012,16 @@ func main() {
 
 		// Get tracks
 		tRows, tErr := db.Query(`
-			SELECT t.id, t.title, t.artist, t.duration_ms, COALESCE(t.spotify_id, ''),
-			       COALESCE(t.album_id, ''), a.title, COALESCE(a.cover_image_url, ''), 0
+			SELECT t.id, t.title, COALESCE(t.artist, ''), COALESCE(t.duration_ms, 0), COALESCE(t.spotify_id, ''),
+			       COALESCE(t.album_id, ''), a.title, COALESCE(a.cover_image_url, ''), 0, t.bpm, COALESCE(t.bpm_source,''), COALESCE(t.bpm_provenance,''), COALESCE(t.bpm_updated_at,''), COALESCE(t.track_number,''), COALESCE(t.release_id,''), COALESCE((SELECT format_description || ' · ' || COALESCE(catalog_number,'') FROM release_versions WHERE id=t.release_id),'Catalog recording')
 			FROM tracks t
 			JOIN albums a ON t.album_id = a.id
 			WHERE t.album_id = ?
-			ORDER BY CAST(t.track_number AS INTEGER) ASC, t.title ASC`, albumID)
+			ORDER BY t.release_id, CASE WHEN t.track_number GLOB '[0-9]*' THEN CAST(t.track_number AS INTEGER) ELSE 0 END, t.track_number, t.title ASC`, albumID)
 		if tErr == nil {
 			for tRows.Next() {
 				var t TrackDetail
-				if tRows.Scan(&t.ID, &t.Title, &t.Artist, &t.DurationMs, &t.SpotifyID, &t.AlbumID, &t.AlbumTitle, &t.CoverImageURL, &t.Position) == nil {
+				if tRows.Scan(&t.ID, &t.Title, &t.Artist, &t.DurationMs, &t.SpotifyID, &t.AlbumID, &t.AlbumTitle, &t.CoverImageURL, &t.Position, &t.BPM, &t.BPMSource, &t.BPMProvenance, &t.BPMUpdatedAt, &t.TrackNumber, &t.ReleaseID, &t.TempoVersion) == nil {
 					alb.Tracks = append(alb.Tracks, t)
 				}
 			}
@@ -1074,11 +1112,11 @@ func main() {
 
 		var itunesRes struct {
 			Results []struct {
-				TrackName      string `json:"trackName"`
-				ArtistName     string `json:"artistName"`
-				CollectionName string `json:"collectionName"`
-				TrackTimeMillis int   `json:"trackTimeMillis"`
-				ArtworkUrl100  string `json:"artworkUrl100"`
+				TrackName       string `json:"trackName"`
+				ArtistName      string `json:"artistName"`
+				CollectionName  string `json:"collectionName"`
+				TrackTimeMillis int    `json:"trackTimeMillis"`
+				ArtworkUrl100   string `json:"artworkUrl100"`
 			} `json:"results"`
 		}
 
@@ -1120,8 +1158,8 @@ func main() {
 
 		ftsQuery := query + "*"
 		rows, err := db.Query(`
-			SELECT t.id, t.title, t.artist, t.duration_ms, COALESCE(t.spotify_id, ''),
-			       COALESCE(t.album_id, ''), COALESCE(a.title, ''), COALESCE(a.cover_image_url, ''), 0
+			SELECT t.id, t.title, COALESCE(t.artist, ''), COALESCE(t.duration_ms, 0), COALESCE(t.spotify_id, ''),
+			       COALESCE(t.album_id, ''), COALESCE(a.title, ''), COALESCE(a.cover_image_url, ''), 0, t.bpm, COALESCE(t.bpm_source,''), COALESCE(t.bpm_provenance,''), COALESCE(t.bpm_updated_at,''), COALESCE(t.track_number,''), COALESCE(t.release_id,''), COALESCE((SELECT format_description || ' · ' || COALESCE(catalog_number,'') FROM release_versions WHERE id=t.release_id),'Catalog recording')
 			FROM search_fts fts
 			JOIN tracks t ON fts.target_id = t.id
 			LEFT JOIN albums a ON t.album_id = a.id
@@ -1136,7 +1174,7 @@ func main() {
 		var tracks []TrackDetail
 		for rows.Next() {
 			var t TrackDetail
-			if err := rows.Scan(&t.ID, &t.Title, &t.Artist, &t.DurationMs, &t.SpotifyID, &t.AlbumID, &t.AlbumTitle, &t.CoverImageURL, &t.Position); err == nil {
+			if err := rows.Scan(&t.ID, &t.Title, &t.Artist, &t.DurationMs, &t.SpotifyID, &t.AlbumID, &t.AlbumTitle, &t.CoverImageURL, &t.Position, &t.BPM, &t.BPMSource, &t.BPMProvenance, &t.BPMUpdatedAt, &t.TrackNumber, &t.ReleaseID, &t.TempoVersion); err == nil {
 				tracks = append(tracks, t)
 			}
 		}

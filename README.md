@@ -144,3 +144,13 @@ npx -y playwright screenshot http://localhost:8080 screenshot.png
 - **`playlists`**: Internal playlists.
 - **`playlist_tracks`**: Ordered track mappings.
 - **`search_fts`**: FTS5 virtual table for fast searching.
+
+
+## BPM and DJ tempo browsing
+
+Collection now supports BPM min/max and Vinyl only, listing the actual matching
+tracks on each record. Tracklists show source/evidence and allow protected manual
+corrections; unknown tempos remain unknown. No crate tagging is needed.
+
+See [BPM enrichment and measured coverage](docs/BPM.md) for the bounded, resumable
+local analyzer, optional external metadata, API behavior, results and limitations.

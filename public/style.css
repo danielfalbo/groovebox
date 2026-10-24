@@ -1274,3 +1274,14 @@ body.np-active .main-panel { padding-bottom: 84px; }
   .grid-card:hover .card-play-btn { opacity: 1; }
 }
 .card-play-btn { opacity: .9; }
+
+/* Tempo browsing uses actual owned recordings, never album averages. */
+.tempo-filter { margin: 0 0 20px; }
+.tempo-filter[hidden] { display: none; }
+.tempo-filter form { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.tempo-filter input[type=number] { width: 85px; }
+#tempo-status { margin-top: 8px; font-size: 12px; }
+.bpm-value { color: #9fd5c8; display: inline-block; font-size: 12px; margin: 3px 0; }
+.bpm-coverage { font-size: 12px; color: #a7b6c2; margin-top: 6px; }
+.bpm-match { border-top: 1px solid #39434d; padding-top: 8px; margin-top: 8px; font-size: 12px; }
+.bpm-match strong { display: block; white-space: normal; }

@@ -13,7 +13,7 @@
 
 import { spawn, execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { mkdtempSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { createServer } from 'node:net';
 import { join, dirname } from 'node:path';
@@ -24,7 +24,7 @@ const { chromium } = createRequire(import.meta.url)('playwright');
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
-const BIN = join(ROOT, 'groovebox');
+
 const DB = join(ROOT, 'music.db');
 
 const LARGE = 45000;
@@ -41,6 +41,25 @@ out = sqlite3.connect(dst)
 sqlite3.connect(src).backup(out)
 out.close()
 `, DB, join(dstDir, 'music.db')], { stdio: 'inherit' });
+}
+
+function addTempoFixtures(work) {
+  // Fixture writes are confined to the isolated snapshot, never --live.
+  execFileSync('python3', ['-c', `
+import sqlite3,sys
+c=sqlite3.connect(sys.argv[1])
+# Older snapshots are migrated by the server; add these fixture columns here too.
+cols={r[1] for r in c.execute('pragma table_info(tracks)')}
+for name,typ in [('bpm','REAL'),('bpm_source','TEXT'),('bpm_provenance','TEXT'),('bpm_updated_at','TEXT')]:
+ if name not in cols:c.execute('ALTER TABLE tracks ADD COLUMN '+name+' '+typ)
+for id,title in [('bpm-match','__BPM_TEST__ Match'),('bpm-average','__BPM_TEST__ False average')]:
+ c.execute("INSERT INTO albums(id,title,artist,in_collection,has_vinyl) VALUES(?,?, 'Tempo fixtures',1,1)",(id,title))
+ c.execute("INSERT INTO release_versions(id,album_id,title,artist,source,has_vinyl,format_description) VALUES(?,?,?,'Tempo fixtures','collection',1,'Vinyl')",(id+'-release',id,title))
+for id,album,title,bpm in [('bpm-hit','bpm-match','Matching club mix',121.4),('bpm-unknown','bpm-match','Unknown mix',None),('bpm-slow','bpm-average','Slow',90),('bpm-fast','bpm-average','Fast',150)]:
+ c.execute("INSERT INTO tracks(id,album_id,release_id,title,artist,track_number,duration_ms,bpm,bpm_source) VALUES(?,?,?,?,'Tempo fixtures','A1',300000,?,?)",(id,album,album+'-release',title,bpm,'external:acousticbrainz' if bpm else None))
+c.execute("INSERT INTO tracks(id,album_id,title,artist,duration_ms,bpm) VALUES('bpm-catalog','bpm-average','Unowned radio edit','Tempo fixtures',180000,122)")
+c.commit()
+`, join(work, 'music.db')], {stdio: 'inherit', timeout: 20000});
 }
 
 function freePort() {
@@ -62,8 +81,10 @@ async function waitReady(url, portProc, deadlineMs = 30000) {
 
 async function startServer() {
   const work = mkdtempSync(join(tmpdir(), 'groovebox-e2e-'));
-  if (!existsSync(BIN)) throw new Error(`binary missing: ${BIN} — run \`go build -o groovebox .\` first`);
+  const BIN = join(work, 'groovebox');
+  execFileSync('go', ['build', '-o', BIN, '.'], {cwd: ROOT, stdio: 'inherit', timeout: 90000});
   snapshotDB(work);
+  addTempoFixtures(work);
   const port = await freePort();
   const url = `http://127.0.0.1:${port}`;
   const child = spawn(BIN, ['-port', String(port), '-db', join(work, 'music.db')],
@@ -199,6 +220,56 @@ test('no page/console errors while sync-status polling runs (regression: syncBtn
   page.off('pageerror', onPageErr);
   page.off('console', onConsole);
   assert(errors.length === 0, `JS errors during polling:\n${errors.join('\n')}`);
+});
+
+
+test('tempo range matches owned tracks, preserves URL, excludes album averages and unknowns', async ({page, url}) => {
+  if (process.argv.includes('--live')) return;
+  await page.goto(`${url}/albums?filter=collection&q=__BPM_TEST__`, {waitUntil: 'networkidle'});
+  await page.waitForSelector('.grid-card');
+  assert(await page.locator('.grid-card').count() === 2, 'fixture albums missing');
+  await page.locator('#bpm_min').fill('120');
+  await page.locator('#bpm_max').fill('125');
+  await page.locator('#bpm-vinyl').check();
+  await page.getByRole('button', {name:'Find matching tracks'}).click();
+  await page.waitForFunction(() => document.querySelectorAll('.grid-card').length === 1);
+  assert((await page.locator('.bpm-match').innerText()).includes('Matching club mix'), 'actual matching title missing');
+  assert((await page.locator('.bpm-match').innerText()).includes('121.4 BPM'), 'matching BPM missing');
+  assert(!(await page.locator('#grid-container').innerText()).includes('False average'), 'filtered using average/catalog mix');
+  assert(new URL(page.url()).searchParams.get('bpm_min') === '120', 'filter missing in URL');
+  await page.reload({waitUntil: 'networkidle'});
+  assert(await page.locator('#bpm_min').inputValue() === '120', 'reload lost bound');
+  assert(await page.locator('#bpm-vinyl').isChecked(), 'reload lost vinyl');
+  assert(await page.locator('.grid-card').count() === 1, 'reload lost filtering');
+  const bad = await fetch(`${url}/api/albums?filter=collection&bpm_min=130&bpm_max=120`);
+  assert(bad.status === 400, 'inverted API range accepted');
+  await page.locator('.grid-card').click();
+  assert(!await page.locator('#tempo-filter').isVisible(), 'tempo controls visible on detail');
+  await page.locator('.back-btn').first().click();
+  await page.waitForSelector('.bpm-match');
+  assert(await page.locator('#bpm_min').inputValue() === '120', 'Back lost tempo range');
+  assert(await page.locator('.grid-card').count() === 1, 'Back lost matching record selection');
+});
+
+test('manual BPM correction persists, unknown locks and Auto resets', async ({page, url}) => {
+  if (process.argv.includes('--live')) return;
+  await page.goto(`${url}/albums/bpm-match`, {waitUntil: 'networkidle'});
+  const button = page.locator('[data-track-bpm="bpm-hit"]');
+  await button.waitFor();
+  page.once('dialog', d => d.accept('124.5'));
+  await button.click();
+  await page.waitForFunction(() => document.querySelector('[data-track-bpm="bpm-hit"]')?.textContent.includes('124.5'));
+  await page.reload({waitUntil:'networkidle'});
+  assert((await button.getAttribute('title')).includes('Manual override'), 'source missing after reload');
+  page.once('dialog', d => d.accept(''));
+  await button.click();
+  await page.waitForFunction(() => document.querySelector('[data-track-bpm="bpm-hit"]')?.textContent.includes('unknown'));
+  let track = (await (await fetch(`${url}/api/albums/bpm-match`)).json()).tracks.find(t => t.id === 'bpm-hit');
+  assert(track.bpm === null && track.bpm_source === 'manual', 'unknown manual lock missing');
+  await page.getByRole('button', {name:'Auto', exact:true}).click();
+  await page.waitForFunction(() => !document.querySelector('[data-track-bpm="bpm-hit"]')?.title.includes('Manual override'));
+  track = (await (await fetch(`${url}/api/albums/bpm-match`)).json()).tracks.find(t => t.id === 'bpm-hit');
+  assert(track.bpm === null && track.bpm_source === '', 'auto reset failed');
 });
 
 // ---------------------------------------------------------------------------

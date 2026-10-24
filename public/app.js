@@ -50,8 +50,8 @@ function navShowArtists() {
 }
 
 function navShowAlbums() {
-  pushURL(`/albums?filter=${encodeURIComponent(activeAlbumFilter || 'collection')}`);
-  showAlbums();
+  pushURL(albumBrowseURL);
+  showAlbums(new URLSearchParams(location.search).get('filter') || 'collection');
 }
 
 function navOpenArtistPage(artistName) {
@@ -239,6 +239,7 @@ let currentSectionView = ''; // 'songs', 'artists', 'albums', 'playlist'
 let rawSectionData = [];
 
 let activeAlbumFilter = 'collection';
+let albumBrowseURL = '/albums?filter=collection';
 
 function showSectionFilter(placeholder, showPills = false) {
   const wrap = document.getElementById('section-filter-wrap');
@@ -249,12 +250,14 @@ function showSectionFilter(placeholder, showPills = false) {
     input.placeholder = placeholder;
     input.value = '';
   }
+  document.getElementById('tempo-filter').hidden = !showPills || activeAlbumFilter !== 'collection';
   if (pills) {
     pills.style.display = showPills ? 'flex' : 'none';
   }
 }
 
 function hideSectionFilter() {
+  document.getElementById('tempo-filter').hidden = true;
   const wrap = document.getElementById('section-filter-wrap');
   if (wrap) wrap.style.display = 'none';
 }
@@ -297,41 +300,49 @@ async function updateAlbumCounts() {
   }
 }
 
+let albumRequest = 0;
+function tempoParams(params) {
+  if (activeAlbumFilter !== 'collection') return;
+  for (const name of ['bpm_min', 'bpm_max']) {
+    const input = document.getElementById(name);
+    if (input.value) params.set(name, input.value);
+  }
+  if (document.getElementById('bpm-vinyl').checked) params.set('vinyl', '1');
+}
+function applyTempoFilter() {
+  const min = document.getElementById('bpm_min');
+  const max = document.getElementById('bpm_max');
+  max.setCustomValidity(min.value && max.value && +min.value > +max.value ? 'Maximum must be at least minimum' : '');
+  if (!min.reportValidity() || !max.reportValidity()) return;
+  setAlbumFilter('collection');
+}
 async function setAlbumFilter(filter) {
-  activeAlbumFilter = filter;
+  activeAlbumFilter = ['all', 'collection', 'wantlist'].includes(filter) ? filter : 'collection';
   document.querySelectorAll('#album-filter-pills .bp5-button').forEach(btn => btn.classList.remove('bp5-active'));
-  document.getElementById(`pill-${filter}`).classList.add('bp5-active');
-
+  document.getElementById(`pill-${activeAlbumFilter}`).classList.add('bp5-active');
+  document.getElementById('tempo-filter').hidden = activeAlbumFilter !== 'collection';
   const grid = document.getElementById('grid-container');
   grid.style.display = 'grid';
-  grid.innerHTML = `
-    <div style="grid-column: 1 / -1; text-align: center; padding: 48px;">
-      <div class="bp5-spinner bp5-intent-primary" style="margin: 0 auto;">
-        <div class="bp5-spinner-head"></div>
-      </div>
-      <div class="bp5-text-muted" style="margin-top: 12px; font-size: 13px;">Loading ${filter}...</div>
-    </div>
-  `;
-
+  const request = ++albumRequest;
+  const params = new URLSearchParams({filter: activeAlbumFilter});
+  const q = document.getElementById('section-filter-input').value.trim();
+  if (q) params.set('q', q);
+  tempoParams(params);
+  albumBrowseURL = `/albums?${params}`;
+  replaceURL(albumBrowseURL);
+  grid.innerHTML = '<div class="bp5-text-muted">Loading records…</div>';
   try {
-    const filterInput = document.getElementById('section-filter-input');
-    const q = filterInput ? filterInput.value.trim() : '';
-
-    let apiParams = new URLSearchParams();
-    if (filter !== 'all') apiParams.append('filter', filter);
-    if (q) apiParams.append('q', q);
-
-    let urlParams = new URLSearchParams();
-    urlParams.append('filter', filter);
-    if (q) urlParams.append('q', q);
-    replaceURL(`/albums?${urlParams.toString()}`);
-
-    const url = `/api/albums${apiParams.toString() ? '?' + apiParams.toString() : ''}`;
-    const res = await fetch(url);
-    rawSectionData = await res.json();
+    const res = await fetch(`/api/albums?${params}`);
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    if (request !== albumRequest || currentSectionView !== 'albums') return;
+    rawSectionData = data || [];
     renderAlbumCards(rawSectionData);
+    document.getElementById('tempo-status').textContent = params.has('bpm_min') || params.has('bpm_max')
+      ? `${rawSectionData.length} records with matching tracks. Unknown BPM is excluded.`
+      : 'BPM coverage counts owned release tracks and local audio. Estimates may need half/double correction.';
   } catch (err) {
-    console.error('Failed to load filtered albums:', err);
+    if (request === albumRequest) grid.textContent = 'Could not load records: ' + err.message;
   }
 }
 
@@ -364,33 +375,8 @@ function handleSectionFilter(query) {
     }
     renderArtistCards(filtered);
   } else if (currentSectionView === 'albums') {
-    if (albumSearchDebounceTimer) clearTimeout(albumSearchDebounceTimer);
-
-    let urlParams = new URLSearchParams();
-    urlParams.append('filter', activeAlbumFilter);
-    if (q) urlParams.append('q', q);
-    replaceURL(`/albums?${urlParams.toString()}`);
-
-    albumSearchDebounceTimer = setTimeout(async () => {
-      const grid = document.getElementById('grid-container');
-      try {
-        let params = new URLSearchParams();
-        if (activeAlbumFilter !== 'all') params.append('filter', activeAlbumFilter);
-        if (q) params.append('q', q);
-
-        const url = `/api/albums${params.toString() ? '?' + params.toString() : ''}`;
-        const res = await fetch(url);
-        const albums = await res.json();
-
-        if (!albums || albums.length === 0) {
-          grid.innerHTML = '<div class="bp5-text-muted" style="grid-column: 1 / -1; text-align: center; padding: 24px;">No matching albums</div>';
-          return;
-        }
-        renderAlbumCards(albums);
-      } catch (err) {
-        console.error('Failed to search albums:', err);
-      }
-    }, 200);
+    clearTimeout(albumSearchDebounceTimer);
+    albumSearchDebounceTimer = setTimeout(() => setAlbumFilter(activeAlbumFilter), 200);
   }
 }
 
@@ -493,6 +479,10 @@ async function showAlbums(targetFilter) {
   document.getElementById('table-container').style.display = 'none';
   
   updateAlbumCounts();
+  const params = new URLSearchParams(location.search);
+  setSectionFilterInputValue(params.get('q') || '');
+  for (const name of ['bpm_min', 'bpm_max']) document.getElementById(name).value = params.get(name) || '';
+  document.getElementById('bpm-vinyl').checked = params.get('vinyl') === '1';
   setAlbumFilter(targetFilter || activeAlbumFilter);
 }
 
@@ -567,6 +557,9 @@ function renderAlbumCards(albums) {
       <div class="grid-card-title">${alb.title}</div>
       <div class="grid-card-subtitle">${alb.artist}${alb.release_year ? ' • ' + alb.release_year : ''}</div>
       <div class="grid-card-version-count">${versionLabel}</div>
+      ${alb.in_collection && activeAlbumFilter === 'collection' ? `<div class="bpm-coverage">${alb.bpm_known || 0}/${alb.bpm_total || 0} owned tracks with BPM${!alb.bpm_total ? ' · tracklist unavailable' : ''}</div>` : ''}
+      ${(alb.matching_tracks || []).map(t => `<div class="bpm-match"><strong>${bpmEscape(t.track_number)} ${bpmEscape(t.title)}</strong> ${bpmMarkup(t)}<div class="bp5-text-muted">${bpmEscape(t.tempo_version)}</div></div>`).join('')}
+
     `;
     grid.appendChild(card);
   });
@@ -638,7 +631,7 @@ async function openArtistPage(artistName) {
         <tr ${trAttrs}>
           <td>${idx + 1}</td>
           <td>
-            <div class="track-title-text">${t.title}</div>
+            <div class="track-title-text">${t.title}</div>${bpmMarkup(t)}
             <div class="track-artist-text">${t.album_title || '-'}</div>
           </td>
           <td>${formatDuration(t.duration_ms)}</td>
@@ -697,7 +690,9 @@ async function openArtistPage(artistName) {
   }
 }
 
+let bpmAlbumID = null;
 async function openAlbumPage(albumId) {
+  bpmAlbumID = albumId;
   clearNavActive();
   hideSectionFilter();
   const titleCard = document.getElementById('view-title-card');
@@ -826,7 +821,7 @@ async function openAlbumPage(albumId) {
         <tr>
           <td style="width: 50px;">${idx + 1}</td>
           <td>
-            <div class="track-title-text">${t.title}</div>
+            <div class="track-title-text">${t.title}</div>${bpmMarkup(t, true)}<div class="track-artist-text">${bpmEscape(t.track_number)} · ${bpmEscape(t.tempo_version)}</div>
             <div class="track-artist-text">${t.artist || album.artist}</div>
           </td>
           <td style="width: 100px;">${formatDuration(t.duration_ms)}</td>
@@ -1787,6 +1782,9 @@ async function renderSearchResults(query) {
 }
 
 function clearNavActive() {
+  ++albumRequest;
+  clearTimeout(albumSearchDebounceTimer);
+  document.getElementById('tempo-filter').hidden = true;
   document.querySelectorAll('.playlist-item-btn, .nav-item-btn').forEach(el => el.classList.remove('bp5-active'));
   document.getElementById('album-detail-container').style.display = 'none';
   const artistContainer = document.getElementById('artist-detail-container');
@@ -1844,7 +1842,7 @@ function renderTracks(tracks) {
         <div class="track-meta">
           <img class="cover-art-small" src="${coverUrl}" alt="art" onerror="this.onerror=null;this.src='${fallbackCover}'">
           <div>
-            <div class="track-title-text">${t.title}</div>
+            <div class="track-title-text">${t.title}</div>${bpmMarkup(t)}
             <div class="track-artist-text">${t.artist}</div>
           </div>
         </div>
@@ -1870,4 +1868,31 @@ function formatDate(dateStr) {
   const d = new Date(dateStr);
   if (isNaN(d.getTime())) return '';
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function bpmEscape(value) {
+  return String(value == null ? '' : value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function bpmMarkup(t, editable = false) {
+  const label = t.bpm == null ? 'BPM unknown' : `${Number(t.bpm).toFixed(1).replace(/\.0$/, '')} BPM`;
+  const source = t.bpm_source === 'manual' ? 'Manual override (protected)' : t.bpm_source === 'local:librosa' ? 'Local audio estimate · librosa' : t.bpm_source === 'external:acousticbrainz' ? 'AcousticBrainz archive estimate' : 'No tempo data';
+  const detail = `${source}${t.bpm_updated_at ? ' · ' + t.bpm_updated_at : ''}${t.bpm_provenance ? '\n' + t.bpm_provenance : ''}`;
+  return editable
+    ? `<button class="bp5-button bp5-minimal bp5-small bpm-value" data-track-bpm="${bpmEscape(t.id)}" title="${bpmEscape(detail)} — Click to correct" onclick="editTrackBPM('${bpmEscape(t.id)}', ${t.bpm == null ? 'null' : Number(t.bpm)})">${label} ✎</button>${t.bpm_source === 'manual' ? `<button class="bp5-button bp5-minimal bp5-small" title="Remove manual BPM and allow enrichment on the next run" onclick="resetTrackBPM('${bpmEscape(t.id)}')">Auto</button>` : ''}`
+    : `<span class="bpm-value" title="${bpmEscape(detail)}">${label}</span>`;
+}
+async function editTrackBPM(id, current) {
+  const value = prompt('BPM (20–400). Leave blank to mark unknown and protect it from automatic enrichment.', current == null ? '' : current);
+  if (value === null) return;
+  const bpm = value.trim() === '' ? null : Number(value);
+  if (bpm !== null && (!Number.isFinite(bpm) || bpm < 20 || bpm > 400)) { alert('Enter a BPM between 20 and 400.'); return; }
+  await saveTrackBPM(id, 'PUT', {bpm});
+}
+async function resetTrackBPM(id) { await saveTrackBPM(id, 'DELETE'); }
+async function saveTrackBPM(id, method, body) {
+  try {
+    const res = await fetch(`/api/tracks/${encodeURIComponent(id)}/bpm`, {method, headers: {'Content-Type': 'application/json'}, body: body ? JSON.stringify(body) : undefined});
+    if (!res.ok) throw new Error(await res.text());
+    if (bpmAlbumID) openAlbumPage(bpmAlbumID);
+  } catch (err) { alert('Could not save BPM: ' + err.message); }
 }

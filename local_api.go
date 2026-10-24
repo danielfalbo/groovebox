@@ -33,23 +33,27 @@ type LocalAlbum struct {
 
 // LocalFileRow is a DB representation of an audio_files row with context.
 type LocalFileRow struct {
-	ID         string `json:"id"`
-	AlbumID    string `json:"album_id"`
-	TrackID    *string `json:"track_id,omitempty"`
-	ReleaseID  *string `json:"release_id,omitempty"`
-	Relpath    string `json:"relpath"`
-	AbsPath    string `json:"abs_path,omitempty"`
-	Kind       string `json:"kind"`
-	Source     string `json:"source"`
-	Format     string `json:"format"`
-	BitDepth   int    `json:"bit_depth"`
-	SampleRate int    `json:"sample_rate"`
-	SizeBytes  int64  `json:"size_bytes"`
-	DurationMs int64  `json:"duration_ms"`
-	Title      string `json:"title"`
-	Artist     string `json:"artist"`
-	Album      string `json:"album"`
-	CoverURL   string `json:"cover_url,omitempty"`
+	BPM           *float64 `json:"bpm"`
+	BPMSource     string   `json:"bpm_source"`
+	BPMProvenance string   `json:"bpm_provenance"`
+	BPMUpdatedAt  string   `json:"bpm_updated_at"`
+	ID            string   `json:"id"`
+	AlbumID       string   `json:"album_id"`
+	TrackID       *string  `json:"track_id,omitempty"`
+	ReleaseID     *string  `json:"release_id,omitempty"`
+	Relpath       string   `json:"relpath"`
+	AbsPath       string   `json:"abs_path,omitempty"`
+	Kind          string   `json:"kind"`
+	Source        string   `json:"source"`
+	Format        string   `json:"format"`
+	BitDepth      int      `json:"bit_depth"`
+	SampleRate    int      `json:"sample_rate"`
+	SizeBytes     int64    `json:"size_bytes"`
+	DurationMs    int64    `json:"duration_ms"`
+	Title         string   `json:"title"`
+	Artist        string   `json:"artist"`
+	Album         string   `json:"album"`
+	CoverURL      string   `json:"cover_url,omitempty"`
 }
 
 // localAlbumRows returns all albums that have at least one local audio file.
@@ -83,7 +87,7 @@ func localFilesForAlbum(db *sql.DB, albumID string) ([]LocalFileRow, error) {
 		SELECT f.id, f.album_id, COALESCE(f.track_id,''), COALESCE(f.release_id,''), f.relpath, f.kind,
 		       COALESCE(f.source,''), COALESCE(f.format,''), COALESCE(f.bit_depth,0), COALESCE(f.sample_rate,0),
 		       COALESCE(f.size_bytes,0), COALESCE(f.duration_ms,0),
-		       COALESCE(t.title,''), COALESCE(t.artist,''), COALESCE(a.title,''), COALESCE(a.cover_image_url,'')
+		       COALESCE(t.title,''), COALESCE(t.artist,''), COALESCE(a.title,''), COALESCE(a.cover_image_url,''),t.bpm,COALESCE(t.bpm_source,''),COALESCE(t.bpm_provenance,''),COALESCE(t.bpm_updated_at,'')
 		FROM audio_files f
 		LEFT JOIN tracks t ON f.track_id=t.id
 		LEFT JOIN albums a ON f.album_id=a.id
@@ -99,7 +103,7 @@ func localFilesForAlbum(db *sql.DB, albumID string) ([]LocalFileRow, error) {
 		var f LocalFileRow
 		var trackID, releaseID string
 		if err := rows.Scan(&f.ID, &f.AlbumID, &trackID, &releaseID, &f.Relpath, &f.Kind, &f.Source, &f.Format,
-			&f.BitDepth, &f.SampleRate, &f.SizeBytes, &f.DurationMs, &f.Title, &f.Artist, &f.Album, &f.CoverURL); err == nil {
+			&f.BitDepth, &f.SampleRate, &f.SizeBytes, &f.DurationMs, &f.Title, &f.Artist, &f.Album, &f.CoverURL, &f.BPM, &f.BPMSource, &f.BPMProvenance, &f.BPMUpdatedAt); err == nil {
 			if trackID != "" {
 				f.TrackID = &trackID
 			}

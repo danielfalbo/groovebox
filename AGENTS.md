@@ -197,3 +197,32 @@ Two-way playlist sync between Groovebox and Tidal, using a safe 3-way merge per 
 **Track matching**: `tracks.tidal_id` is the bidirectional link. When pushing local → Tidal, the Tidal ID is resolved via v1 search + ISRC match (`ResolveTidalID`). Tidal API requires an `If-None-Match` etag header for playlist mutations (fetched via `fetchETag`).
 
 **Credentials**: hardcoded tidalapi device-flow client credentials (public, from the open-source Python library). Override via `.env` with `TIDAL_DEVICE_CLIENT_ID` / `TIDAL_DEVICE_SECRET`. OAuth tokens are stored in `.tidal-session.json` (gitignored).
+
+
+## Track BPM (2026-10-24)
+
+- `bpm.go`: nullable per-track BPM/provenance, protected manual overrides and
+  owned-record tempo filtering. Never filter on album averages. Vinyl results
+  require tracks tied to an owned vinyl pressing; same-album catalog tracks are
+  insufficient version evidence.
+- `scripts/enrich_bpm.py`: bounded/resumable Discogs tracklists, local librosa
+  analysis and optional AcousticBrainz archive metadata. Read `docs/BPM.md` for
+  exact matching, coverage evidence, commands and limitations before changing it.
+  Never invent tempos, drop remix/edit words, analyze unauthorized audio, obtain
+  credentials or buy a subscription without explicit authorization.
+- Manual `bpm_source='manual'` protects both a number and an explicit NULL.
+  Automatic writes must check this atomically; external data cannot replace local
+  analysis. Whole-side raw audio has no per-track BPM.
+- `music.db`, `.bpm-cache/`, `.venv-bpm/` are ignored; never commit runtime DB,
+  caches, secrets or audio. The pre-feature snapshot is in the ignored cache.
+- Tests: `timeout 240s sh e2e/run.sh`, `timeout 60s go test ./...`, and
+  `timeout 30s python3 -m unittest discover -s scripts -p 'test_*.py'`.
+  E2E builds current Go sources and injects BPM fixtures only into its snapshot;
+  `--live` skips tests that write data. Static cache versions must still be bumped.
+- Deploy with an atomic binary replacement and restart only `groovebox.service`
+  after checking playback and sync are idle. `docs/BPM.md` records this rollout.
+
+- Initial measured rollout: 48 local + 87 external BPM rows; 60/936 owned-vinyl
+  track slots have BPM. All local tracks were evaluated; external work remains
+  incomplete (315 pending/failing outcomes after timeouts/503s). Never describe
+  the collection as fully enriched. Current counts/limitations are in docs/BPM.md.

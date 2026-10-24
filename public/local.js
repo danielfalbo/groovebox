@@ -58,7 +58,7 @@ async function openLocalAlbum(albumId) {
   const rows = files.map((f,i) => `
     <tr>
       <td style="width:36px">${i+1}</td>
-      <td><span class="bp5-tag ${f.kind==='raw'?'bp5-intent-warning':'bp5-intent-success'} bp5-round">${f.kind==='raw'?'RAW':'TRACK'}</span> <strong>${esc(f.title)}</strong>${f.artist&&f.artist!==first.artist?'<div class="bp5-text-muted">'+esc(f.artist)+'</div>':''}</td>
+      <td><span class="bp5-tag ${f.kind==='raw'?'bp5-intent-warning':'bp5-intent-success'} bp5-round">${f.kind==='raw'?'RAW':'TRACK'}</span> <strong>${esc(f.title)}</strong> ${bpmMarkup(f)}${f.artist&&f.artist!==first.artist?'<div class="bp5-text-muted">'+esc(f.artist)+'</div>':''}</td>
       <td><span class="bp5-tag bp5-minimal">${esc(f.format)} ${f.sample_rate?'-'+f.sample_rate:''}</span> <span class="bp5-tag bp5-minimal">${srcLabel(f.source)}</span></td>
       <td>${fmtDur(f.duration_ms)}</td>
       <td style="text-align:right"><button class="bp5-button bp5-small bp5-intent-primary" onclick="playFileNow('${f.id}')">▶</button></td>

@@ -11,7 +11,7 @@
   <link href="https://unpkg.com/normalize.css@8.0.1/normalize.css" rel="stylesheet" />
   <link href="https://unpkg.com/@blueprintjs/core@5/lib/css/blueprint.css" rel="stylesheet" />
   <link href="https://unpkg.com/@blueprintjs/icons@5/lib/css/blueprint-icons.css" rel="stylesheet" />
-  <link href="/style.css?v=4" rel="stylesheet" />
+  <link href="/style.css?v=7" rel="stylesheet" />
 </head>
 <body class="bp5-dark">
   <div class="app-layout">
@@ -137,6 +137,17 @@
               <input type="text" class="bp5-input" id="section-filter-input" placeholder="Filter current view..." oninput="handleSectionFilter(this.value)" />
             </div>
           </div>
+        </div>
+
+        <div id="tempo-filter" class="tempo-filter" hidden>
+          <form onsubmit="event.preventDefault();applyTempoFilter()">
+            <label for="bpm_min">BPM from <input id="bpm_min" name="bpm_min" type="number" min="20" max="400" step="0.1" placeholder="Any" class="bp5-input"></label>
+            <label for="bpm_max">to <input id="bpm_max" name="bpm_max" type="number" min="20" max="400" step="0.1" placeholder="Any" class="bp5-input"></label>
+            <label><input id="bpm-vinyl" type="checkbox"> Vinyl only</label>
+            <button class="bp5-button" type="submit">Find matching tracks</button>
+            <button class="bp5-button bp5-minimal" type="button" onclick="document.getElementById('bpm_min').value='';document.getElementById('bpm_max').value='';document.getElementById('bpm_max').setCustomValidity('');document.getElementById('bpm-vinyl').checked=false;applyTempoFilter()">Clear</button>
+          </form>
+          <div id="tempo-status" class="bp5-text-muted" role="status"></div>
         </div>
 
         <!-- Local Library Views -->
@@ -329,7 +340,7 @@
     </div>
   </div>
 
-  <script src="/app.js?v=5"></script>
-  <script src="/local.js?v=5"></script>
+  <script src="/app.js?v=7"></script>
+  <script src="/local.js?v=7"></script>
 </body>
 </html>

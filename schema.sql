@@ -46,6 +46,10 @@ CREATE TABLE IF NOT EXISTS tracks (
     spotify_id TEXT,
     apple_music_id TEXT,
     tidal_id TEXT,
+    bpm REAL CHECK (bpm IS NULL OR (bpm >= 20 AND bpm <= 400)),
+    bpm_source TEXT,
+    bpm_provenance TEXT,
+    bpm_updated_at TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 

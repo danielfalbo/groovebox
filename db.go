@@ -85,6 +85,15 @@ func initDB(dbPath string) (*sql.DB, error) {
 		return nil, fmt.Errorf("failed to create Tidal track index: %w", err)
 	}
 
+	for _, column := range []struct{ name, definition string }{
+		{"bpm", "REAL CHECK (bpm IS NULL OR (bpm >= 20 AND bpm <= 400))"},
+		{"bpm_source", "TEXT"}, {"bpm_provenance", "TEXT"}, {"bpm_updated_at", "TEXT"},
+	} {
+		if err := ensureColumn(db, "tracks", column.name, column.definition); err != nil {
+			return nil, fmt.Errorf("failed to migrate track tempo: %w", err)
+		}
+	}
+
 	// has_vinyl means "owned as physical vinyl", but earlier syncs also set it for
 	// vinyl pressings that only existed on the wantlist. Recompute strictly from
 	// collection-sourced release_versions so wantlist-only albums show correctly.

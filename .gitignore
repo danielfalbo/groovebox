@@ -28,3 +28,8 @@ music.db
 *.png
 
 .tidal-session.json
+
+# Isolated BPM analyzer and resumable enrichment state (no audio or credentials in git)
+.venv-bpm/
+.bpm-cache/
+__pycache__/
