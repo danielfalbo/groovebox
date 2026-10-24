@@ -1,0 +1,1047 @@
+{
+  "date": "2026-10-24",
+  "selection": "First two owned-vinyl slots per DANCE_ARTISTS artist, ordered by release ID and position; no replacement of failed queries",
+  "sample_size": 23,
+  "completed": 23,
+  "index_result_domains": {
+    "songbpm.com": 47,
+    "tunebat.com": 17,
+    "www.beatport.com": 32,
+    "songdata.io": 15,
+    "www.gemtracks.com": 8,
+    "vibesdj.io": 1,
+    "chordu.com": 11,
+    "chordify.net": 4,
+    "www.1001tracklists.com": 2,
+    "www.bpmkey.com": 2,
+    "dub.ninja": 1,
+    "sfrbeats.com": 6,
+    "www.discogs.com": 16,
+    "acapellas.eu": 8,
+    "music.toolstud.io": 1,
+    "frenchcandy.bandcamp.com": 1,
+    "trackify.am": 1,
+    "www.traxsource.com": 1,
+    "www.youtube.com": 6,
+    "genius.com": 1,
+    "open.spotify.com": 3,
+    "music.youtube.com": 1,
+    "www.songlyrics.com": 1,
+    "grindhouserecords.com.au": 1,
+    "musicstax.com": 1,
+    "defected.bandcamp.com": 2,
+    "www.digtracks.com": 1,
+    "www.beatsource.com": 1,
+    "voclr.it": 1,
+    "musescore.com": 1,
+    "www.decks.de": 1,
+    "mixprism.eu": 1,
+    "camelphat.bandcamp.com": 2,
+    "www.dancevinylbeats.com": 1,
+    "tune-scout.com": 1,
+    "getsongkey.com": 1,
+    "songiq.co": 1,
+    "www.signalkey.io": 1,
+    "getsongbpm.com": 1,
+    "supersimpledrum.com": 1,
+    "musiciwant.com": 1,
+    "www.bpmdatabase.com": 1,
+    "en.wikipedia.org": 2,
+    "www.azlyrics.com": 1,
+    "soundcloud.com": 1,
+    "www.songsterr.com": 1,
+    "planetary.music": 1,
+    "the-rhythm-slavescv.bandcamp.com": 1,
+    "rateyourmusic.com": 2,
+    "musicanalyzer.net": 3,
+    "bpmfinder.co": 1,
+    "sonichits.com": 1,
+    "app.bpmsupreme.com": 2,
+    "riffloop.app": 1,
+    "audiocutter.app": 2,
+    "www.mixinout.com": 1,
+    "bpmfinder.net": 1
+  },
+  "requests": {
+    "acousticbrainz.org": 7,
+    "musicbrainz.org": 16
+  },
+  "records": [
+    {
+      "id": "1ca85c4d-3d52-57ab-bb34-1428ba8368db",
+      "artist": "Peggy Gou",
+      "title": "Starry Night",
+      "discogs_release_id": 17161240,
+      "track_number": "A",
+      "duration_ms": 0,
+      "index_query": "Peggy Gou Starry Night BPM",
+      "index_urls": [
+        "https://songbpm.com/@peggy-gou/starry-night--_arzPkapr",
+        "https://songbpm.com/@peggy-gou/starry-night---original-mix",
+        "https://tunebat.com/Info/Starry-Night-Edit-Peggy-Gou/2NeSirLM2VHQW4upn0nMfB",
+        "https://www.beatport.com/track/starry-night/11769642",
+        "https://songdata.io/track/46KG2wmw38sYm1GoRHIsOW/Starry-Night-by-Peggy-Gou",
+        "https://www.beatport.com/track/starry-night-original-mix/11769642",
+        "https://www.gemtracks.com/resources/bpm-and-key/view-song.php?song=starry-night-edit&artist=peggy-gou&year=2019&id=6FwPQVdtjwfORrrFkpGhrz",
+        "https://vibesdj.io/dj/track/peggy-gou-starry-night-edit",
+        "https://chordu.com/chords-tabs-peggy-gou-starry-night-id_r_wwmmo6UGY",
+        "https://chordify.net/chords/peggy-gou-songs/starry-night-edit-chords"
+      ],
+      "index_status": "discovery-only; title/version/duration must be verified independently",
+      "deezer_search_results": 3,
+      "deezer_candidates": [
+        {
+          "id": 2199719427,
+          "title": "Starry Night",
+          "duration": 398,
+          "bpm": 0,
+          "isrc": "GBJX31975001",
+          "link": "https://www.deezer.com/track/2199719427"
+        }
+      ],
+      "deezer_status": "no-exact-nonzero-bpm",
+      "acousticbrainz": {
+        "status": "ok",
+        "bpm": 122.99,
+        "url": "https://acousticbrainz.org/api/v1/fb5981dd-0835-46e2-8574-d68bfac78c20/low-level",
+        "mbid": "fb5981dd-0835-46e2-8574-d68bfac78c20",
+        "confidence": "recording metadata verified; tempo is an algorithmic estimate",
+        "match": "unique exact title+artist+duration",
+        "recording_title": "Starry Night",
+        "recording_duration_ms": 398000,
+        "archive_duration_ms": 398598.41918900004,
+        "archive_version": {
+          "essentia": "2.1-beta2",
+          "essentia_build_sha": "c0e182ba78c2de26e491b7b7a4a2c98c1ed34208",
+          "essentia_git_sha": "v2.1_beta2-2-gbb40004",
+          "extractor": "music 1.0"
+        },
+        "archive_titles": [
+          "Starry Night"
+        ],
+        "archive_artists": [
+          "Peggy Gou"
+        ],
+        "archive_albums": [
+          "Moment EP"
+        ],
+        "archive_title_rule": "exact full title, or exact Discogs slot prefix plus corroborated album"
+      },
+      "stored_bpm": 122.99,
+      "stored_source": "external:acousticbrainz",
+      "getsongbpm": {
+        "status": "not independently verified in bounded indexed-page review"
+      }
+    },
+    {
+      "id": "e915110b-6535-513e-9785-d9d018014bc7",
+      "artist": "Peggy Gou",
+      "title": "Han Pan",
+      "discogs_release_id": 17161240,
+      "track_number": "B",
+      "duration_ms": 0,
+      "index_query": "Peggy Gou Han Pan BPM",
+      "index_urls": [
+        "https://songdata.io/track/3KAMgcLxqce9PRkwzbYkHa/Han-Pan-by-Peggy-Gou",
+        "https://www.gemtracks.com/resources/bpm-and-key/view-song.php?song=han-pan&artist=peggy-gou&year=2019&id=3KAMgcLxqce9PRkwzbYkHa",
+        "https://tunebat.com/Info/Han-Pan-Original-Mix-Peggy-Gou/6z7Y23tSMqnHVDU51I3VjT",
+        "https://songbpm.com/@peggy-gou/han-jan-7640ff2b-97bf-4da2-92c0-c5bc54acd4f3",
+        "https://songbpm.com/@peggy-gou",
+        "https://www.beatport.com/track/han-pan/11769643",
+        "https://tunebat.com/Info/Han-Jan-Edit-Peggy-Gou/0R7KkoK3CRaKwb9gYeH1st",
+        "https://chordu.com/chords-tabs-peggy-gou-han-pan-id_gLeb7L2x7Pk",
+        "https://www.beatport.com/track/han-jan/10294725",
+        "https://www.1001tracklists.com/track/2mc468rp/peggy-gou-han-pan/index.html"
+      ],
+      "index_status": "discovery-only; title/version/duration must be verified independently",
+      "deezer_search_results": 3,
+      "deezer_candidates": [
+        {
+          "id": 2200177617,
+          "title": "Han Pan",
+          "duration": 401,
+          "bpm": 0,
+          "isrc": "GBJX31975002",
+          "link": "https://www.deezer.com/track/2200177617"
+        }
+      ],
+      "deezer_status": "no-exact-nonzero-bpm",
+      "acousticbrainz": {
+        "status": "ok",
+        "bpm": 126.01,
+        "url": "https://acousticbrainz.org/api/v1/a47e27cc-ef16-4ff9-aadf-3865401f06a2/low-level",
+        "mbid": "a47e27cc-ef16-4ff9-aadf-3865401f06a2",
+        "confidence": "recording metadata verified; tempo is an algorithmic estimate",
+        "match": "unique exact title+artist+duration",
+        "recording_title": "Han Pan",
+        "recording_duration_ms": 402000,
+        "archive_duration_ms": 401695.495605,
+        "archive_version": {
+          "essentia": "2.1-beta2",
+          "essentia_build_sha": "c0e182ba78c2de26e491b7b7a4a2c98c1ed34208",
+          "essentia_git_sha": "v2.1_beta2-2-gbb40004",
+          "extractor": "music 1.0"
+        },
+        "archive_titles": [
+          "Han Pan"
+        ],
+        "archive_artists": [
+          "Peggy Gou"
+        ],
+        "archive_albums": [
+          "Moment EP"
+        ],
+        "archive_title_rule": "exact full title, or exact Discogs slot prefix plus corroborated album"
+      },
+      "stored_bpm": 126.01,
+      "stored_source": "external:acousticbrainz",
+      "getsongbpm": {
+        "status": "not independently verified in bounded indexed-page review"
+      }
+    },
+    {
+      "id": "e28b1cf2-7005-5329-9600-310b49018f3b",
+      "artist": "Demuja",
+      "title": "Do You Want My Love",
+      "discogs_release_id": 9535843,
+      "track_number": "A1",
+      "duration_ms": 0,
+      "index_query": "Demuja Do You Want My Love BPM",
+      "index_urls": [
+        "https://tunebat.com/Info/Do-You-Want-My-Love-Demuja/3KPhaCvEPAKmwgYd8LARFe",
+        "https://songdata.io/track/458uXMUJCxyB2dwpHvz8YQ/Do-You-Want-My-Love-by-Demuja",
+        "https://www.gemtracks.com/resources/bpm-and-key/view-song.php?song=do-you-want-my-love&artist=demuja&year=2017&id=458uXMUJCxyB2dwpHvz8YQ",
+        "https://www.beatport.com/track/-/12829307",
+        "https://chordu.com/chords-tabs-demuja-do-you-want-my-love-id_J1SWn2IGOV4",
+        "https://www.bpmkey.com/artists/demuja/1LfqhJiCiHfVzrBOVaBXc1",
+        "https://tunebat.com/",
+        "https://dub.ninja/track/12829307/demuja-do-you-want-my-love",
+        "https://songbpm.com/@demuja",
+        "https://songbpm.com/@demuja/how-do-you-love"
+      ],
+      "index_status": "discovery-only; title/version/duration must be verified independently",
+      "deezer_search_results": 1,
+      "deezer_candidates": [
+        {
+          "id": 2322211305,
+          "title": "Do You Want My Love",
+          "duration": 321,
+          "bpm": 0,
+          "isrc": "TCADM1834158",
+          "link": "https://www.deezer.com/track/2322211305"
+        }
+      ],
+      "deezer_status": "no-exact-nonzero-bpm",
+      "acousticbrainz": {
+        "status": "ok",
+        "bpm": 123.91,
+        "url": "https://acousticbrainz.org/api/v1/62a2d37f-04d5-4986-9869-403ae08541a4/low-level",
+        "mbid": "62a2d37f-04d5-4986-9869-403ae08541a4",
+        "confidence": "recording metadata verified; tempo is an algorithmic estimate",
+        "match": "unique exact title+artist+duration",
+        "recording_title": "Do You Want My Love",
+        "recording_duration_ms": 321733,
+        "archive_duration_ms": 321776.33667,
+        "archive_version": {
+          "essentia": "2.1-beta2",
+          "essentia_build_sha": "70f2e5ece6736b2c40cc944ad0e695b16b925413",
+          "essentia_git_sha": "v2.1_beta2",
+          "extractor": "music 1.0"
+        },
+        "archive_titles": [
+          "A1. Do You Want My Love"
+        ],
+        "archive_artists": [
+          "Demuja"
+        ],
+        "archive_albums": [
+          "Mary Janes Theory"
+        ],
+        "archive_title_rule": "exact full title, or exact Discogs slot prefix plus corroborated album"
+      },
+      "stored_bpm": 123.91,
+      "stored_source": "external:acousticbrainz",
+      "getsongbpm": {
+        "status": "not independently verified in bounded indexed-page review"
+      }
+    },
+    {
+      "id": "dbee85e3-38a5-5e18-834b-8487c1e53244",
+      "artist": "Demuja",
+      "title": "Get Up",
+      "discogs_release_id": 9535843,
+      "track_number": "A2 ",
+      "duration_ms": 0,
+      "index_query": "Demuja Get Up BPM",
+      "index_urls": [
+        "https://songbpm.com/@demuja/get-up",
+        "https://www.beatport.com/track/get-up/12829308",
+        "https://songbpm.com/@demuja",
+        "https://songdata.io/track/7iG6ut5EMVkjUOmxf4zZKU/Wake-Up-by-Demuja",
+        "https://www.bpmkey.com/artists/demuja/1LfqhJiCiHfVzrBOVaBXc1",
+        "https://songbpm.com/",
+        "https://songbpm.com/@demuja/come-to-me",
+        "https://songbpm.com/@demuja/boom",
+        "https://www.beatport.com/track/grown-up-groove/17235866",
+        "https://songbpm.com/@demuja/how-do-you-love"
+      ],
+      "index_status": "discovery-only; title/version/duration must be verified independently",
+      "deezer_search_results": 6,
+      "deezer_candidates": [
+        {
+          "id": 2322211315,
+          "title": "Get Up",
+          "duration": 369,
+          "bpm": 0,
+          "isrc": "TCADM1834159",
+          "link": "https://www.deezer.com/track/2322211315"
+        }
+      ],
+      "deezer_status": "no-exact-nonzero-bpm",
+      "acousticbrainz": {
+        "status": "ok",
+        "bpm": 122.01,
+        "url": "https://acousticbrainz.org/api/v1/e527cfb5-7f1c-4846-90be-56feb294c46a/low-level",
+        "mbid": "e527cfb5-7f1c-4846-90be-56feb294c46a",
+        "confidence": "recording metadata verified; tempo is an algorithmic estimate",
+        "match": "unique exact title+artist+duration",
+        "recording_title": "Get Up",
+        "recording_duration_ms": 369773,
+        "archive_duration_ms": 369815.52124000003,
+        "archive_version": {
+          "essentia": "2.1-beta2",
+          "essentia_build_sha": "70f2e5ece6736b2c40cc944ad0e695b16b925413",
+          "essentia_git_sha": "v2.1_beta2",
+          "extractor": "music 1.0"
+        },
+        "archive_titles": [
+          "A2. Get Up"
+        ],
+        "archive_artists": [
+          "Demuja"
+        ],
+        "archive_albums": [
+          "Mary Janes Theory"
+        ],
+        "archive_title_rule": "exact full title, or exact Discogs slot prefix plus corroborated album"
+      },
+      "stored_bpm": 122.01,
+      "stored_source": "external:acousticbrainz",
+      "getsongbpm": {
+        "status": "not independently verified in bounded indexed-page review"
+      }
+    },
+    {
+      "id": "d55fd162-a85f-5c38-9f41-5fbb9888ef61",
+      "artist": "Inner City",
+      "title": "Good Life (Magic Juan's Mix)",
+      "discogs_release_id": 39795,
+      "track_number": "A",
+      "duration_ms": 508000,
+      "index_query": "Inner City Good Life (Magic Juan's Mix) BPM",
+      "index_urls": [
+        "https://sfrbeats.com/tools/bpm/Inner%20City/Good%20Life",
+        "https://www.discogs.com/release/2135977-Inner-City-Good-Life",
+        "https://songbpm.com/@inner-city/good-life",
+        "https://sfrbeats.com/tools/bpm/inner-city/",
+        "https://www.beatport.com/track/good-life/1985049",
+        "https://chordu.com/chords-tabs-inner-city-good-life-1988-id_DdOdvICqyIM",
+        "https://www.discogs.com/release/14761942-Inner-City-Good-Life",
+        "https://songbpm.com/@inner-city",
+        "https://www.beatport.com/track/good-life/30187996",
+        "https://acapellas.eu/inner-city-morgan-seatree-danny-lees-good-life-bpm-key"
+      ],
+      "index_status": "discovery-only; title/version/duration must be verified independently",
+      "deezer_search_results": 0,
+      "deezer_candidates": [],
+      "deezer_status": "no-exact-nonzero-bpm",
+      "acousticbrainz": {
+        "status": "ambiguous-recording"
+      },
+      "stored_bpm": null,
+      "stored_source": null,
+      "getsongbpm": {
+        "status": "not independently verified in bounded indexed-page review"
+      }
+    },
+    {
+      "id": "f7202863-81b2-5ce8-aeba-b751361d3b19",
+      "artist": "Inner City",
+      "title": "Good Life (Mayday Club Mix)",
+      "discogs_release_id": 39795,
+      "track_number": "B1",
+      "duration_ms": 372000,
+      "index_query": "Inner City Good Life (Mayday Club Mix) BPM",
+      "index_urls": [
+        "https://www.beatport.com/track/good-life/8215135",
+        "https://songbpm.com/@inner-city/good-life",
+        "https://sfrbeats.com/tools/bpm/Inner%20City/Good%20Life",
+        "https://tunebat.com/Info/Good-Life-Remastered-Club-Mix-Inner-City/67zr6xdiSAhsuyvL2Dczc1",
+        "https://www.beatport.com/track/good-life/1985049",
+        "https://sfrbeats.com/tools/bpm/inner-city/",
+        "https://acapellas.eu/inner-city-morgan-seatree-danny-lees-good-life-bpm-key",
+        "https://www.discogs.com/release/39795-Inner-City-Good-Life",
+        "https://songdata.io/track/6e7UgEwCg3idEOEhXEQaPJ/Good-Life-Remastered-by-Inner-City",
+        "https://songbpm.com/@inner-city"
+      ],
+      "index_status": "discovery-only; title/version/duration must be verified independently",
+      "deezer_search_results": 0,
+      "deezer_candidates": [],
+      "deezer_status": "no-exact-nonzero-bpm",
+      "acousticbrainz": {
+        "status": "ambiguous-recording"
+      },
+      "stored_bpm": null,
+      "stored_source": null,
+      "getsongbpm": {
+        "status": "not independently verified in bounded indexed-page review"
+      }
+    },
+    {
+      "id": "0e84512a-ad37-5afc-aa99-db1f9cbe62ab",
+      "artist": "Stardust",
+      "title": "Music Sounds Better With You",
+      "discogs_release_id": 24227129,
+      "track_number": "A",
+      "duration_ms": 415000,
+      "index_query": "Stardust Music Sounds Better With You BPM",
+      "index_urls": [
+        "https://songbpm.com/@stardust/music-sounds-better-with-you",
+        "https://songbpm.com/@stardust/music-sounds-better-with-you-radio-edit",
+        "https://songdata.io/track/303ccTay2FiDTZ9fZ2AdBt/Music-Sounds-Better-With-You-by-Stardust-Benjamin-Diamond-Alan-Braxe-T",
+        "https://www.gemtracks.com/resources/bpm-and-key/view-song.php?song=music-sounds-better-with-you-radio-edit&artist=stardust&year=1998&id=1mv4lh1rW1K6xhxhJmEezy",
+        "https://www.beatport.com/track/music-sounds-better-with-you/12247393",
+        "https://music.toolstud.io/tracks/6449-e98c/music-sounds-better-with-you",
+        "https://acapellas.eu/stardust-benjamin-diamond-alan-braxe-music-sounds-better-with-you-bpm-key",
+        "https://songdata.io/track/1mv4lh1rW1K6xhxhJmEezy/Music-Sounds-Better-With-You-Radio-Edit-by-Stardust-Benjamin-Diamond-A",
+        "https://frenchcandy.bandcamp.com/track/music-sounds-better-with-you-2a-124-bpm",
+        "https://trackify.am/track/2cX2QPKpZSxt5HqzOumGC4/tempo"
+      ],
+      "index_status": "discovery-only; title/version/duration must be verified independently",
+      "deezer_search_results": 17,
+      "deezer_candidates": [],
+      "deezer_status": "no-exact-nonzero-bpm",
+      "acousticbrainz": {
+        "status": "ambiguous-search"
+      },
+      "stored_bpm": null,
+      "stored_source": null,
+      "getsongbpm": {
+        "status": "not independently verified in bounded indexed-page review"
+      }
+    },
+    {
+      "id": "460a0579-ff09-51e2-bec5-8e8942cb9d42",
+      "artist": "Robin S.",
+      "title": "Show Me Love (Stonebridge Club Mix)",
+      "discogs_release_id": 626105,
+      "track_number": "A1",
+      "duration_ms": 0,
+      "index_query": "Robin S. Show Me Love (Stonebridge Club Mix) BPM",
+      "index_urls": [
+        "https://songbpm.com/@robin-s/show-me-love-2020-remaster---stonebridge-club-mix-2NFrTqCa4A",
+        "https://acapellas.eu/robin-s-show-me-love-stonebridge-club-mix-bpm-key",
+        "https://www.beatport.com/track/show-me-love/17935373",
+        "https://songdata.io/track/0zvlNfLqNLMoGmy5X9v5Iq/Show-Me-Love-2020-Remaster-StoneBridge-Club-Mix-by-Robin-S-StoneBridge",
+        "https://www.1001tracklists.com/track/556wzzx/robin-s-show-me-love-stonebridge-club-mix/index.html",
+        "https://acapellas.eu/robin-s-show-me-love-stonebridge-bpm-key",
+        "https://www.beatport.com/track/show-me-love-2020-remaster/17935393",
+        "https://songbpm.com/@robin-s/show-me-love",
+        "https://www.gemtracks.com/resources/bpm-and-key/view-song.php?song=show-me-love&artist=robin-s&year=1993&id=4t0UsYzmmmZRMTWn77jiGF",
+        "https://www.traxsource.com/track/235262/show-me-love-stonebridge-club-mix"
+      ],
+      "index_status": "discovery-only; title/version/duration must be verified independently",
+      "deezer_search_results": 2,
+      "deezer_candidates": [
+        {
+          "id": 826880192,
+          "title": "Show Me Love (Stonebridge Club Mix)",
+          "duration": 254,
+          "bpm": 0,
+          "isrc": "GBBXG0620007",
+          "link": "https://www.deezer.com/track/826880192"
+        }
+      ],
+      "deezer_status": "no-exact-nonzero-bpm",
+      "acousticbrainz": {
+        "status": "ambiguous-search"
+      },
+      "stored_bpm": null,
+      "stored_source": null,
+      "getsongbpm": {
+        "status": "not independently verified in bounded indexed-page review"
+      }
+    },
+    {
+      "id": "cee88b92-6a6f-5592-8d20-9e3847a1280d",
+      "artist": "Robin S.",
+      "title": "Show Me Love (Todd Edwards Remix)",
+      "discogs_release_id": 626105,
+      "track_number": "A2",
+      "duration_ms": 0,
+      "index_query": "Robin S. Show Me Love (Todd Edwards Remix) BPM",
+      "index_urls": [
+        "https://www.beatport.com/track/show-me-love/15372528",
+        "https://www.youtube.com/watch?v=94ZyFgHyu5A",
+        "https://genius.com/Robin-s-show-me-love-todd-edwards-remix-lyrics",
+        "https://www.youtube.com/watch?v=Gur36wjE6JE",
+        "https://open.spotify.com/track/0B1X4hXTP5H0iPjO9PCazi",
+        "https://music.youtube.com/watch?v=94ZyFgHyu5A",
+        "https://open.spotify.com/track/5Q5jnsG4R8dcGstR6X1JXL",
+        "https://www.discogs.com/release/2399649-Robin-S-Show-Me-Love-Todd-Edwards-Remix",
+        "https://www.songlyrics.com/robin-s/show-me-love-todd-edwards-remix-lyrics/",
+        "https://songbpm.com/@robins/show-me-love---extended-mix"
+      ],
+      "index_status": "discovery-only; title/version/duration must be verified independently",
+      "deezer_search_results": 1,
+      "deezer_candidates": [
+        {
+          "id": 3156076241,
+          "title": "Show Me Love (Todd Edwards Remix)",
+          "duration": 433,
+          "bpm": 0,
+          "isrc": "GBBXG0620008",
+          "link": "https://www.deezer.com/track/3156076241"
+        }
+      ],
+      "deezer_status": "no-exact-nonzero-bpm",
+      "acousticbrainz": {
+        "status": "ambiguous-recording"
+      },
+      "stored_bpm": null,
+      "stored_source": null,
+      "getsongbpm": {
+        "status": "not independently verified in bounded indexed-page review"
+      }
+    },
+    {
+      "id": "653b7f13-e408-5595-a396-67e5ae6c78a9",
+      "artist": "Shakedown",
+      "title": "At Night (Peggy Gou's Acid Journey Remix)",
+      "discogs_release_id": 12272670,
+      "track_number": "A1",
+      "duration_ms": 0,
+      "index_query": "Shakedown At Night (Peggy Gou's Acid Journey Remix) BPM",
+      "index_urls": [
+        "https://tunebat.com/Info/At-Night-Peggy-Gou-s-Acid-Journey-Remix-Edit-Shakedown-Peggy-Gou/47IUL5vAQ3VPCHVQlcuXsK",
+        "https://chordify.net/chords/shakedown-songs/at-night-peggy-gou-s-acid-journey-remix-chords",
+        "https://grindhouserecords.com.au/product/shakedown-at-night-vinyl/",
+        "https://chordu.com/chords-tabs-shakedown-at-night-peggy-gou-s-acid-journey-remix--id_tZbf2JR422w",
+        "https://chordify.net/chords/shakedown-songs/at-night-peggy-gou-s-acid-journey-remix-2-chords",
+        "https://www.beatport.com/track/at-night/10714561",
+        "https://musicstax.com/track/at-night-peggy-gous-acid-journey-remix-mixed/0IjZjrwGhPgZlwpvDJmN3Q",
+        "https://tunebat.com/Info/At-Night-Purple-Disco-Machine-Extended-Remix-Shakedown-Purple-Disco-Machine/6d9UZvhiqIAmtZ6EIse1LW",
+        "https://defected.bandcamp.com/track/at-night-peggy-gous-acid-journey-remix",
+        "https://www.discogs.com/release/12395949-Shakedown-At-Night-Remixes"
+      ],
+      "index_status": "discovery-only; title/version/duration must be verified independently",
+      "deezer_search_results": 5,
+      "deezer_candidates": [
+        {
+          "id": 3155416861,
+          "title": "At Night (Peggy Gou's Acid Journey Remix)",
+          "duration": 431,
+          "bpm": 0,
+          "isrc": "GBCPZ1813875",
+          "link": "https://www.deezer.com/track/3155416861"
+        }
+      ],
+      "deezer_status": "no-exact-nonzero-bpm",
+      "acousticbrainz": {
+        "status": "no-archived-bpm",
+        "mbid": "c88aa862-1a75-46a2-ae38-f00b3e55ab32"
+      },
+      "stored_bpm": null,
+      "stored_source": null,
+      "getsongbpm": {
+        "status": "not independently verified in bounded indexed-page review"
+      }
+    },
+    {
+      "id": "db3241fe-be2b-576d-911e-d7688b6792f9",
+      "artist": "Shakedown",
+      "title": "At Night (Tiger & Woods Remix)",
+      "discogs_release_id": 12272670,
+      "track_number": "A2",
+      "duration_ms": 0,
+      "index_query": "Shakedown At Night (Tiger & Woods Remix) BPM",
+      "index_urls": [
+        "https://songbpm.com/@shakedown/at-night",
+        "https://www.beatport.com/track/at-night/10714562",
+        "https://songbpm.com/@shakedown",
+        "https://www.discogs.com/release/12395949-Shakedown-At-Night-Remixes",
+        "https://songdata.io/track/1xrSV0FyGg77IuJGYF3siH/At-Night-by-Shakedown",
+        "https://www.digtracks.com/tracks/264278/detail?locale=en",
+        "https://www.gemtracks.com/resources/bpm-and-key/view-song.php?song=at-night-album-mix&artist=shakedown&year=2002&id=0YBOMh2ieafDHXOdzHZpzO",
+        "https://tunebat.com/Info/At-Night-Purple-Disco-Machine-Extended-Remix-Shakedown-Purple-Disco-Machine/0yFHJYmx2dljdnH9hIRT5Q",
+        "https://tunebat.com/Info/At-Night-Purple-Disco-Machine-Extended-Remix-Shakedown-Purple-Disco-Machine/6d9UZvhiqIAmtZ6EIse1LW",
+        "https://defected.bandcamp.com/album/at-night-remixes"
+      ],
+      "index_status": "discovery-only; title/version/duration must be verified independently",
+      "deezer_search_results": 2,
+      "deezer_candidates": [
+        {
+          "id": 3155416841,
+          "title": "At Night (Tiger & Woods Remix)",
+          "duration": 185,
+          "bpm": 0,
+          "isrc": "GBCPZ1813961",
+          "link": "https://www.deezer.com/track/3155416841"
+        }
+      ],
+      "deezer_status": "no-exact-nonzero-bpm",
+      "acousticbrainz": {
+        "status": "no-archived-bpm",
+        "mbid": "53507571-d62a-40f1-97fd-29bdc1cf3ef7"
+      },
+      "stored_bpm": null,
+      "stored_source": null,
+      "getsongbpm": {
+        "status": "not independently verified in bounded indexed-page review"
+      }
+    },
+    {
+      "id": "8ef8666b-6a59-56a1-97d5-650e21e3c338",
+      "artist": "Aly-Us",
+      "title": "Follow Me (Club Mix)",
+      "discogs_release_id": 15448740,
+      "track_number": "A",
+      "duration_ms": 375000,
+      "index_query": "Aly-Us Follow Me (Club Mix) BPM",
+      "index_urls": [
+        "https://songbpm.com/@aly-us/follow-me---club-mix-c1ffc52d-267c-451e-a6ac-5dbe695d04cc",
+        "https://songbpm.com/@aly-us/follow-me---club-mix",
+        "https://tunebat.com/Info/Follow-Me-Club-Mix-Aly-Us/4hr7Huv03hzqQKrTOhF9BN",
+        "https://www.beatport.com/track/follow-me-club-mix/12891087",
+        "https://www.beatport.com/track/follow-me/934916",
+        "https://songdata.io/track/1usxyS9jbI7VdFs7XiCbve/Follow-Me-by-Aly-Us",
+        "https://chordu.com/chords-tabs-aly-us-‎-follow-me-club-mix--id_iitJCe2-IFY",
+        "https://www.beatsource.com/track/follow-me/1495986",
+        "https://voclr.it/acapella/aly-us-follow-me-acapella/",
+        "https://musescore.com/user/28849057/scores/6419314"
+      ],
+      "index_status": "discovery-only; title/version/duration must be verified independently",
+      "deezer_search_results": 2,
+      "deezer_candidates": [],
+      "deezer_status": "no-exact-nonzero-bpm",
+      "acousticbrainz": {
+        "status": "ambiguous-recording"
+      },
+      "stored_bpm": null,
+      "stored_source": null,
+      "getsongbpm": {
+        "status": "not independently verified in bounded indexed-page review"
+      }
+    },
+    {
+      "id": "cfa47483-6c97-55bc-a7b5-6e1ec419d999",
+      "artist": "Aly-Us",
+      "title": "Follow Me (Dub Mix)",
+      "discogs_release_id": 15448740,
+      "track_number": "B1",
+      "duration_ms": 342000,
+      "index_query": "Aly-Us Follow Me (Dub Mix) BPM",
+      "index_urls": [
+        "https://www.gemtracks.com/resources/bpm-and-key/view-song.php?song=follow-me-fred-everything-olivier-desmet-sf-dub&artist=alyus&year=2009&id=5nDAteHjDS8sa5bmij5Rp6",
+        "https://songbpm.com/@aly-us/follow-me-club-mix-FwOH_M2ba6",
+        "https://songbpm.com/@aly-us/follow-me-full-intention-club-mix-kge1dVrluj",
+        "https://www.beatport.com/track/follow-me/23625877",
+        "https://tunebat.com/Info/Follow-Me-Club-Mix-Aly-Us/547iG5F16pTdim4XlMlGEU",
+        "https://www.beatport.com/track/follow-me/23656028",
+        "https://songdata.io/track/1usxyS9jbI7VdFs7XiCbve/Follow-Me-by-Aly-Us",
+        "https://www.discogs.com/release/83106-Aly-Us-Follow-Me",
+        "https://www.discogs.com/release/1049687-Aly-Us-Follow-Me",
+        "https://www.decks.de/track/aly-us-follow_me/ccz-gu"
+      ],
+      "index_status": "discovery-only; title/version/duration must be verified independently",
+      "deezer_search_results": 2,
+      "deezer_candidates": [
+        {
+          "id": 3782884352,
+          "title": "Follow Me (Dub Mix)",
+          "duration": 345,
+          "bpm": 0,
+          "isrc": "USSR39208802",
+          "link": "https://www.deezer.com/track/3782884352"
+        }
+      ],
+      "deezer_status": "no-exact-nonzero-bpm",
+      "acousticbrainz": {
+        "status": "ambiguous-recording"
+      },
+      "stored_bpm": null,
+      "stored_source": null,
+      "getsongbpm": {
+        "status": "not independently verified in bounded indexed-page review"
+      }
+    },
+    {
+      "id": "43b68317-3850-563c-9743-f9e4a916ba81",
+      "artist": "Camelphat, Elderbrook",
+      "title": "Cola",
+      "discogs_release_id": 11273300,
+      "track_number": "A1",
+      "duration_ms": 415000,
+      "index_query": "Camelphat, Elderbrook Cola BPM",
+      "index_urls": [
+        "https://songbpm.com/@camelphat/cola",
+        "https://acapellas.eu/camelphat-elderbrook-cola-bpm-key",
+        "https://songdata.io/track/6VFbiCUX2PbD1rdXEIRwE6/Cola-by-CamelPhat-Elderbrook",
+        "https://songdata.io/track/7ir1tVqAtNjctvteJPw5MF/Cola-by-CamelPhat-Elderbrook",
+        "https://songbpm.com/searches/ddb5eef0-c747-47c7-a940-61b0fec6c7fd",
+        "https://www.beatport.com/track/cola/9382891",
+        "https://tunebat.com/Info/Cola-Simon-Mills-Full-Sugar-Mix-CamelPhat-Elderbrook-Simon-Mills/3kwltGVsg2y5QsM9RDF8Zw",
+        "https://www.beatport.com/track/cola-feat-elderbrook/19384391",
+        "https://mixprism.eu/track/camelphat-elderbrook-cola",
+        "https://chordu.com/chords-tabs-camelphat-elderbrook-cola--id_qke-jOUqSXU"
+      ],
+      "index_status": "discovery-only; title/version/duration must be verified independently",
+      "deezer_search_results": 25,
+      "deezer_candidates": [],
+      "deezer_status": "no-exact-nonzero-bpm",
+      "acousticbrainz": {
+        "status": "no-exact-recording"
+      },
+      "stored_bpm": null,
+      "stored_source": null,
+      "getsongbpm": {
+        "status": "not independently verified in bounded indexed-page review"
+      }
+    },
+    {
+      "id": "72d12a49-03a7-5a96-96e8-7cdd67b47789",
+      "artist": "Camelphat, Elderbrook",
+      "title": "Cola (Dario D'Attis Remix)",
+      "discogs_release_id": 11273300,
+      "track_number": "A2",
+      "duration_ms": 418000,
+      "index_query": "Camelphat, Elderbrook Cola (Dario D'Attis Remix) BPM",
+      "index_urls": [
+        "https://camelphat.bandcamp.com/album/cola-the-unreleased-mixes",
+        "https://camelphat.bandcamp.com/album/cola-the-unreleased-mixes?action=buy",
+        "https://www.youtube.com/watch?v=5E4xR51fzWI&ntb=1&msockid=0e82ac92cfcd11f1818cf5b74f2caf45",
+        "https://www.youtube.com/watch?v=NwHYR3kNtoU",
+        "https://www.beatport.com/track/cola/16231966",
+        "https://www.beatport.com/track/cola/20790162",
+        "https://www.discogs.com/master/1196596-Camelphat-Elderbrook-Cola",
+        "https://songbpm.com/@camelphat/cola---elderbrook-chilled-mix",
+        "https://songbpm.com/@camelphat/cola",
+        "https://www.dancevinylbeats.com/product/camelphat-elderbrook-cola/"
+      ],
+      "index_status": "discovery-only; title/version/duration must be verified independently",
+      "deezer_search_results": 0,
+      "deezer_candidates": [],
+      "deezer_status": "no-exact-nonzero-bpm",
+      "acousticbrainz": {
+        "status": "no-exact-recording"
+      },
+      "stored_bpm": null,
+      "stored_source": null,
+      "getsongbpm": {
+        "status": "not independently verified in bounded indexed-page review"
+      }
+    },
+    {
+      "id": "86de8b9e-21e4-51bd-96de-37cf5d33c0c0",
+      "artist": "Daft Punk",
+      "title": "One More Time",
+      "discogs_release_id": 26031499,
+      "track_number": "A1",
+      "duration_ms": 320000,
+      "index_query": "Daft Punk One More Time BPM",
+      "index_urls": [
+        "https://songbpm.com/@daft-punk/one-more-time",
+        "https://songbpm.com/@daft-punk/one-more-time-zLZ5kPYBD9",
+        "https://sfrbeats.com/tools/bpm/daft-punk/one-more-time",
+        "https://songdata.io/track/0DiWol3AO6WpXZgp0goxAV/One-More-Time-by-Daft-Punk",
+        "https://tune-scout.com/bpm/daft-punk/one-more-time",
+        "https://acapellas.eu/daft-punk-one-more-time-bpm-key",
+        "https://getsongkey.com/song/one-more-time/Wn02J",
+        "https://sfrbeats.com/tools/artist/daft-punk",
+        "https://songiq.co/tools/one-more-time-daft-punk-key-bpm",
+        "https://www.signalkey.io/song/daft-punk/one-more-time"
+      ],
+      "index_status": "discovery-only; title/version/duration must be verified independently",
+      "deezer_search_results": 25,
+      "deezer_candidates": [
+        {
+          "id": 3135553,
+          "title": "One More Time",
+          "duration": 320,
+          "bpm": 0,
+          "isrc": "GBDUW0000053",
+          "link": "https://www.deezer.com/track/3135553"
+        }
+      ],
+      "deezer_status": "no-exact-nonzero-bpm",
+      "acousticbrainz": {
+        "status": "ambiguous-search"
+      },
+      "stored_bpm": 122.0,
+      "stored_source": "external:getsongbpm",
+      "getsongbpm": {
+        "status": "accepted metadata match",
+        "bpm": 122.0,
+        "url": "https://getsongbpm.com/album/discovery/B610k"
+      }
+    },
+    {
+      "id": "7d9972ae-e4a7-58bd-87a8-2e4f4c7543a6",
+      "artist": "Daft Punk",
+      "title": "Aerodynamic",
+      "discogs_release_id": 26031499,
+      "track_number": "A2",
+      "duration_ms": 207000,
+      "index_query": "Daft Punk Aerodynamic BPM",
+      "index_urls": [
+        "https://songbpm.com/@daft-punk/aerodynamic",
+        "https://getsongbpm.com/song/aerodynamic/X6l3W",
+        "https://www.gemtracks.com/resources/bpm-and-key/view-song.php?song=aerodynamic&artist=daft-punk&year=2001&id=3H3cOQ6LBLSvmcaV7QkZEu",
+        "https://acapellas.eu/daft-punk-aerodynamic-bpm-key",
+        "https://songdata.io/track/3H3cOQ6LBLSvmcaV7QkZEu/Aerodynamic-by-Daft-Punk",
+        "https://songbpm.com/@daft-punk",
+        "https://supersimpledrum.com/songs/aerodynamic-daft-punk",
+        "https://www.beatport.com/track/aerodynamic/8291701",
+        "https://musiciwant.com/artist/daft-punk/discovery/aerodynamic",
+        "https://www.bpmdatabase.com/music/search/?artist=Daft+Punk"
+      ],
+      "index_status": "discovery-only; title/version/duration must be verified independently",
+      "deezer_search_results": 12,
+      "deezer_candidates": [],
+      "deezer_status": "no-exact-nonzero-bpm",
+      "acousticbrainz": {
+        "status": "ambiguous-search"
+      },
+      "stored_bpm": 123.0,
+      "stored_source": "external:getsongbpm",
+      "getsongbpm": {
+        "status": "accepted metadata match",
+        "bpm": 123.0,
+        "url": "https://getsongbpm.com/album/discovery/B610k"
+      }
+    },
+    {
+      "id": "dc0a42c4-82cc-5fff-b242-178ae9d2dfaa",
+      "artist": "Chic",
+      "title": "Dance, Dance, Dance (Yowsah, Yowsah, Yowsah)",
+      "discogs_release_id": 1184374,
+      "track_number": "A1",
+      "duration_ms": 510000,
+      "index_query": "Chic Dance, Dance, Dance (Yowsah, Yowsah, Yowsah) BPM",
+      "index_urls": [
+        "https://en.wikipedia.org/wiki/Dance,_Dance,_Dance_(Yowsah,_Yowsah,_Yowsah)",
+        "https://www.discogs.com/master/58858-Chic-Dance-Dance-Dance-Yowsah-Yowsah-Yowsah",
+        "https://www.discogs.com/release/10479836-Chic-Dance-Dance-Dance-Yowsah-Yowsah-Yowsah",
+        "https://tunebat.com/Info/Dance-Dance-Dance-Yowsah-Yowsah-Yowsah-2018-Remaster-CHIC/2HXNOuXxXOyKahilEfQHHO",
+        "https://www.youtube.com/watch?v=-3WV-3XWdzs",
+        "https://www.azlyrics.com/lyrics/chic/dancedancedanceyowsahyowsahyowsah.html",
+        "https://songbpm.com/@chic/dance-dance-dance---yowsah-yowsah-yowsah",
+        "https://soundcloud.com/paysan/chic-dance-dance-dance-yowsah",
+        "https://open.spotify.com/track/1SwyDb5qUcLjukFqSCRqxy"
+      ],
+      "index_status": "discovery-only; title/version/duration must be verified independently",
+      "deezer_search_results": 4,
+      "deezer_candidates": [],
+      "deezer_status": "no-exact-nonzero-bpm",
+      "acousticbrainz": {
+        "status": "no-exact-recording"
+      },
+      "stored_bpm": null,
+      "stored_source": null,
+      "getsongbpm": {
+        "status": "not independently verified in bounded indexed-page review"
+      }
+    },
+    {
+      "id": "f080ced3-63fd-5c6d-a03f-efa79d66918d",
+      "artist": "Chic",
+      "title": "São Paulo",
+      "discogs_release_id": 1184374,
+      "track_number": "A2",
+      "duration_ms": 270000,
+      "index_query": "Chic São Paulo BPM",
+      "index_urls": [
+        "https://songbpm.com/@chic/sao-paulo",
+        "https://songbpm.com/@chic/sao-paulo---2018-remaster-3fe140a2-064a-4eb2-8f06-debfa7c2d21d",
+        "https://chordu.com/chords-tabs-chic-s%C3%A3o-paulo-id_pa4StVo_pqA",
+        "https://chordu.com/chords-tabs-chic-sao-paulo-1977-vinyl-id_qQwatt3CrD4",
+        "https://www.songsterr.com/a/wsa/chic-sao-paulo-tab-s638770",
+        "https://planetary.music/song-analysis/chic",
+        "https://chordify.net/chords/chic-songs/sao-palo-chords",
+        "https://chordu.com/chords-tabs-s%C3%A3o-paulo-id_Rw4q3X9Q8pg",
+        "https://chordu.com/chords-tabs-chic-sao-paulo-album-chic-1977-id_jBY2CRL-aGw",
+        "https://songbpm.com/@the-weeknd/sao-paulo-feat-anitta-lcvxz"
+      ],
+      "index_status": "discovery-only; title/version/duration must be verified independently",
+      "deezer_search_results": 25,
+      "deezer_candidates": [],
+      "deezer_status": "no-exact-nonzero-bpm",
+      "acousticbrainz": {
+        "status": "no-exact-recording"
+      },
+      "stored_bpm": null,
+      "stored_source": null,
+      "getsongbpm": {
+        "status": "not independently verified in bounded indexed-page review"
+      }
+    },
+    {
+      "id": "b4acc5bb-b6a4-588d-b7bc-86069fd2f5ce",
+      "artist": "The Rhythm Slaves",
+      "title": "Talk About It",
+      "discogs_release_id": 1334025,
+      "track_number": "A1",
+      "duration_ms": 0,
+      "index_query": "The Rhythm Slaves Talk About It BPM",
+      "index_urls": [
+        "https://songbpm.com/@the-rhythm-slaves",
+        "https://tunebat.com/",
+        "https://www.beatport.com/artist/answer42/1226/tracks",
+        "https://www.discogs.com/release/412911-The-Rhythm-Slaves-Talk-About-It-EP",
+        "https://www.discogs.com/master/10583-The-Rhythm-Slaves-Talk-About-It-EP",
+        "https://the-rhythm-slavescv.bandcamp.com/audio",
+        "https://rateyourmusic.com/release/ep/the-rhythm-slaves/talk-about-it-ep/",
+        "https://songbpm.com/",
+        "https://musicanalyzer.net/en",
+        "https://bpmfinder.co/"
+      ],
+      "index_status": "discovery-only; title/version/duration must be verified independently",
+      "deezer_search_results": 0,
+      "deezer_candidates": [],
+      "deezer_status": "no-exact-nonzero-bpm",
+      "acousticbrainz": {
+        "status": "no-exact-recording"
+      },
+      "stored_bpm": null,
+      "stored_source": null,
+      "getsongbpm": {
+        "status": "not independently verified in bounded indexed-page review"
+      }
+    },
+    {
+      "id": "2683b436-05fe-52ab-b9f4-dfa5cf217dec",
+      "artist": "The Rhythm Slaves",
+      "title": "Talk About It Again",
+      "discogs_release_id": 1334025,
+      "track_number": "B1",
+      "duration_ms": 0,
+      "index_query": "The Rhythm Slaves Talk About It Again BPM",
+      "index_urls": [
+        "https://songbpm.com/@the-rhythm-slaves",
+        "https://www.beatport.com/artist/answer42/1226/tracks",
+        "https://www.discogs.com/release/412911-The-Rhythm-Slaves-Talk-About-It-EP",
+        "https://www.beatport.com/artist/sound-navigators/1226/releases",
+        "https://www.discogs.com/master/10583-The-Rhythm-Slaves-Talk-About-It-EP",
+        "https://sonichits.com/video/Rhythm_Slaves/Talk_About_It_Again",
+        "https://rateyourmusic.com/release/ep/the-rhythm-slaves/talk-about-it-ep/",
+        "https://songbpm.com/",
+        "https://musicanalyzer.net/en"
+      ],
+      "index_status": "discovery-only; title/version/duration must be verified independently",
+      "deezer_search_results": 0,
+      "deezer_candidates": [],
+      "deezer_status": "no-exact-nonzero-bpm",
+      "acousticbrainz": {
+        "status": "no-exact-recording"
+      },
+      "stored_bpm": null,
+      "stored_source": null,
+      "getsongbpm": {
+        "status": "not independently verified in bounded indexed-page review"
+      }
+    },
+    {
+      "id": "fbeda54c-19cb-5c34-8999-a76d61d17136",
+      "artist": "Paul Woolford",
+      "title": "Demons",
+      "discogs_release_id": 734483,
+      "track_number": "A",
+      "duration_ms": 0,
+      "index_query": "Paul Woolford Demons BPM",
+      "index_urls": [
+        "https://www.beatport.com/track/demons/168927",
+        "https://tunebat.com/",
+        "https://songbpm.com/@paul-woolford",
+        "https://songbpm.com/@paul/demons",
+        "https://app.bpmsupreme.com/d/artist/paul-woolford?library=main",
+        "https://riffloop.app/key-bpm-finder/",
+        "https://audiocutter.app/tools/bpm-finder/",
+        "https://musicanalyzer.net/en",
+        "https://www.mixinout.com/artists/54783cd3-4a7a-4dfe-b849-80983aa1582a/paul-woolford",
+        "https://bpmfinder.net/"
+      ],
+      "index_status": "discovery-only; title/version/duration must be verified independently",
+      "deezer_search_results": 2,
+      "deezer_candidates": [
+        {
+          "id": 9879549,
+          "title": "Demons",
+          "duration": 635,
+          "bpm": 0,
+          "isrc": "GBHSF0400678",
+          "link": "https://www.deezer.com/track/9879549"
+        }
+      ],
+      "deezer_status": "no-exact-nonzero-bpm",
+      "acousticbrainz": {
+        "status": "no-exact-recording"
+      },
+      "stored_bpm": null,
+      "stored_source": null,
+      "getsongbpm": {
+        "status": "not independently verified in bounded indexed-page review"
+      }
+    },
+    {
+      "id": "9c51dfc0-0d22-5c3d-8255-6be4ca915e32",
+      "artist": "Paul Woolford",
+      "title": "Sealed In Amber",
+      "discogs_release_id": 734483,
+      "track_number": "B",
+      "duration_ms": 0,
+      "index_query": "Paul Woolford Sealed In Amber BPM",
+      "index_urls": [
+        "https://www.beatport.com/track/thedjlist/296643",
+        "https://songbpm.com/@paul-woolford",
+        "https://www.discogs.com/release/734483-Paul-Woolford-Modernist-EP-3",
+        "https://audiocutter.app/tools/bpm-finder/",
+        "https://tunebat.com/Info/HEAT-Paul-Woolford-Amber-Mark/4x0yfBUpGWpovUxJqj20p0",
+        "https://app.bpmsupreme.com/d/artist/paul-woolford?library=main",
+        "https://songbpm.com/",
+        "https://www.youtube.com/watch?v=v7ZjUZ8ta6c",
+        "https://www.beatport.com/track/heat/26766248",
+        "https://en.wikipedia.org/wiki/Paul_Woolford_(DJ)"
+      ],
+      "index_status": "discovery-only; title/version/duration must be verified independently",
+      "deezer_search_results": 1,
+      "deezer_candidates": [
+        {
+          "id": 9877728,
+          "title": "Sealed In Amber",
+          "duration": 591,
+          "bpm": 0,
+          "isrc": "GBHSF0400679",
+          "link": "https://www.deezer.com/track/9877728"
+        }
+      ],
+      "deezer_status": "no-exact-nonzero-bpm",
+      "acousticbrainz": {
+        "status": "ambiguous-recording"
+      },
+      "stored_bpm": null,
+      "stored_source": null,
+      "getsongbpm": {
+        "status": "not independently verified in bounded indexed-page review"
+      }
+    }
+  ],
+  "policies": {
+    "songbpm": "automated collection prohibited: https://songbpm.com/legal/terms/",
+    "tunebat": "automated collection prohibited: https://tunebat.com/documents/tunebat-terms-of-service-new.pdf",
+    "musicstax": "extraction prohibited without consent: https://musicstax.com/terms/",
+    "getsongbpm": "CC BY 4.0 database; public indexed metadata reviewed; direct requests 403, no bypass; API requires key/registration/backlink",
+    "songdata": "direct requests HTTP 403; no further requests",
+    "beatport": "track fetch HTTP 403; no further requests"
+  },
+  "final_recheck": "Cached HTTP evidence only, exact-v3 slot-prefix rule, after reviewed album enrichment; no new requests."
+}

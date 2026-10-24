@@ -1,0 +1,2572 @@
+{
+  "attribution": "BPM and duration metadata: GetSongBPM (https://getsongbpm.com), CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Transcribed factual track metadata from public search-indexed pages; converted durations to milliseconds and BPM to numeric values. No API key, login or access-control bypass. Tempo estimates retain provider algorithm/half-time limitations.",
+  "albums": [
+    {
+      "artist": "Daft Punk",
+      "album": "Discovery",
+      "discogs_release_id": 26031499,
+      "url": "https://getsongbpm.com/album/discovery/B610k",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "One More Time",
+          "duration_ms": 320000,
+          "bpm": 122.0
+        },
+        {
+          "title": "Aerodynamic",
+          "duration_ms": 207000,
+          "bpm": 123.0
+        },
+        {
+          "title": "Digital Love",
+          "duration_ms": 298000,
+          "bpm": 123.0
+        },
+        {
+          "title": "Harder, Better, Faster, Stronger",
+          "duration_ms": 224000,
+          "bpm": 123.0
+        },
+        {
+          "title": "Crescendolls",
+          "duration_ms": 211000,
+          "bpm": 123.0
+        },
+        {
+          "title": "Nightvision",
+          "duration_ms": 104000,
+          "bpm": 119.0
+        },
+        {
+          "title": "Superheroes",
+          "duration_ms": 237000,
+          "bpm": 140.0
+        },
+        {
+          "title": "High Life",
+          "duration_ms": 201000,
+          "bpm": 123.0
+        },
+        {
+          "title": "Something About Us",
+          "duration_ms": 231000,
+          "bpm": 98.0
+        },
+        {
+          "title": "Voyager",
+          "duration_ms": 227000,
+          "bpm": 117.0
+        },
+        {
+          "title": "Veridis Quo",
+          "duration_ms": 344000,
+          "bpm": 108.0
+        },
+        {
+          "title": "Short Circuit",
+          "duration_ms": 206000,
+          "bpm": 109.0
+        },
+        {
+          "title": "Face to Face",
+          "duration_ms": 240000,
+          "bpm": 117.0
+        },
+        {
+          "title": "Too Long",
+          "duration_ms": 600000,
+          "bpm": 127.0
+        }
+      ]
+    },
+    {
+      "artist": "Bicep",
+      "album": "Bicep",
+      "discogs_release_id": 25801321,
+      "url": "https://getsongbpm.com/album/bicep/8x3Ko",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Orca",
+          "duration_ms": 273000,
+          "bpm": 122.0
+        },
+        {
+          "title": "Glue",
+          "duration_ms": 269000,
+          "bpm": 129.0
+        },
+        {
+          "title": "Kites",
+          "duration_ms": 386000,
+          "bpm": 136.0
+        },
+        {
+          "title": "Vespa",
+          "duration_ms": 86000,
+          "bpm": 167.0
+        },
+        {
+          "title": "Ayaya",
+          "duration_ms": 216000,
+          "bpm": 109.0
+        },
+        {
+          "title": "Spring",
+          "duration_ms": 414000,
+          "bpm": 118.0
+        },
+        {
+          "title": "Drift",
+          "duration_ms": 294000,
+          "bpm": 127.0
+        },
+        {
+          "title": "Opal",
+          "duration_ms": 271000,
+          "bpm": 130.0
+        },
+        {
+          "title": "Rain",
+          "duration_ms": 351000,
+          "bpm": 123.0
+        },
+        {
+          "title": "Ayr",
+          "duration_ms": 300000,
+          "bpm": 79.0
+        },
+        {
+          "title": "Vale",
+          "duration_ms": 297000,
+          "bpm": 127.0
+        },
+        {
+          "title": "Aura",
+          "duration_ms": 316000,
+          "bpm": 123.0
+        }
+      ]
+    },
+    {
+      "artist": "Jon Hopkins",
+      "album": "Singularity",
+      "discogs_release_id": 11950639,
+      "url": "https://getsongbpm.com/album/singularity/2oWNK",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Singularity",
+          "duration_ms": 389000,
+          "bpm": 126.0
+        },
+        {
+          "title": "Emerald Rush",
+          "duration_ms": 336000,
+          "bpm": 106.0
+        },
+        {
+          "title": "Neon Pattern Drum",
+          "duration_ms": 367000,
+          "bpm": 125.0
+        },
+        {
+          "title": "Everything Connected",
+          "duration_ms": 630000,
+          "bpm": 125.0
+        },
+        {
+          "title": "Feel First Life",
+          "duration_ms": 333000,
+          "bpm": 70.0
+        },
+        {
+          "title": "C O S M",
+          "duration_ms": 428000,
+          "bpm": 106.0
+        },
+        {
+          "title": "Echo Dissolve",
+          "duration_ms": 201000,
+          "bpm": 70.0
+        },
+        {
+          "title": "Luminous Beings",
+          "duration_ms": 711000,
+          "bpm": 120.0
+        },
+        {
+          "title": "Recovery",
+          "duration_ms": 335000,
+          "bpm": 126.0
+        },
+        {
+          "title": "Emerald Rush - Edit",
+          "duration_ms": 202000,
+          "bpm": 106.0
+        },
+        {
+          "title": "Everything Connected - Edit",
+          "duration_ms": 352000,
+          "bpm": 125.0
+        },
+        {
+          "title": "Singularity - Edit",
+          "duration_ms": 267000,
+          "bpm": 132.0
+        }
+      ]
+    },
+    {
+      "artist": "Tame Impala",
+      "album": "Currents",
+      "discogs_release_id": 7252111,
+      "url": "https://getsongbpm.com/album/currents/gyRG6",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Let It Happen",
+          "duration_ms": 466000,
+          "bpm": 123.0
+        },
+        {
+          "title": "Nangs",
+          "duration_ms": 107000,
+          "bpm": 83.0
+        },
+        {
+          "title": "The Moment",
+          "duration_ms": 255000,
+          "bpm": 119.0
+        },
+        {
+          "title": "Yes I'm Changing",
+          "duration_ms": 270000,
+          "bpm": 179.0
+        },
+        {
+          "title": "Eventually",
+          "duration_ms": 319000,
+          "bpm": 77.0
+        },
+        {
+          "title": "Gossip",
+          "duration_ms": 55000,
+          "bpm": 119.0
+        },
+        {
+          "title": "The Less I Know the Better",
+          "duration_ms": 218000,
+          "bpm": 117.0
+        },
+        {
+          "title": "Past Life",
+          "duration_ms": 227000,
+          "bpm": 144.0
+        },
+        {
+          "title": "Disciples",
+          "duration_ms": 108000,
+          "bpm": 126.0
+        },
+        {
+          "title": "'Cause I'm a Man",
+          "duration_ms": 241000,
+          "bpm": 144.0
+        },
+        {
+          "title": "Reality in Motion",
+          "duration_ms": 252000,
+          "bpm": 115.0
+        },
+        {
+          "title": "Love/Paranoia",
+          "duration_ms": 186000,
+          "bpm": 112.0
+        },
+        {
+          "title": "New Person, Same Old Mistakes",
+          "duration_ms": 362000,
+          "bpm": 152.0
+        }
+      ]
+    },
+    {
+      "artist": "Maribou State",
+      "album": "Portraits",
+      "discogs_release_id": 7066571,
+      "url": "https://getsongbpm.com/album/portraits/vwKx0",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Home",
+          "duration_ms": 195000,
+          "bpm": 100.0
+        },
+        {
+          "title": "The Clown",
+          "duration_ms": 247000,
+          "bpm": 119.0
+        },
+        {
+          "title": "Rituals",
+          "duration_ms": 266000,
+          "bpm": 121.0
+        },
+        {
+          "title": "Steal",
+          "duration_ms": 219000,
+          "bpm": 110.0
+        },
+        {
+          "title": "Wallflower",
+          "duration_ms": 223000,
+          "bpm": 123.0
+        },
+        {
+          "title": "Say More",
+          "duration_ms": 263000,
+          "bpm": 111.0
+        },
+        {
+          "title": "Raincoats",
+          "duration_ms": 277000,
+          "bpm": 118.0
+        },
+        {
+          "title": "Midas",
+          "duration_ms": 218000,
+          "bpm": 114.0
+        },
+        {
+          "title": "Natural Fools",
+          "duration_ms": 339000,
+          "bpm": 119.0
+        },
+        {
+          "title": "Varkala",
+          "duration_ms": 204000,
+          "bpm": 114.0
+        }
+      ]
+    },
+    {
+      "artist": "Anderson .Paak",
+      "album": "Malibu",
+      "discogs_release_id": 8385370,
+      "url": "https://getsongbpm.com/album/malibu/lLZxr",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "The Bird",
+          "duration_ms": 217000,
+          "bpm": 148.0
+        },
+        {
+          "title": "Heart Don't Stand a Chance",
+          "duration_ms": 312000,
+          "bpm": 94.0
+        },
+        {
+          "title": "The Waters",
+          "duration_ms": 174000,
+          "bpm": 91.0
+        },
+        {
+          "title": "The Season / Carry Me",
+          "duration_ms": 328000,
+          "bpm": 78.0
+        },
+        {
+          "title": "Put Me Thru",
+          "duration_ms": 160000,
+          "bpm": 107.0
+        },
+        {
+          "title": "Am I Wrong",
+          "duration_ms": 253000,
+          "bpm": 115.0
+        },
+        {
+          "title": "Without You",
+          "duration_ms": 199000,
+          "bpm": 83.0
+        },
+        {
+          "title": "Parking Lot",
+          "duration_ms": 234000,
+          "bpm": 97.0
+        },
+        {
+          "title": "Lite Weight",
+          "duration_ms": 206000,
+          "bpm": 120.0
+        },
+        {
+          "title": "Room in Here",
+          "duration_ms": 239000,
+          "bpm": 86.0
+        },
+        {
+          "title": "Water Fall",
+          "duration_ms": 118000,
+          "bpm": 118.0
+        },
+        {
+          "title": "Your Prime",
+          "duration_ms": 237000,
+          "bpm": 160.0
+        },
+        {
+          "title": "Come Down",
+          "duration_ms": 176000,
+          "bpm": 98.0
+        },
+        {
+          "title": "Silicon Valley",
+          "duration_ms": 244000,
+          "bpm": 115.0
+        },
+        {
+          "title": "Celebrate",
+          "duration_ms": 226000,
+          "bpm": 94.0
+        },
+        {
+          "title": "The Dreamer",
+          "duration_ms": 339000,
+          "bpm": 164.0
+        }
+      ]
+    },
+    {
+      "artist": "Michael Jackson",
+      "album": "Thriller",
+      "discogs_release_id": 3884453,
+      "url": "https://getsongbpm.com/album/thriller/xgR9",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Wanna Be Startin' Somethin'",
+          "duration_ms": 364000,
+          "bpm": 122.0
+        },
+        {
+          "title": "Baby Be Mine",
+          "duration_ms": 261000,
+          "bpm": 112.0
+        },
+        {
+          "title": "The Girl Is Mine",
+          "duration_ms": 222000,
+          "bpm": 81.0
+        },
+        {
+          "title": "Thriller",
+          "duration_ms": 359000,
+          "bpm": 116.0
+        },
+        {
+          "title": "Beat It",
+          "duration_ms": 259000,
+          "bpm": 136.0
+        },
+        {
+          "title": "Billie Jean",
+          "duration_ms": 294000,
+          "bpm": 116.0
+        },
+        {
+          "title": "Human Nature",
+          "duration_ms": 246000,
+          "bpm": 92.0
+        },
+        {
+          "title": "P.Y.T. (Pretty Young Thing)",
+          "duration_ms": 239000,
+          "bpm": 129.0
+        },
+        {
+          "title": "The Lady in My Life",
+          "duration_ms": 300000,
+          "bpm": 74.0
+        }
+      ]
+    },
+    {
+      "artist": "Michael Jackson",
+      "album": "Bad",
+      "discogs_release_id": 8496901,
+      "url": "https://getsongbpm.com/album/bad/n1g7",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Bad",
+          "duration_ms": 247000,
+          "bpm": 112.0
+        },
+        {
+          "title": "The Way You Make Me Feel",
+          "duration_ms": 299000,
+          "bpm": 112.0
+        },
+        {
+          "title": "Speed Demon",
+          "duration_ms": 241000,
+          "bpm": 196.0
+        },
+        {
+          "title": "Liberian Girl",
+          "duration_ms": 233000,
+          "bpm": 104.0
+        },
+        {
+          "title": "Just Good Friends",
+          "duration_ms": 248000,
+          "bpm": 118.0
+        },
+        {
+          "title": "Another Part of Me",
+          "duration_ms": 234000,
+          "bpm": 106.0
+        },
+        {
+          "title": "Man in the Mirror",
+          "duration_ms": 319000,
+          "bpm": 100.0
+        },
+        {
+          "title": "I Just Can't Stop Loving You",
+          "duration_ms": 265000,
+          "bpm": 99.0
+        },
+        {
+          "title": "Dirty Diana",
+          "duration_ms": 292000,
+          "bpm": 136.0
+        },
+        {
+          "title": "Smooth Criminal",
+          "duration_ms": 258000,
+          "bpm": 117.0
+        },
+        {
+          "title": "Leave Me Alone",
+          "duration_ms": 279000,
+          "bpm": 123.0
+        }
+      ]
+    },
+    {
+      "artist": "Fleetwood Mac",
+      "album": "Rumours",
+      "discogs_release_id": 14119525,
+      "url": "https://getsongbpm.com/album/rumours/A8Pl",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Second Hand News",
+          "duration_ms": 163000,
+          "bpm": 117.0
+        },
+        {
+          "title": "Dreams",
+          "duration_ms": 254000,
+          "bpm": 122.0
+        },
+        {
+          "title": "Never Going Back Again",
+          "duration_ms": 122000,
+          "bpm": 176.0
+        },
+        {
+          "title": "Don't Stop",
+          "duration_ms": 191000,
+          "bpm": 117.0
+        },
+        {
+          "title": "Go Your Own Way",
+          "duration_ms": 218000,
+          "bpm": 136.0
+        },
+        {
+          "title": "Songbird",
+          "duration_ms": 200000,
+          "bpm": 184.0
+        },
+        {
+          "title": "The Chain",
+          "duration_ms": 268000,
+          "bpm": 76.0
+        },
+        {
+          "title": "You Make Loving Fun",
+          "duration_ms": 211000,
+          "bpm": 129.0
+        },
+        {
+          "title": "I Don't Want to Know",
+          "duration_ms": 191000,
+          "bpm": 139.0
+        },
+        {
+          "title": "Oh Daddy",
+          "duration_ms": 234000,
+          "bpm": 138.0
+        },
+        {
+          "title": "Gold Dust Woman",
+          "duration_ms": 291000,
+          "bpm": 123.0
+        }
+      ]
+    },
+    {
+      "artist": "Arctic Monkeys",
+      "album": "AM",
+      "discogs_release_id": 4883505,
+      "url": "https://getsongbpm.com/album/am/JXDnK",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Do I Wanna Know?",
+          "duration_ms": 272000,
+          "bpm": 86.0
+        },
+        {
+          "title": "R U Mine?",
+          "duration_ms": 201000,
+          "bpm": 96.0
+        },
+        {
+          "title": "One for the Road",
+          "duration_ms": 206000,
+          "bpm": 180.0
+        },
+        {
+          "title": "Arabella",
+          "duration_ms": 207000,
+          "bpm": 89.0
+        },
+        {
+          "title": "I Want It All",
+          "duration_ms": 184000,
+          "bpm": 129.0
+        },
+        {
+          "title": "No.1 Party Anthem",
+          "duration_ms": 243000,
+          "bpm": 115.0
+        },
+        {
+          "title": "Mad Sounds",
+          "duration_ms": 215000,
+          "bpm": 80.0
+        },
+        {
+          "title": "Fireside",
+          "duration_ms": 181000,
+          "bpm": 100.0
+        },
+        {
+          "title": "Why'd You Only Call Me When You're High?",
+          "duration_ms": 161000,
+          "bpm": 92.0
+        },
+        {
+          "title": "Snap Out of It",
+          "duration_ms": 192000,
+          "bpm": 130.0
+        },
+        {
+          "title": "Knee Socks",
+          "duration_ms": 257000,
+          "bpm": 99.0
+        },
+        {
+          "title": "I Wanna Be Yours",
+          "duration_ms": 184000,
+          "bpm": 68.0
+        }
+      ]
+    },
+    {
+      "artist": "Cosmo",
+      "album": "Cosmotronic",
+      "discogs_release_id": 16057265,
+      "url": "https://getsongbpm.com/album/cosmotronic/mn7Pp",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Bentornato",
+          "duration_ms": 317000,
+          "bpm": 120.0
+        },
+        {
+          "title": "Ivrea Bangkok",
+          "duration_ms": 378000,
+          "bpm": 120.0
+        },
+        {
+          "title": "Turbo",
+          "duration_ms": 241000,
+          "bpm": 121.0
+        },
+        {
+          "title": "Attraverso lo specchio",
+          "duration_ms": 277000,
+          "bpm": 121.0
+        },
+        {
+          "title": "Sei la mia città",
+          "duration_ms": 224000,
+          "bpm": 115.0
+        },
+        {
+          "title": "Barbara",
+          "duration_ms": 285000,
+          "bpm": 120.0
+        },
+        {
+          "title": "Tutto bene",
+          "duration_ms": 272000,
+          "bpm": 119.0
+        },
+        {
+          "title": "La notte farà il resto",
+          "duration_ms": 272000,
+          "bpm": 120.0
+        },
+        {
+          "title": "Tristan Zarra",
+          "duration_ms": 339000,
+          "bpm": 122.0
+        },
+        {
+          "title": "5 antimeridiane",
+          "duration_ms": 297000,
+          "bpm": 120.0
+        },
+        {
+          "title": "L'amore",
+          "duration_ms": 304000,
+          "bpm": 125.0
+        },
+        {
+          "title": "Tu non sei tu",
+          "duration_ms": 413000,
+          "bpm": 125.0
+        },
+        {
+          "title": "Animali",
+          "duration_ms": 266000,
+          "bpm": 125.0
+        },
+        {
+          "title": "Quando ho incontrato te",
+          "duration_ms": 242000,
+          "bpm": 119.0
+        },
+        {
+          "title": "Ho vinto",
+          "duration_ms": 287000,
+          "bpm": 120.0
+        }
+      ]
+    },
+    {
+      "artist": "Electric Light Orchestra",
+      "album": "Out of the Blue",
+      "discogs_release_id": 601218,
+      "url": "https://getsongbpm.com/album/out-of-the-blue/44j8V",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Turn to Stone",
+          "duration_ms": 227000,
+          "bpm": 144
+        },
+        {
+          "title": "It's Over",
+          "duration_ms": 248000,
+          "bpm": 111
+        },
+        {
+          "title": "Sweet Talkin' Woman",
+          "duration_ms": 230000,
+          "bpm": 121
+        },
+        {
+          "title": "Across the Border",
+          "duration_ms": 233000,
+          "bpm": 145
+        },
+        {
+          "title": "Night in the City",
+          "duration_ms": 241000,
+          "bpm": 119
+        },
+        {
+          "title": "Starlight",
+          "duration_ms": 268000,
+          "bpm": 89
+        },
+        {
+          "title": "Jungle",
+          "duration_ms": 232000,
+          "bpm": 99
+        },
+        {
+          "title": "Believe Me Now",
+          "duration_ms": 81000,
+          "bpm": 135
+        },
+        {
+          "title": "Steppin' Out / Standin' in the Rain",
+          "duration_ms": 539000,
+          "bpm": null
+        },
+        {
+          "title": "Big Wheels",
+          "duration_ms": 308000,
+          "bpm": 61
+        },
+        {
+          "title": "Summer and Lightning",
+          "duration_ms": 251000,
+          "bpm": 174
+        },
+        {
+          "title": "Mr. Blue Sky",
+          "duration_ms": 306000,
+          "bpm": 172
+        },
+        {
+          "title": "Sweet Is the Night",
+          "duration_ms": 207000,
+          "bpm": 75
+        },
+        {
+          "title": "The Whale",
+          "duration_ms": 302000,
+          "bpm": 80
+        },
+        {
+          "title": "Birmingham Blues",
+          "duration_ms": 263000,
+          "bpm": 116
+        },
+        {
+          "title": "Wild West Hero",
+          "duration_ms": 281000,
+          "bpm": 75
+        }
+      ]
+    },
+    {
+      "artist": "RJD2",
+      "album": "Deadringer",
+      "discogs_release_id": 103380,
+      "url": "https://getsongbpm.com/album/deadringer/k2YwK",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "The Horror",
+          "duration_ms": 251000,
+          "bpm": 95
+        },
+        {
+          "title": "Salud",
+          "duration_ms": 38000,
+          "bpm": 131
+        },
+        {
+          "title": "Smoke & Mirrors",
+          "duration_ms": 266000,
+          "bpm": 95
+        },
+        {
+          "title": "Good Times Roll, Part 2",
+          "duration_ms": 297000,
+          "bpm": 113
+        },
+        {
+          "title": "Final Frontier",
+          "duration_ms": 265000,
+          "bpm": 91
+        },
+        {
+          "title": "Ghostwriter",
+          "duration_ms": 317000,
+          "bpm": 93
+        },
+        {
+          "title": "Cut Out to FL",
+          "duration_ms": 222000,
+          "bpm": 182
+        },
+        {
+          "title": "F.H.H.",
+          "duration_ms": 271000,
+          "bpm": 91
+        },
+        {
+          "title": "Shot in the Dark",
+          "duration_ms": 81000,
+          "bpm": 89
+        },
+        {
+          "title": "Chicken-Bone Circuit",
+          "duration_ms": 234000,
+          "bpm": 120
+        },
+        {
+          "title": "The Proxy",
+          "duration_ms": 134000,
+          "bpm": 97
+        },
+        {
+          "title": "2 More Dead",
+          "duration_ms": 317000,
+          "bpm": 91
+        },
+        {
+          "title": "Take the Picture Off",
+          "duration_ms": 62000,
+          "bpm": 93
+        },
+        {
+          "title": "Silver Fox",
+          "duration_ms": 211000,
+          "bpm": 97
+        },
+        {
+          "title": "June",
+          "duration_ms": 363000,
+          "bpm": 92
+        },
+        {
+          "title": "Work / Here's What's Left",
+          "duration_ms": 699000,
+          "bpm": null
+        }
+      ]
+    },
+    {
+      "artist": "Frank Ocean",
+      "album": "Blonde",
+      "discogs_release_id": 25500877,
+      "url": "https://getsongbpm.com/album/blonde/4D1E2",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Nikes",
+          "duration_ms": 314000,
+          "bpm": 137
+        },
+        {
+          "title": "Ivy",
+          "duration_ms": 249000,
+          "bpm": 116
+        },
+        {
+          "title": "Pink + White",
+          "duration_ms": 184000,
+          "bpm": 158
+        },
+        {
+          "title": "Be Yourself",
+          "duration_ms": 86000,
+          "bpm": 83
+        },
+        {
+          "title": "Solo",
+          "duration_ms": 257000,
+          "bpm": 123
+        },
+        {
+          "title": "Skyline To",
+          "duration_ms": 184000,
+          "bpm": 129
+        },
+        {
+          "title": "Self Control",
+          "duration_ms": 249000,
+          "bpm": 80
+        },
+        {
+          "title": "Good Guy",
+          "duration_ms": 66000,
+          "bpm": 105
+        },
+        {
+          "title": "Nights",
+          "duration_ms": 307000,
+          "bpm": 176
+        },
+        {
+          "title": "Solo (Reprise)",
+          "duration_ms": 78000,
+          "bpm": 83
+        },
+        {
+          "title": "Pretty Sweet",
+          "duration_ms": 158000,
+          "bpm": 154
+        },
+        {
+          "title": "Facebook Story",
+          "duration_ms": 68000,
+          "bpm": 85
+        },
+        {
+          "title": "Close to You",
+          "duration_ms": 85000,
+          "bpm": 78
+        },
+        {
+          "title": "White Ferrari",
+          "duration_ms": 248000,
+          "bpm": 108
+        },
+        {
+          "title": "Seigfried",
+          "duration_ms": 334000,
+          "bpm": 122
+        },
+        {
+          "title": "Godspeed",
+          "duration_ms": 177000,
+          "bpm": 109
+        },
+        {
+          "title": "Futura Free",
+          "duration_ms": 564000,
+          "bpm": 83
+        }
+      ]
+    },
+    {
+      "artist": "Frank Ocean",
+      "album": "Channel Orange",
+      "discogs_release_id": 36080959,
+      "url": "https://getsongbpm.com/album/channel-orange/Qj9EZ",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Start",
+          "duration_ms": 45000,
+          "bpm": 80
+        },
+        {
+          "title": "Thinkin Bout You",
+          "duration_ms": 200000,
+          "bpm": 129
+        },
+        {
+          "title": "Fertilizer",
+          "duration_ms": 39000,
+          "bpm": 115
+        },
+        {
+          "title": "Sierra Leone",
+          "duration_ms": 148000,
+          "bpm": 124
+        },
+        {
+          "title": "Sweet Life",
+          "duration_ms": 262000,
+          "bpm": 83
+        },
+        {
+          "title": "Not Just Money",
+          "duration_ms": 59000,
+          "bpm": 152
+        },
+        {
+          "title": "Super Rich Kids",
+          "duration_ms": 304000,
+          "bpm": 60
+        },
+        {
+          "title": "Pilot Jones",
+          "duration_ms": 184000,
+          "bpm": 125
+        },
+        {
+          "title": "Crack Rock",
+          "duration_ms": 224000,
+          "bpm": 89
+        },
+        {
+          "title": "Pyramids",
+          "duration_ms": 592000,
+          "bpm": 130
+        },
+        {
+          "title": "Lost",
+          "duration_ms": 234000,
+          "bpm": 123
+        },
+        {
+          "title": "White",
+          "duration_ms": 76000,
+          "bpm": 159
+        },
+        {
+          "title": "Monks",
+          "duration_ms": 200000,
+          "bpm": 101
+        },
+        {
+          "title": "Bad Religion",
+          "duration_ms": 175000,
+          "bpm": 81
+        },
+        {
+          "title": "Pink Matter",
+          "duration_ms": 268000,
+          "bpm": 84
+        },
+        {
+          "title": "Forrest Gump",
+          "duration_ms": 194000,
+          "bpm": 95
+        },
+        {
+          "title": "End",
+          "duration_ms": 134000,
+          "bpm": 120
+        }
+      ]
+    },
+    {
+      "artist": "FKA twigs",
+      "album": "LP1",
+      "discogs_release_id": 7175643,
+      "url": "https://getsongbpm.com/album/lp1/DZ6Zk",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Preface",
+          "duration_ms": 106000,
+          "bpm": 110
+        },
+        {
+          "title": "Lights On",
+          "duration_ms": 264000,
+          "bpm": 75
+        },
+        {
+          "title": "Two Weeks",
+          "duration_ms": 247000,
+          "bpm": 109
+        },
+        {
+          "title": "Hours",
+          "duration_ms": 275000,
+          "bpm": 140
+        },
+        {
+          "title": "Pendulum",
+          "duration_ms": 298000,
+          "bpm": 116
+        },
+        {
+          "title": "Video Girl",
+          "duration_ms": 227000,
+          "bpm": 100
+        },
+        {
+          "title": "Numbers",
+          "duration_ms": 223000,
+          "bpm": 159
+        },
+        {
+          "title": "Closer",
+          "duration_ms": 225000,
+          "bpm": 122
+        },
+        {
+          "title": "Give Up",
+          "duration_ms": 257000,
+          "bpm": 108
+        },
+        {
+          "title": "Kicks",
+          "duration_ms": 324000,
+          "bpm": 123
+        }
+      ]
+    },
+    {
+      "artist": "Kendrick Lamar",
+      "album": "good kid, m.A.A.d city",
+      "discogs_release_id": 3975953,
+      "url": "https://getsongbpm.com/album/good-kid-mpointapointapointd-city/Yq7JK",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Sherane a.k.a. Master Splinter's Daughter",
+          "duration_ms": 273000,
+          "bpm": 81
+        },
+        {
+          "title": "Bitch, Don't Kill My Vibe",
+          "duration_ms": 310000,
+          "bpm": 133
+        },
+        {
+          "title": "Backseat Freestyle",
+          "duration_ms": 212000,
+          "bpm": 77
+        },
+        {
+          "title": "The Art of Peer Pressure",
+          "duration_ms": 324000,
+          "bpm": 92
+        },
+        {
+          "title": "Money Trees",
+          "duration_ms": 386000,
+          "bpm": 144
+        },
+        {
+          "title": "Poetic Justice",
+          "duration_ms": 300000,
+          "bpm": 134
+        },
+        {
+          "title": "good kid",
+          "duration_ms": 214000,
+          "bpm": 88
+        },
+        {
+          "title": "m.A.A.d city",
+          "duration_ms": 350000,
+          "bpm": 91
+        },
+        {
+          "title": "Swimming Pools (Drank) (extended version)",
+          "duration_ms": 313000,
+          "bpm": 74
+        },
+        {
+          "title": "Sing About Me, I'm Dying of Thirst",
+          "duration_ms": 723000,
+          "bpm": 110
+        },
+        {
+          "title": "Real",
+          "duration_ms": 443000,
+          "bpm": 100
+        },
+        {
+          "title": "Compton",
+          "duration_ms": 248000,
+          "bpm": 170
+        }
+      ]
+    },
+    {
+      "artist": "Kendrick Lamar",
+      "album": "DAMN.",
+      "discogs_release_id": 10441142,
+      "url": "https://getsongbpm.com/album/damnpoint/Zo4Nv",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "BLOOD.",
+          "duration_ms": 118000,
+          "bpm": 78
+        },
+        {
+          "title": "DNA.",
+          "duration_ms": 185000,
+          "bpm": 72
+        },
+        {
+          "title": "YAH.",
+          "duration_ms": 160000,
+          "bpm": 69
+        },
+        {
+          "title": "ELEMENT.",
+          "duration_ms": 208000,
+          "bpm": 96
+        },
+        {
+          "title": "FEEL.",
+          "duration_ms": 214000,
+          "bpm": 112
+        },
+        {
+          "title": "LOYALTY. FEAT. RIHANNA.",
+          "duration_ms": 227000,
+          "bpm": 110
+        },
+        {
+          "title": "PRIDE.",
+          "duration_ms": 275000,
+          "bpm": 70
+        },
+        {
+          "title": "HUMBLE.",
+          "duration_ms": 177000,
+          "bpm": 76
+        },
+        {
+          "title": "LUST.",
+          "duration_ms": 307000,
+          "bpm": 96
+        },
+        {
+          "title": "LOVE. FEAT. ZACARI.",
+          "duration_ms": 213000,
+          "bpm": 126
+        },
+        {
+          "title": "XXX. FEAT. U2.",
+          "duration_ms": 254000,
+          "bpm": 85
+        },
+        {
+          "title": "FEAR.",
+          "duration_ms": 460000,
+          "bpm": 76
+        },
+        {
+          "title": "GOD.",
+          "duration_ms": 248000,
+          "bpm": 136
+        },
+        {
+          "title": "DUCKWORTH.",
+          "duration_ms": 248000,
+          "bpm": 89
+        }
+      ]
+    },
+    {
+      "artist": "M83",
+      "album": "Hurry Up, We're Dreaming",
+      "discogs_release_id": 3187666,
+      "url": "https://getsongbpm.com/album/hurry-up-we-re-dreaming/kDEor",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Intro",
+          "duration_ms": 322000,
+          "bpm": 103
+        },
+        {
+          "title": "Midnight City",
+          "duration_ms": 244000,
+          "bpm": 103
+        },
+        {
+          "title": "Reunion",
+          "duration_ms": 235000,
+          "bpm": 124
+        },
+        {
+          "title": "Where the Boats Go",
+          "duration_ms": 106000,
+          "bpm": 112
+        },
+        {
+          "title": "Wait",
+          "duration_ms": 343000,
+          "bpm": 147
+        },
+        {
+          "title": "Raconte-moi une histoire",
+          "duration_ms": 244000,
+          "bpm": 90
+        },
+        {
+          "title": "Train to Pluton",
+          "duration_ms": 75000,
+          "bpm": 106
+        },
+        {
+          "title": "Claudia Lewis",
+          "duration_ms": 271000,
+          "bpm": 107
+        },
+        {
+          "title": "This Bright Flash",
+          "duration_ms": 144000,
+          "bpm": 159
+        },
+        {
+          "title": "When Will You Come Home?",
+          "duration_ms": 83000,
+          "bpm": 72
+        },
+        {
+          "title": "Soon, My Friend",
+          "duration_ms": 189000,
+          "bpm": 106
+        },
+        {
+          "title": "My Tears Are Becoming a Sea",
+          "duration_ms": 151000,
+          "bpm": 48
+        },
+        {
+          "title": "New Map",
+          "duration_ms": 262000,
+          "bpm": 162
+        },
+        {
+          "title": "OK Pal",
+          "duration_ms": 238000,
+          "bpm": 105
+        },
+        {
+          "title": "Another Wave From You",
+          "duration_ms": 113000,
+          "bpm": 86
+        },
+        {
+          "title": "Splendor",
+          "duration_ms": 307000,
+          "bpm": 129
+        },
+        {
+          "title": "Year One, One UFO",
+          "duration_ms": 197000,
+          "bpm": 147
+        },
+        {
+          "title": "Fountains",
+          "duration_ms": 81000,
+          "bpm": 116
+        },
+        {
+          "title": "Steve McQueen",
+          "duration_ms": 228000,
+          "bpm": 142
+        },
+        {
+          "title": "Echoes of Mine",
+          "duration_ms": 219000,
+          "bpm": 103
+        },
+        {
+          "title": "Klaus I Love You",
+          "duration_ms": 104000,
+          "bpm": 117
+        },
+        {
+          "title": "Outro",
+          "duration_ms": 247000,
+          "bpm": 108
+        }
+      ]
+    },
+    {
+      "artist": "Pink Floyd",
+      "album": "Meddle",
+      "discogs_release_id": 2375565,
+      "url": "https://getsongbpm.com/album/meddle/vZWX",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "One of These Days",
+          "duration_ms": 354000,
+          "bpm": 103
+        },
+        {
+          "title": "A Pillow of Winds",
+          "duration_ms": 312000,
+          "bpm": 142
+        },
+        {
+          "title": "Fearless",
+          "duration_ms": 367000,
+          "bpm": 143
+        },
+        {
+          "title": "San Tropez",
+          "duration_ms": 223000,
+          "bpm": 121
+        },
+        {
+          "title": "Seamus",
+          "duration_ms": 134000,
+          "bpm": 71
+        },
+        {
+          "title": "Echoes",
+          "duration_ms": 1412000,
+          "bpm": 134
+        }
+      ]
+    },
+    {
+      "artist": "Pink Floyd",
+      "album": "The Wall",
+      "discogs_release_id": 1203086,
+      "url": "https://getsongbpm.com/album/the-wall/GWl8",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "In the Flesh?",
+          "duration_ms": 199000,
+          "bpm": 152
+        },
+        {
+          "title": "The Thin Ice",
+          "duration_ms": 149000,
+          "bpm": 110
+        },
+        {
+          "title": "Another Brick in the Wall, Part 1",
+          "duration_ms": 190000,
+          "bpm": 99
+        },
+        {
+          "title": "The Happiest Days of Our Lives",
+          "duration_ms": 111000,
+          "bpm": 103
+        },
+        {
+          "title": "Another Brick in the Wall, Part 2",
+          "duration_ms": 240000,
+          "bpm": 108
+        },
+        {
+          "title": "Mother",
+          "duration_ms": 333000,
+          "bpm": 67
+        },
+        {
+          "title": "Goodbye Blue Sky",
+          "duration_ms": 169000,
+          "bpm": 109
+        },
+        {
+          "title": "Empty Spaces",
+          "duration_ms": 127000,
+          "bpm": 95
+        },
+        {
+          "title": "Young Lust",
+          "duration_ms": 213000,
+          "bpm": 96
+        },
+        {
+          "title": "One of My Turns",
+          "duration_ms": 214000,
+          "bpm": 175
+        },
+        {
+          "title": "Don't Leave Me Now",
+          "duration_ms": 256000,
+          "bpm": 123
+        },
+        {
+          "title": "Another Brick in the Wall, Part 3",
+          "duration_ms": 77000,
+          "bpm": 102
+        },
+        {
+          "title": "Goodbye Cruel World",
+          "duration_ms": 74000,
+          "bpm": 102
+        }
+      ]
+    },
+    {
+      "artist": "Pink Floyd",
+      "album": "Wish You Were Here",
+      "discogs_release_id": 8814446,
+      "url": "https://getsongbpm.com/album/wish-you-were-here/BgVX",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Shine On You Crazy Diamond (Pts. 1-5)",
+          "duration_ms": 811000,
+          "bpm": 137
+        },
+        {
+          "title": "Welcome to the Machine",
+          "duration_ms": 451000,
+          "bpm": 133
+        },
+        {
+          "title": "Have a Cigar",
+          "duration_ms": 307000,
+          "bpm": 120
+        },
+        {
+          "title": "Wish You Were Here",
+          "duration_ms": 334000,
+          "bpm": 122
+        },
+        {
+          "title": "Wish You Were Here",
+          "duration_ms": 334000,
+          "bpm": 61
+        },
+        {
+          "title": "Shine On You Crazy Diamond (Pts. 6-9)",
+          "duration_ms": 747000,
+          "bpm": 135
+        }
+      ]
+    },
+    {
+      "artist": "Pink Floyd",
+      "album": "The Dark Side of the Moon",
+      "discogs_release_id": 2666307,
+      "url": "https://getsongbpm.com/album/the-dark-side-of-the-moon/rMQzw",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Speak to Me",
+          "duration_ms": 68000,
+          "bpm": 62
+        },
+        {
+          "title": "Breathe",
+          "duration_ms": 168000,
+          "bpm": 64
+        },
+        {
+          "title": "On the Run",
+          "duration_ms": 230000,
+          "bpm": 166
+        },
+        {
+          "title": "Time",
+          "duration_ms": 409000,
+          "bpm": 122
+        },
+        {
+          "title": "The Great Gig in the Sky",
+          "duration_ms": 284000,
+          "bpm": 116
+        },
+        {
+          "title": "Money",
+          "duration_ms": 382000,
+          "bpm": 122
+        },
+        {
+          "title": "Us and Them",
+          "duration_ms": 469000,
+          "bpm": 72
+        },
+        {
+          "title": "Any Colour You Like",
+          "duration_ms": 206000,
+          "bpm": 76
+        },
+        {
+          "title": "Brain Damage",
+          "duration_ms": 226000,
+          "bpm": 136
+        },
+        {
+          "title": "Eclipse",
+          "duration_ms": 131000,
+          "bpm": 136
+        }
+      ]
+    },
+    {
+      "artist": "Pink Floyd",
+      "album": "The Dark Side of the Moon",
+      "discogs_release_id": 1619236,
+      "url": "https://getsongbpm.com/album/the-dark-side-of-the-moon/rMQzw",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Speak to Me",
+          "duration_ms": 68000,
+          "bpm": 62
+        },
+        {
+          "title": "Breathe",
+          "duration_ms": 168000,
+          "bpm": 64
+        },
+        {
+          "title": "On the Run",
+          "duration_ms": 230000,
+          "bpm": 166
+        },
+        {
+          "title": "Time",
+          "duration_ms": 409000,
+          "bpm": 122
+        },
+        {
+          "title": "The Great Gig in the Sky",
+          "duration_ms": 284000,
+          "bpm": 116
+        },
+        {
+          "title": "Money",
+          "duration_ms": 382000,
+          "bpm": 122
+        },
+        {
+          "title": "Us and Them",
+          "duration_ms": 469000,
+          "bpm": 72
+        },
+        {
+          "title": "Any Colour You Like",
+          "duration_ms": 206000,
+          "bpm": 76
+        },
+        {
+          "title": "Brain Damage",
+          "duration_ms": 226000,
+          "bpm": 136
+        },
+        {
+          "title": "Eclipse",
+          "duration_ms": 131000,
+          "bpm": 136
+        }
+      ]
+    },
+    {
+      "artist": "Pink Floyd",
+      "album": "The Dark Side of the Moon",
+      "discogs_release_id": 28580086,
+      "url": "https://getsongbpm.com/album/the-dark-side-of-the-moon/rMQzw",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Speak to Me",
+          "duration_ms": 68000,
+          "bpm": 62
+        },
+        {
+          "title": "Breathe",
+          "duration_ms": 168000,
+          "bpm": 64
+        },
+        {
+          "title": "On the Run",
+          "duration_ms": 230000,
+          "bpm": 166
+        },
+        {
+          "title": "Time",
+          "duration_ms": 409000,
+          "bpm": 122
+        },
+        {
+          "title": "The Great Gig in the Sky",
+          "duration_ms": 284000,
+          "bpm": 116
+        },
+        {
+          "title": "Money",
+          "duration_ms": 382000,
+          "bpm": 122
+        },
+        {
+          "title": "Us and Them",
+          "duration_ms": 469000,
+          "bpm": 72
+        },
+        {
+          "title": "Any Colour You Like",
+          "duration_ms": 206000,
+          "bpm": 76
+        },
+        {
+          "title": "Brain Damage",
+          "duration_ms": 226000,
+          "bpm": 136
+        },
+        {
+          "title": "Eclipse",
+          "duration_ms": 131000,
+          "bpm": 136
+        }
+      ]
+    },
+    {
+      "artist": "Moby",
+      "album": "Play",
+      "discogs_release_id": 2285,
+      "url": "https://getsongbpm.com/album/play/nzrqE",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Honey",
+          "duration_ms": 208000,
+          "bpm": 103
+        },
+        {
+          "title": "Find My Baby",
+          "duration_ms": 239000,
+          "bpm": 93
+        },
+        {
+          "title": "Porcelain",
+          "duration_ms": 241000,
+          "bpm": 96
+        },
+        {
+          "title": "Why Does My Heart Feel So Bad?",
+          "duration_ms": 264000,
+          "bpm": 98
+        },
+        {
+          "title": "South Side",
+          "duration_ms": 229000,
+          "bpm": 97
+        },
+        {
+          "title": "Rushing",
+          "duration_ms": 180000,
+          "bpm": 170
+        },
+        {
+          "title": "Bodyrock",
+          "duration_ms": 216000,
+          "bpm": 107
+        },
+        {
+          "title": "Natural Blues",
+          "duration_ms": 253000,
+          "bpm": 108
+        },
+        {
+          "title": "Machete",
+          "duration_ms": 217000,
+          "bpm": 134
+        },
+        {
+          "title": "7",
+          "duration_ms": 62000,
+          "bpm": 88
+        },
+        {
+          "title": "Run On",
+          "duration_ms": 225000,
+          "bpm": 96
+        },
+        {
+          "title": "Down Slow",
+          "duration_ms": 94000,
+          "bpm": 82
+        },
+        {
+          "title": "If Things Were Perfect",
+          "duration_ms": 258000,
+          "bpm": 165
+        },
+        {
+          "title": "Everloving",
+          "duration_ms": 205000,
+          "bpm": 83
+        },
+        {
+          "title": "Inside",
+          "duration_ms": 288000,
+          "bpm": 95
+        },
+        {
+          "title": "Guitar Flute & String",
+          "duration_ms": 129000,
+          "bpm": 124
+        },
+        {
+          "title": "The Sky Is Broken",
+          "duration_ms": 258000,
+          "bpm": 81
+        },
+        {
+          "title": "My Weakness",
+          "duration_ms": 217000,
+          "bpm": 85
+        }
+      ]
+    },
+    {
+      "artist": "Coldplay",
+      "album": "Parachutes",
+      "discogs_release_id": 6593918,
+      "url": "https://getsongbpm.com/album/parachutes/KrJr",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Don't Panic",
+          "duration_ms": 136000,
+          "bpm": 124
+        },
+        {
+          "title": "Shiver",
+          "duration_ms": 299000,
+          "bpm": 116
+        },
+        {
+          "title": "Spies",
+          "duration_ms": 318000,
+          "bpm": 147
+        },
+        {
+          "title": "Sparks",
+          "duration_ms": 227000,
+          "bpm": 206
+        },
+        {
+          "title": "Yellow",
+          "duration_ms": 269000,
+          "bpm": 86
+        },
+        {
+          "title": "Trouble",
+          "duration_ms": 270000,
+          "bpm": 70
+        },
+        {
+          "title": "Parachutes",
+          "duration_ms": 46000,
+          "bpm": 136
+        },
+        {
+          "title": "High Speed",
+          "duration_ms": 254000,
+          "bpm": 77
+        },
+        {
+          "title": "We Never Change",
+          "duration_ms": 249000,
+          "bpm": 136
+        },
+        {
+          "title": "Everything's Not Lost / Life Is for Living",
+          "duration_ms": 436000,
+          "bpm": 135
+        }
+      ]
+    },
+    {
+      "artist": "Coldplay",
+      "album": "Viva la Vida or Death and All His Friends",
+      "discogs_release_id": 1369232,
+      "url": "https://getsongbpm.com/album/viva-la-vida-or-death-and-all-his-friends/N8n18",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Life in Technicolor",
+          "duration_ms": 149000,
+          "bpm": 129
+        },
+        {
+          "title": "Cemeteries of London",
+          "duration_ms": 201000,
+          "bpm": 109
+        },
+        {
+          "title": "Lost!",
+          "duration_ms": 235000,
+          "bpm": 86
+        },
+        {
+          "title": "42",
+          "duration_ms": 237000,
+          "bpm": 141
+        },
+        {
+          "title": "Lovers in Japan / Reign of Love",
+          "duration_ms": 411000,
+          "bpm": 112
+        },
+        {
+          "title": "Yes / Chinese Sleep Chant",
+          "duration_ms": 426000,
+          "bpm": null
+        },
+        {
+          "title": "Viva la Vida",
+          "duration_ms": 241000,
+          "bpm": 136
+        },
+        {
+          "title": "Violet Hill",
+          "duration_ms": 222000,
+          "bpm": 76
+        },
+        {
+          "title": "Strawberry Swing",
+          "duration_ms": 249000,
+          "bpm": 86
+        },
+        {
+          "title": "Death and All His Friends / The Escapist",
+          "duration_ms": 378000,
+          "bpm": 132
+        }
+      ]
+    },
+    {
+      "artist": "Daughter",
+      "album": "If You Leave",
+      "discogs_release_id": 4389520,
+      "url": "https://getsongbpm.com/album/if-you-leave/j6mry",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Winter",
+          "duration_ms": 283000,
+          "bpm": 119
+        },
+        {
+          "title": "Smother",
+          "duration_ms": 241000,
+          "bpm": 124
+        },
+        {
+          "title": "Youth",
+          "duration_ms": 253000,
+          "bpm": 146
+        },
+        {
+          "title": "Still",
+          "duration_ms": 212000,
+          "bpm": 115
+        },
+        {
+          "title": "Lifeforms",
+          "duration_ms": 335000,
+          "bpm": 154
+        },
+        {
+          "title": "Tomorrow",
+          "duration_ms": 280000,
+          "bpm": 128
+        },
+        {
+          "title": "Human",
+          "duration_ms": 211000,
+          "bpm": 160
+        },
+        {
+          "title": "Touch",
+          "duration_ms": 265000,
+          "bpm": 144
+        },
+        {
+          "title": "Amsterdam",
+          "duration_ms": 242000,
+          "bpm": 130
+        },
+        {
+          "title": "Shallows",
+          "duration_ms": 413000,
+          "bpm": 141
+        }
+      ]
+    },
+    {
+      "artist": "Ben Howard",
+      "album": "I Forget Where We Were",
+      "discogs_release_id": 6376112,
+      "url": "https://getsongbpm.com/album/i-forget-where-we-were/vxv05",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Small Things",
+          "duration_ms": 344000,
+          "bpm": 135
+        },
+        {
+          "title": "Rivers in Your Mouth",
+          "duration_ms": 312000,
+          "bpm": 161
+        },
+        {
+          "title": "I Forget Where We Were",
+          "duration_ms": 281000,
+          "bpm": 113
+        },
+        {
+          "title": "In Dreams",
+          "duration_ms": 213000,
+          "bpm": 126
+        },
+        {
+          "title": "She Treats Me Well",
+          "duration_ms": 318000,
+          "bpm": 79
+        },
+        {
+          "title": "Time Is Dancing",
+          "duration_ms": 409000,
+          "bpm": 150
+        },
+        {
+          "title": "Evergreen",
+          "duration_ms": 244000,
+          "bpm": 137
+        },
+        {
+          "title": "End of the Affair",
+          "duration_ms": 466000,
+          "bpm": 136
+        },
+        {
+          "title": "Conrad",
+          "duration_ms": 368000,
+          "bpm": 81
+        },
+        {
+          "title": "All Is Now Harmed",
+          "duration_ms": 302000,
+          "bpm": 157
+        }
+      ]
+    },
+    {
+      "artist": "Sufjan Stevens",
+      "album": "Carrie & Lowell",
+      "discogs_release_id": 6549215,
+      "url": "https://getsongbpm.com/album/carrie-and-lowell/rpo3w",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Death With Dignity",
+          "duration_ms": 239000,
+          "bpm": 85
+        },
+        {
+          "title": "Should Have Known Better",
+          "duration_ms": 307000,
+          "bpm": 90
+        },
+        {
+          "title": "All of Me Wants All of You",
+          "duration_ms": 221000,
+          "bpm": 143
+        },
+        {
+          "title": "Drawn to the Blood",
+          "duration_ms": 198000,
+          "bpm": 124
+        },
+        {
+          "title": "Eugene",
+          "duration_ms": 146000,
+          "bpm": 84
+        },
+        {
+          "title": "Fourth of July",
+          "duration_ms": 279000,
+          "bpm": 120
+        },
+        {
+          "title": "The Only Thing",
+          "duration_ms": 284000,
+          "bpm": 158
+        },
+        {
+          "title": "Carrie & Lowell",
+          "duration_ms": 194000,
+          "bpm": 98
+        },
+        {
+          "title": "John My Beloved",
+          "duration_ms": 304000,
+          "bpm": 120
+        },
+        {
+          "title": "No Shade in the Shadow of the Cross",
+          "duration_ms": 160000,
+          "bpm": 82
+        },
+        {
+          "title": "Blue Bucket of Gold",
+          "duration_ms": 285000,
+          "bpm": 74
+        }
+      ]
+    },
+    {
+      "artist": "The Cinematic Orchestra",
+      "album": "Ma fleur",
+      "discogs_release_id": 19645357,
+      "url": "https://getsongbpm.com/album/ma-fleur/3wywx",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "To Build a Home",
+          "duration_ms": 371000,
+          "bpm": 74
+        },
+        {
+          "title": "Familiar Ground",
+          "duration_ms": 274000,
+          "bpm": 125
+        },
+        {
+          "title": "Child Song",
+          "duration_ms": 314000,
+          "bpm": 89
+        },
+        {
+          "title": "Music Box",
+          "duration_ms": 303000,
+          "bpm": 70
+        },
+        {
+          "title": "Prelude",
+          "duration_ms": 163000,
+          "bpm": 149
+        },
+        {
+          "title": "As the Stars Fall",
+          "duration_ms": 355000,
+          "bpm": 84
+        },
+        {
+          "title": "Into You",
+          "duration_ms": 182000,
+          "bpm": 126
+        },
+        {
+          "title": "Ma fleur",
+          "duration_ms": 272000,
+          "bpm": 75
+        },
+        {
+          "title": "Breathe",
+          "duration_ms": 393000,
+          "bpm": 79
+        },
+        {
+          "title": "That Home",
+          "duration_ms": 103000,
+          "bpm": 85
+        },
+        {
+          "title": "Time & Space",
+          "duration_ms": 522000,
+          "bpm": 141
+        }
+      ]
+    },
+    {
+      "artist": "Florence + the Machine",
+      "album": "High as Hope",
+      "discogs_release_id": 12815531,
+      "url": "https://getsongbpm.com/album/high-as-hope/K26Dn",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "June",
+          "duration_ms": 221000,
+          "bpm": 146
+        },
+        {
+          "title": "Hunger",
+          "duration_ms": 214000,
+          "bpm": 116
+        },
+        {
+          "title": "South London Forever",
+          "duration_ms": 262000,
+          "bpm": 107
+        },
+        {
+          "title": "Big God",
+          "duration_ms": 241000,
+          "bpm": 72
+        },
+        {
+          "title": "Sky Full Of Song",
+          "duration_ms": 226000,
+          "bpm": 98
+        },
+        {
+          "title": "Grace",
+          "duration_ms": 288000,
+          "bpm": 74
+        },
+        {
+          "title": "Patricia",
+          "duration_ms": 217000,
+          "bpm": 118
+        },
+        {
+          "title": "100 Years",
+          "duration_ms": 298000,
+          "bpm": 100
+        },
+        {
+          "title": "The End Of Love",
+          "duration_ms": 281000,
+          "bpm": 68
+        },
+        {
+          "title": "No Choir",
+          "duration_ms": 149000,
+          "bpm": 88
+        }
+      ],
+      "artist_aliases": [
+        "Florence And The Machine"
+      ],
+      "artist_alias_evidence": "https://getsongbpm.com/artist/florence-plus-the-machine/ngZnW explicitly identifies Florence + the Machine as a stylisation of Florence and the Machine"
+    },
+    {
+      "artist": "Radiohead",
+      "album": "The Bends",
+      "discogs_release_id": 8655658,
+      "url": "https://getsongbpm.com/album/the-bends/DRo06",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Planet Telex",
+          "duration_ms": 259000,
+          "bpm": 148
+        },
+        {
+          "title": "The Bends",
+          "duration_ms": 246000,
+          "bpm": 89
+        },
+        {
+          "title": "High and Dry",
+          "duration_ms": 257000,
+          "bpm": 86
+        },
+        {
+          "title": "Fake Plastic Trees",
+          "duration_ms": 290000,
+          "bpm": 74
+        },
+        {
+          "title": "Bones",
+          "duration_ms": 189000,
+          "bpm": 101
+        },
+        {
+          "title": "(Nice Dream)",
+          "duration_ms": 233000,
+          "bpm": 172
+        },
+        {
+          "title": "Just",
+          "duration_ms": 234000,
+          "bpm": 87
+        },
+        {
+          "title": "My Iron Lung",
+          "duration_ms": 276000,
+          "bpm": 96
+        },
+        {
+          "title": "Bullet Proof..I Wish I Was",
+          "duration_ms": 208000,
+          "bpm": 80
+        },
+        {
+          "title": "Black Star",
+          "duration_ms": 247000,
+          "bpm": 158
+        },
+        {
+          "title": "Sulk",
+          "duration_ms": 222000,
+          "bpm": 97
+        },
+        {
+          "title": "Street Spirit (Fade Out)",
+          "duration_ms": 252000,
+          "bpm": 69
+        }
+      ]
+    },
+    {
+      "artist": "Led Zeppelin",
+      "album": "Led Zeppelin",
+      "discogs_release_id": 16790298,
+      "url": "https://getsongbpm.com/album/led-zeppelin/OY8p",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Good Times Bad Times",
+          "duration_ms": 166000,
+          "bpm": 96
+        },
+        {
+          "title": "Babe I'm Gonna Leave You",
+          "duration_ms": 401000,
+          "bpm": 136
+        },
+        {
+          "title": "You Shook Me",
+          "duration_ms": 387000,
+          "bpm": 77
+        },
+        {
+          "title": "Dazed and Confused",
+          "duration_ms": 386000,
+          "bpm": 86
+        },
+        {
+          "title": "Your Time Is Gonna Come",
+          "duration_ms": 274000,
+          "bpm": 152
+        },
+        {
+          "title": "Black Mountain Side",
+          "duration_ms": 132000,
+          "bpm": 117
+        },
+        {
+          "title": "Communication Breakdown",
+          "duration_ms": 150000,
+          "bpm": 178
+        },
+        {
+          "title": "I Can't Quit You Baby",
+          "duration_ms": 282000,
+          "bpm": 80
+        },
+        {
+          "title": "How Many More Times",
+          "duration_ms": 508000,
+          "bpm": 144
+        }
+      ]
+    },
+    {
+      "artist": "Led Zeppelin",
+      "album": "Led Zeppelin II",
+      "discogs_release_id": 4088373,
+      "url": "https://getsongbpm.com/album/led-zeppelin-ii/J75g",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "Whole Lotta Love",
+          "duration_ms": 334000,
+          "bpm": 178
+        },
+        {
+          "title": "What Is and What Should Never Be",
+          "duration_ms": 285000,
+          "bpm": 78
+        },
+        {
+          "title": "The Lemon Song",
+          "duration_ms": 379000,
+          "bpm": 89
+        },
+        {
+          "title": "Thank You",
+          "duration_ms": 289000,
+          "bpm": 79
+        },
+        {
+          "title": "Heartbreaker",
+          "duration_ms": 254000,
+          "bpm": 99
+        },
+        {
+          "title": "Living Loving Maid (She's Just a Woman)",
+          "duration_ms": 159000,
+          "bpm": 152
+        },
+        {
+          "title": "Ramble On",
+          "duration_ms": 264000,
+          "bpm": 51
+        },
+        {
+          "title": "Moby Dick",
+          "duration_ms": 260000,
+          "bpm": 112
+        },
+        {
+          "title": "Bring It On Home",
+          "duration_ms": 261000,
+          "bpm": 96
+        }
+      ]
+    },
+    {
+      "artist": "Mario Biondi",
+      "album": "Handful of Soul",
+      "discogs_release_id": 1813003,
+      "url": "https://getsongbpm.com/album/handful-of-soul/z7LB5",
+      "retrieved_at": "2026-10-24",
+      "tracks": [
+        {
+          "title": "A Child Runs Free",
+          "duration_ms": 355000,
+          "bpm": 110
+        },
+        {
+          "title": "No Mercy for Me",
+          "duration_ms": 229000,
+          "bpm": 151
+        },
+        {
+          "title": "This Is What You Are",
+          "duration_ms": 431000,
+          "bpm": 125
+        },
+        {
+          "title": "Rio De Janeiro Blue",
+          "duration_ms": 250000,
+          "bpm": 123
+        },
+        {
+          "title": "Slow Hot Wind",
+          "duration_ms": 243000,
+          "bpm": 185
+        },
+        {
+          "title": "A Handful of Soul",
+          "duration_ms": 262000,
+          "bpm": 119
+        },
+        {
+          "title": "Never Die",
+          "duration_ms": 332000,
+          "bpm": 124
+        },
+        {
+          "title": "On a Clear Day (You Can See Forever)",
+          "duration_ms": 194000,
+          "bpm": null
+        },
+        {
+          "title": "Gig",
+          "duration_ms": 223000,
+          "bpm": 76
+        },
+        {
+          "title": "I Can't Keep From Cryin' Sometimes",
+          "duration_ms": 296000,
+          "bpm": null
+        },
+        {
+          "title": "No Trouble on the Mountain",
+          "duration_ms": 265000,
+          "bpm": 109
+        },
+        {
+          "title": "I'm Her Daddy",
+          "duration_ms": 264000,
+          "bpm": 82
+        }
+      ]
+    }
+  ]
+}

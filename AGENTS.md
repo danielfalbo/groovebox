@@ -239,3 +239,20 @@ Two-way playlist sync between Groovebox and Tidal, using a safe 3-way merge per 
 - The central app router owns `/local/:id` too. Shared navigation cleanup must
   hide local content and invalidate stale view responses. Keep tables inside
   their own horizontal scroll regions and mobile controls at least 44px.
+
+## BPM provider expansion (2026-10-24)
+
+- Current: 432 BPM rows (48 local, 114 AcousticBrainz, 227 reviewed GetSongBPM,
+  43 evidenced recording transfers); 296/936 distinct owned vinyl slots known.
+  Read `docs/BPM-PROVIDERS.md` for the 23-slot comparison, sources, matching
+  changes, 132 duration backfills and partial-coverage limitations.
+- `scripts/apply_reviewed_bpm.py` applies finite attributed CC BY provider
+  metadata with exact recording safeguards; `scripts/bpm_coverage.py` counts
+  distinct owned slots read-only. No authenticated provider integration added.
+- AcousticBrainz matcher exact-v3 allows missing local duration only with unique
+  full recording identity and agreeing MB/archive durations; a physical-position
+  title prefix additionally requires actual slot + corroborated album.
+- `--cached-only` makes no network requests. Manual NULLs/local analysis remain
+  protected. SongBPM/Tunebat/Musicstax collection restrictions and direct 403s
+  must not be bypassed; GetSongBPM public indexed CC BY metadata was reviewed
+  separately from its registered/keyed API.

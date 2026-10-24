@@ -44,14 +44,19 @@ def duration_close(a, b):
     return bool(a and b and abs(a - b) <= max(3000, a * .01))
 
 
-def recording_match(track, rec):
+def recording_identity(track, rec):
     credits = rec.get("artist-credit", [])
     artists = ", ".join(c.get("artist", {}).get("name", c.get("name", ""))
                         for c in credits if isinstance(c, dict))
     if norm(track["artist"]) != norm(artists) or norm(track["title"]) != norm(rec.get("title")):
         return False
-    # Search scores, popularity, album names and base-title similarity aren't evidence.
-    return duration_close(track["duration_ms"], rec.get("length"))
+    # MB often stores remix/edit information in disambiguation rather than title.
+    disambiguation = norm(rec.get("disambiguation"))
+    return not disambiguation or f" {disambiguation} " in f" {norm(track['title'])} "
+
+
+def recording_match(track, rec):
+    return recording_identity(track, rec) and duration_close(track["duration_ms"], rec.get("length"))
 
 
 def analyze(path):
@@ -96,25 +101,45 @@ class Budget:
             raise RuntimeError("batch time budget reached; rerun to resume")
 
 
+class CacheMiss(LookupError):
+    pass
+
+
 class HTTP:
-    def __init__(self, cache, budget, refresh=False):
+    def __init__(self, cache, budget, refresh=False, cached_only=False):
         self.cache, self.budget = cache, budget
         self.refresh = refresh
+        self.cached_only = cached_only
         cache.mkdir(parents=True, exist_ok=True)
         self.requests = Counter()
 
     def get(self, url):
+        # Cached reads must not queue behind another batch's slow network call.
+        dest = self.cache / (hashlib.sha256(url.encode()).hexdigest() + ".json")
+        if not self.refresh and dest.exists() and time.time() - dest.stat().st_mtime < 30 * 86400:
+            return json.loads(dest.read_text())
+        if self.cached_only:
+            raise CacheMiss("no cached HTTP response")
         # Coordinate independent/resumed batches so aggregate request rates stay low.
         host = urllib.parse.urlsplit(url).netloc
         with (self.cache / ("rate-" + host)).open("a+") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
-            return self._get(url, lock)
+            for attempt in range(3):
+                try:
+                    return self._get(url, lock)
+                except OSError:
+                    if attempt == 2:
+                        raise
+                    self.budget.check(20)
+                    time.sleep(2 ** attempt)
 
     def _get(self, url, lock):
         key = hashlib.sha256(url.encode()).hexdigest()
         dest = self.cache / (key + ".json")
         if not self.refresh and dest.exists() and time.time() - dest.stat().st_mtime < 30 * 86400:
             return json.loads(dest.read_text())
+        if self.cached_only:
+            raise CacheMiss("no cached HTTP response")
         host = urllib.parse.urlsplit(url).netloc
         self.budget.check(18)
         # 24 req/min for unauthenticated Discogs; <= 1/sec MusicBrainz.
@@ -151,9 +176,22 @@ def query_url(base, **params):
     return base + "?" + urllib.parse.urlencode(params)
 
 
+def archive_title_match(track, title, tags):
+    if norm(title) == norm(track["title"]):
+        return True
+    # Some submissions put the physical slot in their title tag. Remove only
+    # this track's exact slot prefix, with punctuation and album corroboration.
+    position = str(track["track_number"] or "").strip() if "track_number" in track.keys() else ""
+    album = track["album_title"] if "album_title" in track.keys() else None
+    if not position or not album or not any(norm(a) == norm(album) for a in tags.get("album", [])):
+        return False
+    prefixed = re.fullmatch(re.escape(position) + r"\s*[.:-]\s*(.+)", title, flags=re.I)
+    return bool(prefixed and norm(prefixed[1]) == norm(track["title"]))
+
+
 def external_result(track, http):
-    if not track["duration_ms"] or track["duration_ms"] < 30000:
-        return {"status": "missing-duration"}
+    if track["duration_ms"] and track["duration_ms"] < 30000:
+        return {"status": "unsupported-duration"}
     if not track["artist"] or norm(track["artist"]) in ("various", "various artists"):
         return {"status": "missing-artist"}
     def quote(s):
@@ -166,7 +204,9 @@ def external_result(track, http):
     data = http.get(mb_url)
     if data.get("count", 0) > 25:
         return {"status": "ambiguous-search"}
-    matches = {r["id"]: r for r in data.get("recordings", []) if recording_match(track, r)}
+    identity_matches = {r["id"]: r for r in data.get("recordings", []) if recording_identity(track, r)}
+    matches = (identity_matches if not track["duration_ms"] else
+               {k: r for k, r in identity_matches.items() if duration_close(track["duration_ms"], r.get("length"))})
     if len(matches) != 1:
         return {"status": "no-exact-recording" if not matches else "ambiguous-recording"}
     mbid, rec = next(iter(matches.items()))
@@ -181,29 +221,38 @@ def external_result(track, http):
     titles = tags.get("title", [])
     artists = tags.get("artist", [])
     length = meta.get("audio_properties", {}).get("length", 0) * 1000
-    if not any(norm(t) == norm(track["title"]) for t in titles) or not any(
-            norm(a) == norm(track["artist"]) for a in artists) or not duration_close(track["duration_ms"], length):
+    if not any(archive_title_match(track, t, tags) for t in titles) or not any(
+            norm(a) == norm(track["artist"]) for a in artists) or not duration_close(track["duration_ms"] or rec.get("length"), length):
         return {"status": "archive-version-mismatch", "mbid": mbid}
     return {"status": "ok", "bpm": round(bpm, 2), "url": ab_url, "mbid": mbid,
-            "match": "unique exact title+artist+duration" + ("; ISRC lookup" if query.startswith("isrc:") else ""),
+            "confidence": "recording metadata verified; tempo is an algorithmic estimate",
+            "match": ("unique exact title+artist+duration" if track["duration_ms"] else
+                      "unique exact title+artist; no disambiguation conflict; MB/archive duration agrees") + ("; ISRC lookup" if query.startswith("isrc:") else ""),
             "recording_title": rec["title"], "recording_duration_ms": rec.get("length"),
-            "archive_duration_ms": length, "archive_version": meta.get("version", {})}
+            "archive_duration_ms": length, "archive_version": meta.get("version", {}),
+            "archive_titles": titles, "archive_artists": artists, "archive_albums": tags.get("album", []),
+            "archive_title_rule": "exact full title, or exact Discogs slot prefix plus corroborated album"}
 
 
 def external_job_key(track):
-    identity = ["acousticbrainz/exact-v1", track["title"], track["artist"], track["duration_ms"], track["isrc"]]
+    identity = ["acousticbrainz/exact-v3", track["title"], track["artist"], track["duration_ms"], track["isrc"]]
     return hashlib.sha256(json.dumps(identity).encode()).hexdigest()
 
 
-def write_bpm(db, track_id, result, source):
+def write_bpm(db, track_id, result, source, only_unknown=False):
     # Atomic guard protects a manual correction even if it arrives mid-analysis.
     cur = db.execute("""UPDATE tracks SET bpm=?, bpm_source=?, bpm_provenance=?, bpm_updated_at=?
         WHERE id=? AND COALESCE(bpm_source,'') != 'manual'
-        AND (?='local:librosa' OR bpm_source IS NULL OR bpm_source NOT LIKE 'local:%')""",
+        AND (?='local:librosa' OR bpm_source IS NULL OR bpm_source NOT LIKE 'local:%')
+        AND (?=0 OR bpm IS NULL)""",
         (result["bpm"], source, json.dumps(result, ensure_ascii=False),
-         datetime.now(timezone.utc).isoformat(), track_id, source))
+         datetime.now(timezone.utc).isoformat(), track_id, source, int(only_unknown)))
+    written = cur.rowcount
+    if written and source in ("external:acousticbrainz", "external:getsongbpm") and result.get("recording_duration_ms"):
+        db.execute("UPDATE tracks SET duration_ms=? WHERE id=? AND COALESCE(duration_ms,0)=0 AND bpm_source=? AND bpm_provenance=?",
+                   (result["recording_duration_ms"], track_id, source, json.dumps(result, ensure_ascii=False)))
     db.commit()
-    return cur.rowcount
+    return written
 
 
 def tracklist_rows(data):
@@ -249,7 +298,7 @@ def run(args):
     signal.signal(signal.SIGTERM, stop_batch)
     signal.signal(signal.SIGINT, stop_batch)
     cache = Path(args.cache)
-    http = HTTP(cache / "http", budget, args.refresh)
+    http = HTTP(cache / "http", budget, args.refresh, getattr(args, "cached_only", False))
     db = sqlite3.connect(f"file:{Path(args.db).resolve()}?mode=rw", uri=True, timeout=5)
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA foreign_keys=ON")
@@ -266,11 +315,11 @@ def run(args):
         rows = db.execute("""SELECT f.*,t.bpm_source,t.bpm FROM audio_files f JOIN tracks t ON t.id=f.track_id
             WHERE f.kind='track' ORDER BY f.track_id,f.relpath""").fetchall()
     else:
-        rows = db.execute("""SELECT DISTINCT t.* FROM tracks t JOIN albums a ON a.id=t.album_id
+        rows = db.execute("""SELECT DISTINCT t.*,a.title AS album_title FROM tracks t JOIN albums a ON a.id=t.album_id
             LEFT JOIN release_versions rv ON rv.id=t.release_id
             WHERE a.in_collection=1 AND (rv.source='collection' OR EXISTS
                 (SELECT 1 FROM audio_files f WHERE f.track_id=t.id AND f.kind='track'))
-            ORDER BY a.artist,t.track_number,t.title""").fetchall()
+            ORDER BY COALESCE(rv.has_vinyl,0) DESC,a.artist,t.track_number,t.title""").fetchall()
     if args.sample_dance:
         album_ids = {r[0] for r in db.execute("SELECT id,artist FROM albums") if r[1] in DANCE_ARTISTS}
         rows = [r for r in rows if r["album_id"] in album_ids]
@@ -345,6 +394,8 @@ def run(args):
                 record = {"id": track_id, "title": row["title"] if "title" in row.keys() else row["relpath"], **result}
                 records.append(record)
                 print(json.dumps({"progress": stats["processed"], **record}, ensure_ascii=False), flush=True)
+            except CacheMiss:
+                stats["uncached"] += 1
             except (OSError, ValueError, subprocess.SubprocessError) as exc:
                 # A retryable file/network failure isn't marked complete.
                 stats["errors"] += 1
@@ -378,6 +429,7 @@ def main():
     p.add_argument("--limit", type=int, default=100)
     p.add_argument("--max-seconds", type=int, default=600)
     p.add_argument("--refresh", action="store_true", help="Retry cached outcomes; manual values remain protected")
+    p.add_argument("--cached-only", action="store_true", help="Use cached HTTP metadata only; no network requests")
     p.add_argument("--sample-dance", action="store_true")
     p.add_argument("--probe", action="store_true", help="External coverage research without BPM writes")
     p.add_argument("--report")

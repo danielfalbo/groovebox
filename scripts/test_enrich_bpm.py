@@ -3,6 +3,7 @@ from contextlib import redirect_stdout
 from io import StringIO
 import hashlib
 import signal
+import urllib.error
 import tempfile
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -11,7 +12,8 @@ import sqlite3
 import sys
 import unittest
 sys.path.insert(0, str(Path(__file__).parent))
-from enrich_bpm import external_result, import_tracklist, norm, recording_match, write_bpm, run, ALGORITHM, external_job_key
+from apply_reviewed_bpm import reviewed_matches, duplicate_matches
+from enrich_bpm import external_result, import_tracklist, norm, recording_match, write_bpm, run, ALGORITHM, external_job_key, HTTP, Budget, CacheMiss
 
 
 class FakeHTTP:
@@ -48,7 +50,90 @@ class BPMTests(unittest.TestCase):
         self.assertEqual(external_result(self.track, FakeHTTP([self.recording, ambiguous], self.archive))['status'], 'ambiguous-recording')
         self.archive['metadata']['tags']['title'] = ['Song (Radio Edit)']
         self.assertEqual(external_result(self.track, FakeHTTP([self.recording], self.archive))['status'], 'archive-version-mismatch')
-        self.assertEqual(external_result(dict(self.track, duration_ms=0), h)['status'], 'missing-duration')
+        self.assertEqual(external_result(dict(self.track, duration_ms=0), h)['status'], 'archive-version-mismatch')
+
+    def test_missing_duration_requires_unique_identity_and_archive_corroboration(self):
+        track = dict(self.track, duration_ms=0)
+        result = external_result(track, FakeHTTP([self.recording], self.archive))
+        self.assertEqual(result['bpm'], 123.45)
+        self.assertIn('MB/archive duration agrees', result['match'])
+        self.assertEqual(external_result(track, FakeHTTP(
+            [self.recording, dict(self.recording, id='other', length=300000)], self.archive))['status'],
+            'ambiguous-recording')
+        self.assertEqual(external_result(track, FakeHTTP(
+            [dict(self.recording, length=None)], self.archive))['status'], 'archive-version-mismatch')
+        self.archive['metadata']['audio_properties']['length'] = 250
+        self.assertEqual(external_result(track, FakeHTTP([self.recording], self.archive))['status'],
+                         'archive-version-mismatch')
+
+    def test_recording_disambiguation_cannot_hide_an_edit(self):
+        self.assertFalse(recording_match(self.track, dict(self.recording, disambiguation='radio edit')))
+        self.assertTrue(recording_match(self.track, dict(self.recording, disambiguation='Club Mix')))
+        self.assertFalse(recording_match(dict(self.track,title='Deliver Me'), dict(self.recording,title='Deliver Me',disambiguation='live')))
+
+    def test_reviewed_album_requires_full_order_for_missing_duration(self):
+        owned=[dict(id=str(i),title=f'Track {i}',artist='Artist',duration_ms=0) for i in range(4)]
+        evidence=dict(album='Album',artist='Artist',url='https://getsongbpm.com/album/example',retrieved_at='2026-10-24',
+                      tracks=[dict(title=t['title'],bpm=120,duration_ms=300000) for t in owned])
+        album=dict(title='Album',artist='Artist')
+        self.assertEqual(len(reviewed_matches(owned,evidence,album)),4)
+        self.assertEqual(reviewed_matches(owned,evidence,dict(album,title='Other Album')),[])
+        self.assertEqual(reviewed_matches(owned,dict(evidence,tracks=evidence['tracks'][::-1]),album),[])
+        known=[dict(owned[0],duration_ms=300000)]
+        self.assertEqual(len(reviewed_matches(known,evidence,album)),1)
+        self.assertEqual(reviewed_matches([dict(known[0],title='Track 0 (Radio Edit)')],evidence,album),[])
+        self.assertEqual(reviewed_matches([dict(known[0],duration_ms=180000)],evidence,album),[])
+
+    def test_duplicate_transfer_requires_recording_evidence_and_no_conflict(self):
+        target=dict(id='target',album_id='a',title='Song (Club Mix)',artist='Artist',duration_ms=360000)
+        source=dict(target,id='source',bpm=123,bpm_source='local:librosa',bpm_provenance='{}')
+        self.assertEqual(duplicate_matches(target,[source])['source_track_id'],'source')
+        for change in [dict(album_id='b'),dict(title='Song (Radio Edit)'),dict(duration_ms=0),dict(duration_ms=300000)]:
+            self.assertIsNone(duplicate_matches(dict(target,**change),[source]))
+        self.assertIsNone(duplicate_matches(target,[source,dict(source,id='conflict',bpm=130)]))
+        self.assertIsNone(duplicate_matches(target,[dict(source,bpm_source='manual')]))
+
+    def test_duration_backfill_and_atomic_unknown_guard(self):
+        db=sqlite3.connect(':memory:')
+        db.executescript("CREATE TABLE tracks(id TEXT,bpm REAL,bpm_source TEXT,bpm_provenance TEXT,bpm_updated_at TEXT,duration_ms INTEGER);"
+                         "INSERT INTO tracks VALUES('unknown',NULL,NULL,NULL,NULL,0);"
+                         "INSERT INTO tracks VALUES('manual',NULL,'manual',NULL,NULL,0);"
+                         "INSERT INTO tracks VALUES('known',120,'external:acousticbrainz',NULL,NULL,0);")
+        result=dict(bpm=123,recording_duration_ms=300000)
+        self.assertEqual(write_bpm(db,'unknown',result,'external:getsongbpm',only_unknown=True),1)
+        self.assertEqual(write_bpm(db,'manual',result,'external:getsongbpm',only_unknown=True),0)
+        self.assertEqual(write_bpm(db,'known',result,'external:getsongbpm',only_unknown=True),0)
+        self.assertEqual(db.execute("SELECT duration_ms FROM tracks WHERE id='unknown'").fetchone()[0],300000)
+        self.assertEqual(db.execute("SELECT duration_ms FROM tracks WHERE id='manual'").fetchone()[0],0)
+
+    def test_http_retry_is_bounded_and_access_failures_stop(self):
+        with tempfile.TemporaryDirectory() as work:
+            http=HTTP(Path(work),Budget(120))
+            with patch.object(http,'_get',side_effect=[OSError('503'),{'ok':True}]) as get, patch('enrich_bpm.time.sleep'):
+                self.assertEqual(http.get('https://example.test/track'),{'ok':True})
+                self.assertEqual(get.call_count,2)
+            with patch.object(http,'_get',side_effect=OSError('503')) as get, patch('enrich_bpm.time.sleep'):
+                with self.assertRaises(OSError):http.get('https://example.test/track')
+                self.assertEqual(get.call_count,3)
+            with patch.object(http,'_get',side_effect=RuntimeError('403; stop')) as get:
+                with self.assertRaises(RuntimeError):http.get('https://example.test/track')
+                self.assertEqual(get.call_count,1)
+            url='https://example.test/cached'
+            (Path(work)/(hashlib.sha256(url.encode()).hexdigest()+'.json')).write_text('{"cached": true}')
+            with patch('enrich_bpm.fcntl.flock',side_effect=AssertionError('cached reads must not wait on locks')):
+                self.assertEqual(http.get(url),{'cached':True})
+            http.cached_only=True
+            with patch('enrich_bpm.urllib.request.urlopen') as network:
+                with self.assertRaises(CacheMiss):http.get('https://example.test/uncached')
+                network.assert_not_called()
+
+    def test_archive_slot_prefix_needs_actual_slot_album_and_full_version(self):
+        track=dict(self.track,track_number='A1',album_title='Album',duration_ms=0)
+        self.archive['metadata']['tags'].update(album=['Album'],title=['A1. Song (Club Mix)'])
+        self.assertEqual(external_result(track,FakeHTTP([self.recording],self.archive))['status'],'ok')
+        for title,album in [('A2. Song (Club Mix)','Album'),('A1. Song (Radio Edit)','Album'),('A1. Song (Club Mix)','Other')]:
+            self.archive['metadata']['tags'].update(album=[album],title=[title])
+            self.assertEqual(external_result(track,FakeHTTP([self.recording],self.archive))['status'],'archive-version-mismatch')
 
     def test_manual_null_lock_and_local_priority(self):
         db = sqlite3.connect(':memory:')

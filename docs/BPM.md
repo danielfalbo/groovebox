@@ -1,5 +1,12 @@
 # Track tempo and owned-record browsing
 
+Current provider expansion: **432 BPM rows; 296/936 owned vinyl slots**, up from
+135 rows and 60/936. See [provider results and matching rules](BPM-PROVIDERS.md)
+for the completed multi-provider research, 23-slot sample, 297 actual additions,
+132 duration backfills, safeguards and remaining unknowns. The rollout numbers
+and provider restrictions below record the initial run; the expansion document
+supersedes them where indicated.
+
 Collection → BPM from/to → Find matching tracks. Bounds are inclusive; Vinyl
 only requires the actual owned vinyl release. Cards list matching track names,
 positions and pressing details. Unknown values do not match a range. There is
@@ -17,7 +24,8 @@ Browser navigation and shareable URLs preserve bounds, search and vinyl mode.
 `tracks.bpm` is nullable REAL (20–400); `bpm_source`, `bpm_provenance` (JSON text)
 and `bpm_updated_at` record evidence. `ensureColumn` adds each field safely on old
 databases; the schema includes the same columns for new databases. Unknown stays
-NULL. Sources are `manual`, `local:librosa`, and `external:acousticbrainz`.
+NULL. Sources are `manual`, `local:librosa`, `external:acousticbrainz`,
+`external:getsongbpm`, and `external:recording-copy`.
 Updates atomically check the source so a manual correction made during analysis
 wins. External results cannot replace local analysis.
 
@@ -126,7 +134,7 @@ integration is optional and cannot fill the vinyl-only dance collection reliably
 The broader collection scan did find exact matches outside this initial sample,
 including seven tracks on the owned Bicep pressing (Discogs release 25801321).
 
-## Execution results and operation
+## Initial rollout results and operation (before provider expansion)
 
 Measured final database state (2026-10-24):
 

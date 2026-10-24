@@ -1,0 +1,205 @@
+{
+  "date": "2026-10-24",
+  "before": {
+    "bpm_rows": 135,
+    "sources": {
+      "external:acousticbrainz": 87,
+      "local:librosa": 48
+    },
+    "owned_slots": {
+      "known": 77,
+      "slots": 1039
+    },
+    "owned_vinyl_slots": {
+      "known": 60,
+      "slots": 936
+    },
+    "owned_missing_durations": 419,
+    "collection_albums_with_bpm": 19
+  },
+  "after": {
+    "bpm_rows": 432,
+    "sources": {
+      "external:acousticbrainz": 114,
+      "external:getsongbpm": 227,
+      "external:recording-copy": 43,
+      "local:librosa": 48
+    },
+    "owned_slots": {
+      "known": 362,
+      "slots": 1039
+    },
+    "owned_vinyl_slots": {
+      "known": 296,
+      "slots": 936
+    },
+    "owned_missing_durations": 287,
+    "collection_albums_with_bpm": 38
+  },
+  "new_bpm_rows": 297,
+  "changed_preexisting_bpm_rows": 0,
+  "protected_rows_unchanged": 48,
+  "sqlite_quick_check": "ok",
+  "providers-bulk": {
+    "stats": {
+      "processed": 153,
+      "attempted": 144,
+      "no-archived-bpm": 29,
+      "no-exact-recording": 57,
+      "ambiguous-recording": 22,
+      "archive-version-mismatch": 6,
+      "errors": 7,
+      "written": 18,
+      "ok": 18,
+      "ambiguous-search": 13,
+      "cached": 9,
+      "batch-stopped": 1
+    },
+    "requests": {
+      "musicbrainz.org": 117,
+      "acousticbrainz.org": 40
+    }
+  },
+  "providers-resume": {
+    "stats": {
+      "processed": 329,
+      "cached": 289,
+      "no-archived-bpm": 45,
+      "no-exact-recording": 177,
+      "ambiguous-recording": 28,
+      "archive-version-mismatch": 12,
+      "ambiguous-search": 51,
+      "unsupported-duration": 1,
+      "missing-artist": 8,
+      "attempted": 40,
+      "written": 5,
+      "ok": 5,
+      "errors": 1,
+      "batch-stopped": 1
+    },
+    "requests": {
+      "musicbrainz.org": 47,
+      "acousticbrainz.org": 12
+    }
+  },
+  "providers-cache-sweep": {
+    "stats": {
+      "processed": 731,
+      "cached": 82,
+      "no-archived-bpm": 39,
+      "no-exact-recording": 162,
+      "ambiguous-recording": 22,
+      "archive-version-mismatch": 10,
+      "ambiguous-search": 50,
+      "attempted": 649,
+      "uncached": 439,
+      "unsupported-duration": 1,
+      "missing-artist": 8
+    },
+    "requests": {}
+  },
+  "providers-cache-v3": {
+    "stats": {
+      "processed": 28,
+      "attempted": 28,
+      "no-archived-bpm": 7,
+      "no-exact-recording": 18,
+      "ambiguous-recording": 2,
+      "archive-version-mismatch": 1,
+      "batch-stopped": 1
+    },
+    "requests": {}
+  },
+  "providers-cache-final": {
+    "stats": {
+      "processed": 691,
+      "cached": 31,
+      "no-archived-bpm": 45,
+      "no-exact-recording": 177,
+      "ambiguous-recording": 27,
+      "archive-version-mismatch": 10,
+      "attempted": 660,
+      "ambiguous-search": 44,
+      "uncached": 379,
+      "unsupported-duration": 1,
+      "missing-artist": 8
+    },
+    "requests": {}
+  },
+  "getsongbpm_comparison": {
+    "matched_existing_rows": 102,
+    "within_2_bpm": 75,
+    "examples_disagreeing": [
+      {
+        "artist": "Bicep",
+        "title": "Vespa",
+        "provider_bpm": 167.0,
+        "retained_bpm": 135.43,
+        "retained_source": "external:acousticbrainz"
+      },
+      {
+        "artist": "Bicep",
+        "title": "Drift",
+        "provider_bpm": 127.0,
+        "retained_bpm": 166.42,
+        "retained_source": "external:acousticbrainz"
+      },
+      {
+        "artist": "Bicep",
+        "title": "Ayr",
+        "provider_bpm": 79.0,
+        "retained_bpm": 161.5,
+        "retained_source": "external:acousticbrainz"
+      },
+      {
+        "artist": "Electric Light Orchestra",
+        "title": "Big Wheels",
+        "provider_bpm": 61,
+        "retained_bpm": 123.71,
+        "retained_source": "external:acousticbrainz"
+      },
+      {
+        "artist": "Frank Ocean",
+        "title": "Pink + White",
+        "provider_bpm": 158,
+        "retained_bpm": 106.67,
+        "retained_source": "external:acousticbrainz"
+      },
+      {
+        "artist": "Frank Ocean",
+        "title": "Self Control",
+        "provider_bpm": 80,
+        "retained_bpm": 162.52,
+        "retained_source": "external:acousticbrainz"
+      },
+      {
+        "artist": "Frank Ocean",
+        "title": "Nights",
+        "provider_bpm": 176,
+        "retained_bpm": 79.85,
+        "retained_source": "external:acousticbrainz"
+      },
+      {
+        "artist": "Frank Ocean",
+        "title": "Close To You",
+        "provider_bpm": 78,
+        "retained_bpm": 154.81,
+        "retained_source": "external:acousticbrainz"
+      },
+      {
+        "artist": "Frank Ocean",
+        "title": "Start",
+        "provider_bpm": 80,
+        "retained_bpm": 164.34,
+        "retained_source": "external:acousticbrainz"
+      },
+      {
+        "artist": "Pink Floyd",
+        "title": "Breathe",
+        "provider_bpm": 64,
+        "retained_bpm": 128.71,
+        "retained_source": "external:recording-copy"
+      }
+    ]
+  }
+}
