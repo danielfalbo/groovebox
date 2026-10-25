@@ -58,6 +58,16 @@ not the owned original album. A Good Life album version at 4:04 does not identif
 the owned Magic Juan/Mayday mixes at 8:28/6:12. Unrelated covers and similarly
 named artists returned by search were never accepted.
 
+### Follow-up: direct Tunebat browser access
+
+Tested the specific user-provided page for Marek Hemmann — Left (feat. Fabian
+Reichelt), Spotify ID `1UmLoPCg5kLMm3ROuHrZey`. The HTTP fetch returned a
+JavaScript/cookie challenge. A normal headless Playwright Chromium visit also
+returned HTTP 403 and Cloudflare “Performing security verification”, not track
+metadata. No challenge bypass was attempted and no BPM was imported. A public
+API could not be verified; the existence of `platform.tunebat.com` does not
+establish API availability. User chose to stop this investigation.
+
 ## Measured dance comparison
 
 The fixed 23-slot sample takes the first two owned vinyl tracks per artist from
