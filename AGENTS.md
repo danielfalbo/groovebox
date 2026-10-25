@@ -301,3 +301,40 @@ Two-way playlist sync between Groovebox and Tidal, using a safe 3-way merge per 
 - Tests: `timeout 60s go test ./...`, `timeout 30s python3 -m unittest discover
   -s scripts -p 'test_*.py'`, `timeout 360s sh e2e/run.sh` (isolated snapshot,
   touch Chromium/WebKit at 375/390px). Inspect actual screenshots after UI edits.
+
+## DJ-set playlist builder (2026-10-25)
+
+- **Purpose**: build future DJ-set tracklists playlist-first, picking songs by
+  the records in the Discogs collection. BPM is the ordering currency; each
+  track's order within the playlist matters (it's the set order).
+- **Records picker**: the "Add Songs" modal now has a mode toggle
+  (🔍 Search / 💿 My Records). Records mode lists your **owned collection
+  pressings** (source='collection' release, or a locally-indexed audio file)
+  grouped by record, every group collapsible. Tracks within a group are
+  **BPM-ascending (known first, unknown last)**; groups themselves sort by
+  lowest known BPM so clicking top-to-bottom ramps energy. Cards show a min-BPM
+  badge, vinyl 🖤 marker and the owned pressing's format/label/cat#. Filter box
+  narrows by title/artist.
+- **Eligibility mirrors the tempo filter** (`collectionTempos`): a track must
+  belong to an owned collection pressing OR a locally-indexed track file; a
+  catalog/Spotify track on the same canonical album is not proof it's in the
+  crate. Never aggregate by album-average BPM.
+- **`GET /api/collection/records`** returns `{id,title,artist,cover_image_url,
+  has_vinyl,formats,tracks,min_bpm}`; tracks are full `TrackDetail` (incl. bpm)
+  BPM-sorted. Backend: `collectionRecords()` in bpm.go.
+- **Playlist ordering matters** now, two additions to the playlist view header:
+  - **🌀 Sort by BPM** / **↧ BPM high→low** — reorder the whole playlist by BPM
+    (unknowns last, stable), `POST /api/playlists/:id/sort/bpm?dir=asc|desc`.
+    `sortPlaylistByBPM()` in bpm.go rebuilds `playlist_tracks` positions in a
+    transaction; unknown-BPM tracks keep relative order and sink to the end.
+  - Per-row **↑ / ↓** buttons in the playlist track list move a track one slot
+    (disabled at the edges), `POST /api/playlists/:id/move {position,direction}`.
+    `movePlaylistTrack()` swaps list positions and reindexes positions 1..N in a
+    transaction; an out-of-range position 400s; a no-op edge move succeeds.
+- **Note**: `playlist_tracks` uses `(playlist_id, track_id, position)` as PK, so
+  both reorder helpers delete the old membership rows and re-insert with fresh
+  1..N positions under a transaction (a direct two-row UPDATE would collide).
+- Tests: e2e `DJ records picker: pick tracks from collection records + sort
+  playlist by BPM` (builds a temp playlist, switches to records, asserts the
+  opened fixture record is BPM-ascending with unknown last, sorts the playlist
+  and asserts Slow < Fast < unknown). Cache-buster is v12.

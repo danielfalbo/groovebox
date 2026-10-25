@@ -366,6 +366,55 @@ test('tempo bands include exact float boundaries once and ignore stale requests'
   await page.unroute(delayed);
 });
 
+test('DJ records picker: pick tracks from collection records + sort playlist by BPM', async ({page, url}) => {
+  if (process.argv.includes('--live')) return;
+  // Create a playlist, add two known-BPM tracks in a non-sorted order, and one unknown.
+  const pl = await (await fetch(`${url}/api/playlists`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name:'__DJ__ Set'})})).json();
+  for (const [tid] of [['bpm-fast','bpm-matched'],['bpm-slow','bpm-m0'],['bpm-unknown','bpm-un']]) {
+    await fetch(`${url}/api/playlists/${pl.id}/tracks`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({track_id: tid})});
+  }
+  // Navigate to the playlist view (search sidebar, then open it).
+  await page.goto(`${url}/playlists/${pl.id}`, {waitUntil: 'networkidle'});
+  await page.waitForSelector('#tracklist-body tr');
+  // Open the Add Songs modal and switch to the records picker.
+  await page.locator('button:has-text("Add Songs")').first().click();
+  await page.waitForSelector('#add-songs-modal');
+  await page.locator('[id="add-songs-tab-records"]').click();
+  await page.waitForSelector('.record-group', {timeout:15000});
+  const recordTitles = await page.locator('.record-group-header .playlist-name-text').allInnerTexts();
+  assert(recordTitles.length > 0, 'no collection records rendered in picker');
+  // Tracks inside the matching fixture record group should be BPM-ascending (unknown last).
+  // Scope to the opened group's body only (collapsed groups stay hidden but in the DOM).
+  const badge = page.locator('.record-group-header', {hasText:'__BPM_TEST__ Match'});
+  if (await badge.count()) {
+    await badge.first().click();
+    const bpms = await page.locator('.record-group-body.open .record-track-bpm').allInnerTexts();
+    assert(bpms.length >= 2, 'expected 2+ tracks in fixture record');
+    const nums = bpms.map(x => (x && x !== '—') ? parseFloat(x) : null);
+    const known = nums.filter(n => n != null);
+    assert(!known.some((v,i) => i>0 && known[i-1] > v), `record tracks not BPM-sorted: ${bpms}`);
+    // unknown sorts last
+    const last = nums[nums.length-1];
+    assert(last == null, 'unknown-BPM track should sort last in record, got '+last);
+  }
+  // Close, then use the BPM sort on the playlist directly.
+  await page.locator('#add-songs-modal .bp5-icon-cross').first().click();
+  await page.locator('button:has-text("Sort by BPM")').first().click();
+  await page.waitForFunction(() => document.querySelectorAll('#tracklist-body tr').length >= 3);
+  await page.waitForTimeout(400);
+  const rows = await page.locator('#tracklist-body tr').allInnerTexts();
+  // Unknown should be moved to the end; the two known are now ascending.
+  const text = rows.join('\n');
+  const slowIdx = text.indexOf('Slow');
+  const fastIdx = text.indexOf('Fast');
+  assert(slowIdx > -1 && fastIdx > -1, 'known fixture tracks missing after sort');
+  assert(slowIdx < fastIdx, 'BPM sort did not put Slow (90) before Fast (150)');
+  const unknownIdx = text.lastIndexOf('Unknown');
+  assert(unknownIdx > fastIdx, 'Unknown-BPM track should sort last');
+  // Cleanup
+  await fetch(`${url}/api/playlists/${pl.id}`, {method:'DELETE'});
+});
+
 test('manual BPM correction persists, unknown locks and Auto resets', async ({page, url}) => {
   if (process.argv.includes('--live')) return;
   await page.goto(`${url}/albums/bpm-match`, {waitUntil: 'networkidle'});

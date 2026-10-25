@@ -1129,6 +1129,53 @@ html, body {
   }
 }
 
+/* --- Add Songs: Search / My Records mode toggle --- */
+.add-songs-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+.add-songs-tab {
+  flex: 1;
+  padding: 8px 12px;
+  background: transparent;
+  color: #a7b6c2;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+.add-songs-tab[aria-selected="true"] {
+  color: #2b95d6;
+  border-bottom-color: #2b95d6;
+}
+
+/* --- Add Records: collapsible record groups --- */
+.record-group {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.record-group-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 6px;
+  cursor: pointer;
+}
+.record-group-header:hover { background: rgba(255, 255, 255, 0.04); }
+.record-group-header img {
+  width: 40px; height: 40px; border-radius: 4px; flex-shrink: 0;
+}
+.record-group-info { min-width: 0; flex: 1; }
+.record-group-bpm { flex-shrink: 0; font-size: 12px; }
+.record-group-caret { flex-shrink: 0; color: #73809a; }
+.record-group-body { display: none; }
+.record-group-body.open { display: block; }
+.record-track-row { padding: 6px 6px 6px 50px; }
+.record-position { width: 24px; flex-shrink: 0; color: #73809a; font-size: 11px; text-align: center; }
+.record-track-bpm { flex-shrink: 0; min-width: 64px; text-align: right; font-size: 12px; }
+
 /* --- Add Songs to playlist: search result rows --- */
 .add-song-row {
   justify-content: space-between;

@@ -11,7 +11,7 @@
   <link href="/vendor/normalize-8.0.1.css" rel="stylesheet" />
   <link href="/vendor/blueprint-5.19.1.css" rel="stylesheet" />
   <link href="/vendor/blueprint-icons-5.23.0.css" rel="stylesheet" />
-  <link href="/style.css?v=11" rel="stylesheet" />
+  <link href="/style.css?v=12" rel="stylesheet" />
 </head>
 <body class="bp5-dark">
   <div class="app-layout">
@@ -255,12 +255,28 @@
         <button class="bp5-button bp5-minimal bp5-icon-cross" aria-label="Close dialog" onclick="closeAddSongsModal()"></button>
       </div>
       <div class="bp5-dialog-body">
-        <div class="bp5-input-group bp5-round" style="margin-bottom: 12px;">
-          <span class="bp5-icon bp5-icon-search"></span>
-          <input type="text" class="bp5-input" id="add-songs-search-input" placeholder="Search songs to add..." autocomplete="off" oninput="handlePlaylistSongSearch(this.value)" />
+        <div class="add-songs-tabs" role="tablist">
+          <button type="button" class="add-songs-tab" id="add-songs-tab-search" aria-selected="true" onclick="switchAddSongsToPlaylistMode('search')">🔍 Search</button>
+          <button type="button" class="add-songs-tab" id="add-songs-tab-records" aria-selected="false" onclick="switchAddSongsToPlaylistMode('records')">💿 My Records</button>
         </div>
-        <div class="playlist-select-list add-songs-results" id="add-songs-results">
-          <div class="bp5-text-muted" style="padding: 14px; text-align: center;">Type to search your library...</div>
+        <div id="add-songs-mode-search">
+          <div class="bp5-input-group bp5-round" style="margin-bottom: 12px;">
+            <span class="bp5-icon bp5-icon-search"></span>
+            <input type="text" class="bp5-input" id="add-songs-search-input" placeholder="Search songs to add..." autocomplete="off" oninput="handlePlaylistSongSearch(this.value)" />
+          </div>
+          <div class="playlist-select-list add-songs-results" id="add-songs-results">
+            <div class="bp5-text-muted" style="padding: 14px; text-align: center;">Type to search your library...</div>
+          </div>
+        </div>
+        <div id="add-songs-mode-records" style="display: none;">
+          <div class="bp5-input-group bp5-round" style="margin-bottom: 12px;">
+            <span class="bp5-icon bp5-icon-search"></span>
+            <input type="text" class="bp5-input" id="records-search-input" placeholder="Filter records..." autocomplete="off" oninput="handleRecordsFilter(this.value)" />
+          </div>
+          <div class="playlist-select-list add-songs-results" id="records-results">
+            <div class="bp5-text-muted" style="padding: 14px; text-align: center;">Loading records...</div>
+          </div>
+          <p class="bp5-text-muted" id="records-hint" style="margin: 10px 0 0; font-size: 12px;">Tracks within each record are ordered by BPM (lowest first, unknown last) to help you shape a DJ set. Click a track to add it, top-to-bottom for an energy ramp.</p>
         </div>
       </div>
       <div class="bp5-dialog-footer">
@@ -349,7 +365,7 @@
     </div>
   </div>
 
-  <script src="/app.js?v=11"></script>
-  <script src="/local.js?v=11"></script>
+  <script src="/app.js?v=12"></script>
+  <script src="/local.js?v=12"></script>
 </body>
 </html>

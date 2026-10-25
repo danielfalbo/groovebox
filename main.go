@@ -498,6 +498,47 @@ func main() {
 		}
 		playlistID := parts[0]
 
+		// Move a playlist track to a neighbouring slot: /api/playlists/:id/move
+		// body {"position":N,"direction":"up"|"down"}
+		if len(parts) >= 2 && parts[1] == "move" {
+			if r.Method != http.MethodPost {
+				http.Error(w, "Method not allowed", 405)
+				return
+			}
+			var req struct {
+				Position  int    `json:"position"`
+				Direction string `json:"direction"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Position < 1 {
+				http.Error(w, "position (>=1) and direction (up|down) required", 400)
+				return
+			}
+			if err := movePlaylistTrack(db, playlistID, req.Position, req.Direction); err != nil {
+				http.Error(w, err.Error(), 400)
+				return
+			}
+			json.NewEncoder(w).Encode(map[string]bool{"success": true})
+			return
+		}
+
+		// Sort a playlist's tracks by BPM: /api/playlists/:id/sort/bpm?dir=asc|desc
+		if len(parts) >= 3 && parts[1] == "sort" && parts[2] == "bpm" {
+			if r.Method != http.MethodPost {
+				http.Error(w, "Method not allowed", 405)
+				return
+			}
+			dir := r.URL.Query().Get("dir")
+			if dir != "desc" && dir != "asc" {
+				dir = "asc"
+			}
+			if err := sortPlaylistByBPM(db, playlistID, dir); err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			json.NewEncoder(w).Encode(map[string]bool{"success": true})
+			return
+		}
+
 		// Handle /api/playlists/:id/tracks
 		if len(parts) >= 2 && parts[1] == "tracks" {
 			if r.Method == http.MethodPost {
@@ -1197,6 +1238,19 @@ func main() {
 
 	// ---- Local music library + playback ----
 	http.HandleFunc("/api/sync/local", postSyncLocal(db))
+	http.HandleFunc("/api/collection/records", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", 405)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		records, err := collectionRecords(db)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		json.NewEncoder(w).Encode(records)
+	})
 	http.HandleFunc("/api/local/albums/", getLocalAlbum(db))
 	http.HandleFunc("/api/local/albums", getLocalAlbums(db))
 	http.HandleFunc("/api/local/cover", serveLocalCover())

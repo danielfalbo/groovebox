@@ -1490,10 +1490,136 @@ async function removeTrackFromPlaylist(playlistID, trackID, position) {
   }
 }
 
+// --- Sort current playlist by BPM (for DJ-set tracklists) ---
+async function sortPlaylistByBpm(playlistID, dir) {
+  if (!activePlaylistID) return;
+  try {
+    const res = await fetch(`/api/playlists/${playlistID}/sort/bpm?dir=${dir}`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to sort by BPM');
+    selectPlaylist(playlistID, activePlaylistName, activePlaylistDesc);
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+// Move a playlist track up/down one slot (so a DJ can put a record next).
+async function movePlaylistTrack(position, direction) {
+  if (!activePlaylistID) return;
+  try {
+    const res = await fetch(`/api/playlists/${activePlaylistID}/move`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ position, direction })
+    });
+    if (!res.ok) throw new Error('Move failed');
+    selectPlaylist(activePlaylistID, activePlaylistName, activePlaylistDesc);
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
 // --- Add Songs to current playlist (search first, then add) ---
 let activePlaylistTrackIds = new Set();
 let addedDraftSet = new Set();
 let playlistSongSearchTimer = null;
+let addSongsMode = 'search';
+let recordsCache = [];
+let recordsFilter = '';
+
+function switchAddSongsToPlaylistMode(mode) {
+  addSongsMode = mode;
+  const searchTab = document.getElementById('add-songs-tab-search');
+  const recordsTab = document.getElementById('add-songs-tab-records');
+  searchTab.setAttribute('aria-selected', mode === 'search');
+  recordsTab.setAttribute('aria-selected', mode === 'records');
+  document.getElementById('add-songs-mode-search').style.display = mode === 'search' ? '' : 'none';
+  document.getElementById('add-songs-mode-records').style.display = mode === 'records' ? '' : 'none';
+  if (mode === 'records') loadRecordsIntoModal();
+  else document.getElementById('add-songs-search-input').focus();
+}
+
+async function loadRecordsIntoModal() {
+  const resultsEl = document.getElementById('records-results');
+  if (!resultsEl) return;
+  resultsEl.innerHTML = '<div class="bp5-text-muted" style="padding: 14px; text-align: center;">Loading records...</div>';
+  try {
+    const res = await fetch('/api/collection/records');
+    if (!res.ok) throw new Error('Failed to load records');
+    recordsCache = await res.json();
+    renderRecordsResults();
+  } catch (err) {
+    resultsEl.innerHTML = `<div class="bp5-text-muted" style="padding: 14px; text-align: center;">${err.message}</div>`;
+  }
+}
+
+function handleRecordsFilter(value) {
+  recordsFilter = (value || '').trim().toLowerCase();
+  renderRecordsResults();
+}
+
+function renderRecordsResults() {
+  const resultsEl = document.getElementById('records-results');
+  if (!resultsEl) return;
+  let records = recordsCache;
+  if (recordsFilter) {
+    records = records.filter(r =>
+      (r.title || '').toLowerCase().includes(recordsFilter) ||
+      (r.artist || '').toLowerCase().includes(recordsFilter));
+  }
+  if (!records || records.length === 0) {
+    resultsEl.innerHTML = '<div class="bp5-text-muted" style="padding: 16px; text-align: center;">No records in your collection</div>';
+    return;
+  }
+  resultsEl.innerHTML = '';
+  records.forEach(r => {
+    const rec = document.createElement('div');
+    rec.className = 'record-group';
+    rec.innerHTML = `
+      <div class="record-group-header" onclick="toggleRecordGroup(this)">
+        <img class="playlist-cover-fallback" src="${r.cover_image_url || fallbackCover}" alt="art" onerror="this.onerror=null;this.src=fallbackCover">
+        <div class="record-group-info">
+          <span class="bp5-text-overflow-ellipsis playlist-name-text">${r.title}</span>
+          <span class="playlist-date-text">${r.artist || ''}${r.formats ? ' · ' + r.formats : ''}${r.has_vinyl ? ' · 💿' : ''}</span>
+        </div>
+        <span class="record-group-bpm bp5-text-muted">${r.min_bpm != null ? Math.round(r.min_bpm) + ' BPM' : ''}</span>
+        <span class="record-group-caret">▸</span>
+      </div>
+      <div class="record-group-body">
+        ${r.tracks.map(t => renderRecordTrackRow(t)).join('')}
+      </div>
+    `;
+    resultsEl.appendChild(rec);
+  });
+}
+
+function renderRecordTrackRow(t) {
+  const trackId = String(t.id);
+  const alreadyIn = activePlaylistTrackIds.has(trackId);
+  const justAdded = addedDraftSet.has(trackId);
+  const bpm = t.bpm != null ? `${Number(t.bpm).toFixed(1).replace(/\.0$/, '')} BPM` : '—';
+  const btnText = alreadyIn ? 'In list' : (justAdded ? 'Added ✓' : '+ Add');
+  const btnClass = (alreadyIn || justAdded) ? 'bp5-intent-success' : 'bp5-intent-primary';
+  return `
+    <div class="add-song-row record-track-row">
+      <div class="add-song-meta" onclick="event.stopPropagation()">
+        <span class="record-position">${t.track_number || ''}</span>
+        <div class="playlist-info">
+          <span class="bp5-text-overflow-ellipsis playlist-name-text">${t.title}</span>
+          <span class="playlist-date-text">${t.artist || ''}</span>
+        </div>
+      </div>
+      <span class="record-track-bpm bp5-text-muted">${bpm}</span>
+      <button class="bp5-button bp5-small ${btnClass} add-song-btn" ${(alreadyIn || justAdded) ? 'disabled' : ''} onclick="addSongToCurrentPlaylist('${trackId}', this)">${btnText}</button>
+    </div>`;
+}
+
+function toggleRecordGroup(header) {
+  const body = header.nextElementSibling;
+  const caret = header.querySelector('.record-group-caret');
+  const open = header.classList.toggle('open');
+  body.classList.toggle('open', open);
+  caret.textContent = open ? '▾' : '▸';
+}
 
 function openAddSongsToPlaylistModal() {
   closeSidebarIfMobile();
@@ -1501,13 +1627,17 @@ function openAddSongsToPlaylistModal() {
   document.getElementById('add-songs-modal-title').innerText = `Add Songs to "${activePlaylistName}"`;
   activePlaylistTrackIds = new Set((rawSectionData || []).map(t => String(t.id)));
   addedDraftSet = new Set();
-  const input = document.getElementById('add-songs-search-input');
-  input.value = '';
+  const searchInput = document.getElementById('add-songs-search-input');
+  searchInput.value = '';
+  const recordsInput = document.getElementById('records-search-input');
+  if (recordsInput) recordsInput.value = '';
+  recordsFilter = '';
+  if (addSongsMode === 'records') switchAddSongsToPlaylistMode('search'); // start on search each time
   document.getElementById('add-songs-results').innerHTML =
     '<div class="bp5-text-muted" style="padding: 14px; text-align: center;">Type to search your library...</div>';
   document.getElementById('add-songs-count').innerText = '';
   document.getElementById('add-songs-modal').style.display = 'flex';
-  setTimeout(() => input.focus(), 50);
+  setTimeout(() => searchInput.focus(), 50);
 }
 
 function closeAddSongsModal() {
@@ -1662,6 +1792,8 @@ function renderPlaylistView(playlistID, name, description, tracks) {
           <div class="playlist-header-actions" style="display: flex; gap: 6px;">
             <button class="bp5-button bp5-small bp5-intent-primary bp5-icon-plus" onclick="openAddSongsToPlaylistModal()" title="Add songs to this playlist">Add Songs</button>
             <span id="tidal-btn-${playlistID}" class="tidal-btn-placeholder"></span>
+            <button class="bp5-button bp5-outlined bp5-small" title="Reorder this playlist by BPM, low to high (unknowns last), to shape a DJ set" onclick="sortPlaylistByBpm('${playlistID}', 'asc')">🌀 Sort by BPM</button>
+            <button class="bp5-button bp5-outlined bp5-small" onclick="sortPlaylistByBpm('${playlistID}', 'desc')" title="Reorder this playlist by BPM, high to low">↧ BPM high→low</button>
             <button class="bp5-button bp5-outlined bp5-small bp5-icon-edit" onclick="openEditPlaylistModal('${playlistID}', '${name.replace(/'/g, "\\'")}', '${(description||'').replace(/'/g, "\\'")}')">Edit</button>
             <button class="bp5-button bp5-outlined bp5-intent-danger bp5-small bp5-icon-trash" onclick="deletePlaylistConfirm('${playlistID}', '${name.replace(/'/g, "\\'")}')">Delete</button>
           </div>
@@ -1880,7 +2012,11 @@ function renderTracks(tracks) {
 
     let playlistCurateBtns = '';
     if (isPlaylistView && activePlaylistID) {
-      playlistCurateBtns = `<button class="bp5-button bp5-minimal bp5-small playlist-act-btn danger" onclick="removeTrackFromPlaylist('${activePlaylistID}', '${t.id}', ${t.position || i + 1})" title="Remove from Playlist"><span class="bp5-icon-standard bp5-icon-cross"></span></button>`;
+      const pos = t.position || i + 1;
+      playlistCurateBtns = `
+        <button class="bp5-button bp5-minimal bp5-small playlist-act-btn" onclick="movePlaylistTrack(${pos}, 'up')" title="Move earlier in the set" ${pos <= 1 ? 'disabled' : ''}><span class="bp5-icon-standard bp5-icon-chevron-up"></span></button>
+        <button class="bp5-button bp5-minimal bp5-small playlist-act-btn" onclick="movePlaylistTrack(${pos}, 'down')" title="Move later in the set" ${pos >= (tracks.length) ? 'disabled' : ''}><span class="bp5-icon-standard bp5-icon-chevron-down"></span></button>
+        <button class="bp5-button bp5-minimal bp5-small playlist-act-btn danger" onclick="removeTrackFromPlaylist('${activePlaylistID}', '${t.id}', ${pos})" title="Remove from Playlist"><span class="bp5-icon-standard bp5-icon-cross"></span></button>`;
     }
 
     tr.innerHTML = `
